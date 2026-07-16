@@ -16,6 +16,15 @@
   --radius:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.icn{width:1.1em;height:1.1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;display:inline-block;flex:none}
+nav .ic .icn{width:21px;height:21px}
+.iconbtn .icn{width:19px;height:19px}
+.smallbtn .icn{width:13px;height:13px}
+.isbnrow button .icn{width:19px;height:19px}
+.ph .icn{width:50%;height:50%;color:#7a6c96}
+.empty .icn{width:44px;height:44px;color:#7a6c96}
+.sprimg{display:inline-block;vertical-align:middle;border-radius:5px}
+.icimg{object-fit:contain;border-radius:3px}
 html,body{height:100%}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -60,6 +69,10 @@ nav button.active{color:var(--accent)}
   padding:7px 14px;border-radius:20px;font-size:.82rem;white-space:nowrap;cursor:pointer;font-weight:600;
 }
 .chip.active{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.chip .icn{width:13px;height:13px}
+.book .meta span{display:inline-flex;align-items:center;gap:4px}
+.seg button .icn{width:14px;height:14px}
+.btn .icn,.quickbtn .icn{width:16px;height:16px}
 .chip.dashed{border-style:dashed;color:var(--accent)}
 .colactions{display:flex;gap:8px;margin:0 2px 10px}
 .colactions:empty{display:none}
@@ -163,8 +176,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .stackwrap{display:flex;align-items:flex-end;justify-content:center;gap:26px;margin:16px 0 6px;min-height:180px}
 .stack{display:flex;flex-direction:column-reverse;align-items:center;width:110px}
 .sbook{width:100%;border-radius:3px;margin-top:1px;min-height:3px}
-.human{font-size:2.4rem;display:flex;flex-direction:column;align-items:center;color:var(--txt2);font-weight:600}
-.human small{font-size:.72rem;margin-top:4px}
+.human{display:flex;flex-direction:column;align-items:center;color:var(--txt2);font-weight:600}
+.human small{font-size:.72rem;margin-top:5px}
 .bignum{font-size:2.2rem;font-weight:800;color:var(--accent)}
 .milestones{margin-top:16px}
 .mile{
@@ -219,7 +232,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .calday{background:var(--card);border:1px solid #322847;border-radius:10px;min-height:54px;padding:4px 3px;cursor:pointer;text-align:center}
 .calday .dnum{font-size:.72rem;color:var(--txt2);font-weight:600}
 .calday .pg{font-size:.68rem;color:var(--accent);font-weight:800}
-.calday .fin{font-size:.7rem;display:flex;justify-content:center;align-items:center;gap:1px}
+.calday .fin{font-size:.7rem;display:flex;justify-content:center;align-items:center;gap:1px;color:var(--accent)}
+.calday .fin .icn{width:13px;height:13px}
+.calfall{display:flex;align-items:center;justify-content:center;color:var(--accent)}
 .calcover{width:15px;height:22px;object-fit:cover;border-radius:2px;display:block}
 .calday.today{border-color:var(--accent)}
 .calday.sel{background:var(--accent2);border-color:var(--accent2)}
@@ -233,11 +248,34 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 </head>
 <body>
 
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+  <symbol id="i-book-open" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-shelf" viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="2"/><path d="M3 12h18M8 4v8M12 6v6M16 5l2 7"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0zM7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="1"/><path d="M16 6h-4M16 10h-4M16 14h-4M16 18h-4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><path d="M7 7h.01"/></symbol>
+</svg>
+
 <header>
-  <h1>📚 Ma <span>Bibli</span></h1>
+  <h1><span data-spr="book" data-spr-size="22"><svg class="icn" style="width:22px;height:22px;color:var(--accent)"><use href="#i-book"/></svg></span> Ma <span>Bibli</span></h1>
   <div style="display:flex;gap:8px">
-    <button class="iconbtn" onclick="location.reload()" title="Rafraîchir">🔄</button>
-    <button class="iconbtn" onclick="openSettings()">⚙️</button>
+    <button class="iconbtn" onclick="location.reload()" title="Rafraîchir"><span data-spr="refresh" data-spr-size="20"><svg class="icn"><use href="#i-refresh"/></svg></span></button>
+    <button class="iconbtn" onclick="openSettings()" title="Réglages"><span data-spr="gear" data-spr-size="20"><svg class="icn"><use href="#i-gear"/></svg></span></button>
   </div>
 </header>
 
@@ -260,7 +298,22 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <div style="font-size:.85rem;color:var(--txt2)" id="stackGoal"></div>
       <div class="stackwrap">
         <div class="stack" id="stackViz"></div>
-        <div class="human">🧍‍♀️<small id="humanH"></small></div>
+        <div class="human">
+          <span data-spr="human" data-spr-size="165">
+          <svg viewBox="0 0 60 180" style="height:176px;width:auto;display:block" aria-label="Ta taille">
+            <g fill="var(--accent2)">
+              <circle cx="30" cy="11" r="9"/>
+              <rect x="10" y="27" width="5.5" height="42" rx="2.7"/>
+              <rect x="44.5" y="27" width="5.5" height="42" rx="2.7"/>
+              <path d="M30 21c-10 0-14 9-15 21l-5 35c7 5 33 5 40 0l-5-35c-1-12-5-21-15-21z"/>
+              <rect x="21" y="75" width="7.5" height="99" rx="3.5"/>
+              <rect x="31.5" y="75" width="7.5" height="99" rx="3.5"/>
+            </g>
+            <circle cx="30" cy="11" r="9" fill="var(--accent)" opacity=".35"/>
+          </svg>
+          </span>
+          <small id="humanH"></small>
+        </div>
       </div>
       <div class="pbar" style="height:10px"><div id="stackBar" style="width:0%"></div></div>
       <div style="font-size:.78rem;color:var(--txt2);margin-top:8px">Chaque livre terminé ajoute son épaisseur à ta pile.</div>
@@ -313,13 +366,13 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <button class="fab" id="fab" onclick="openAdd()">+</button>
 
 <nav>
-  <button data-v="lib" class="active" onclick="switchTab('lib')"><span class="ic">📚</span>Bibli</button>
-  <button data-v="shelf" onclick="switchTab('shelf')"><span class="ic">🖼</span>Étagères</button>
-  <button data-v="cols" onclick="switchTab('cols')"><span class="ic">🗂</span>Collections</button>
-  <button data-v="rank" onclick="switchTab('rank')"><span class="ic">🏆</span>Top</button>
-  <button data-v="defi" onclick="switchTab('defi')"><span class="ic">📏</span>Défi</button>
-  <button data-v="stats" onclick="switchTab('stats')"><span class="ic">📊</span>Stats</button>
-  <button data-v="cal" onclick="switchTab('cal')"><span class="ic">📅</span>Journal</button>
+  <button data-v="lib" class="active" onclick="switchTab('lib')"><span class="ic" data-spr="book" data-spr-size="23"><svg class="icn"><use href="#i-book"/></svg></span>Bibli</button>
+  <button data-v="shelf" onclick="switchTab('shelf')"><span class="ic" data-spr="shelf" data-spr-size="23"><svg class="icn"><use href="#i-shelf"/></svg></span>Étagères</button>
+  <button data-v="cols" onclick="switchTab('cols')"><span class="ic" data-spr="collection" data-spr-size="23"><svg class="icn"><use href="#i-folder"/></svg></span>Collections</button>
+  <button data-v="rank" onclick="switchTab('rank')"><span class="ic" data-spr="trophy" data-spr-size="23"><svg class="icn"><use href="#i-trophy"/></svg></span>Top</button>
+  <button data-v="defi" onclick="switchTab('defi')"><span class="ic" data-spr="pile" data-spr-size="23"><svg class="icn"><use href="#i-ruler"/></svg></span>Défi</button>
+  <button data-v="stats" onclick="switchTab('stats')"><span class="ic" data-spr="chart" data-spr-size="23"><svg class="icn"><use href="#i-chart"/></svg></span>Stats</button>
+  <button data-v="cal" onclick="switchTab('cal')"><span class="ic" data-spr="calendar" data-spr-size="23"><svg class="icn"><use href="#i-calendar"/></svg></span>Journal</button>
 </nav>
 
 <!-- MODAL LIVRE -->
@@ -329,33 +382,33 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <label>Recherche en ligne — titre, auteur…</label>
     <div class="isbnrow">
       <input id="f_search" placeholder="Ex : Fourth Wing Yarros" onkeydown="if(event.key==='Enter'){event.preventDefault();searchOnline();}">
-      <button type="button" onclick="searchOnline()" title="Chercher">🔍</button>
+      <button type="button" onclick="searchOnline()" title="Chercher"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="searchMsg"></div>
     <div id="searchResults"></div>
-    <button type="button" class="btn ghost" style="margin-top:8px" onclick="pickFiche()">📄 Remplir depuis une photo de fiche de lecture</button>
+    <button type="button" class="btn ghost" style="margin-top:8px" onclick="pickFiche()"><svg class="icn"><use href="#i-doc"/></svg> Remplir depuis une photo de fiche de lecture</button>
     <div class="isbnmsg" id="ficheMsg"></div>
     <label>ISBN — saisis-le ou scanne le code-barres</label>
     <div class="isbnrow">
       <input id="f_isbn" inputmode="numeric" placeholder="Ex : 9782266200127" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupISBN();}">
-      <button type="button" onclick="lookupISBN()" title="Rechercher">🔍</button>
-      <button type="button" onclick="openScanner()" title="Scanner">📷</button>
+      <button type="button" onclick="lookupISBN()" title="Rechercher"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span></button>
+      <button type="button" onclick="openScanner()" title="Scanner"><span data-spr="camera" data-spr-size="20"><svg class="icn"><use href="#i-camera"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="isbnMsg"></div>
     <label>Titre *</label><input id="f_titre" placeholder="Ex : L'Étranger">
     <label>Auteur·ice</label><input id="f_auteur" placeholder="Ex : Albert Camus">
-    <label>Couverture (URL auto via ISBN, photothèque 📁 ou photo 📷)</label>
+    <label>Couverture (URL auto via ISBN, photothèque ou photo)</label>
     <div class="isbnrow">
       <input id="f_couverture" placeholder="https://…">
-      <button type="button" onclick="pickImage(null,'couverture',false,'form')">📁</button>
-      <button type="button" onclick="pickImage(null,'couverture',true,'form')">📷</button>
+      <button type="button" onclick="pickImage(null,'couverture',false,'form')"><span data-spr="image" data-spr-size="19"><svg class="icn"><use href="#i-image"/></svg></span></button>
+      <button type="button" onclick="pickImage(null,'couverture',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="covMsg"></div>
     <label>Image de la tranche / dos (pour les étagères)</label>
     <div class="isbnrow">
       <input id="f_spine" placeholder="https://… (optionnel)">
-      <button type="button" onclick="pickImage(null,'spine',false,'form')">📁</button>
-      <button type="button" onclick="pickImage(null,'spine',true,'form')">📷</button>
+      <button type="button" onclick="pickImage(null,'spine',false,'form')"><span data-spr="image" data-spr-size="19"><svg class="icn"><use href="#i-image"/></svg></span></button>
+      <button type="button" onclick="pickImage(null,'spine',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="spMsg"></div>
     <label>Collections</label>
@@ -370,9 +423,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     </div>
     <label>Format</label>
     <div class="seg" id="segFormat">
-      <button type="button" data-val="papier" class="on" onclick="segPick(this);toggleStatutFields()">📖 Papier</button>
-      <button type="button" data-val="numerique" onclick="segPick(this);toggleStatutFields()">📱 Numérique</button>
-      <button type="button" data-val="audio" onclick="segPick(this);toggleStatutFields()">🎧 Audio</button>
+      <button type="button" data-val="papier" class="on" onclick="segPick(this);toggleStatutFields()"><span data-spr="paper" data-spr-size="16"><svg class="icn"><use href="#i-book"/></svg></span> Papier</button>
+      <button type="button" data-val="numerique" onclick="segPick(this);toggleStatutFields()"><span data-spr="tablet" data-spr-size="16"><svg class="icn"><use href="#i-tablet"/></svg></span> Numérique</button>
+      <button type="button" data-val="audio" onclick="segPick(this);toggleStatutFields()"><span data-spr="headphones" data-spr-size="16"><svg class="icn"><use href="#i-headphones"/></svg></span> Audio</button>
     </div>
     <label>Type</label>
     <div class="seg" id="segFic">
@@ -436,7 +489,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <div class="overlay" id="infoModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <div id="infoBody"></div>
-    <button class="btn" id="infoEditBtn">✏️ Modifier ce livre</button>
+    <button class="btn" id="infoEditBtn"><span data-spr="pencil" data-spr-size="18"><svg class="icn"><use href="#i-pencil"/></svg></span> Modifier ce livre</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
@@ -454,8 +507,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <div id="colImgPreview"></div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;gap:6px">
-          <button class="smallbtn" onclick="pickImage(colEditId,'image',false,'col')">📁</button>
-          <button class="smallbtn" onclick="pickImage(colEditId,'image',true,'col')">📷</button>
+          <button class="smallbtn" onclick="pickImage(colEditId,'image',false,'col')"><span data-spr="image" data-spr-size="15"><svg class="icn"><use href="#i-image"/></svg></span></button>
+          <button class="smallbtn" onclick="pickImage(colEditId,'image',true,'col')"><span data-spr="camera" data-spr-size="15"><svg class="icn"><use href="#i-camera"/></svg></span></button>
           <button class="smallbtn" style="color:var(--red)" onclick="colClearImg()">✕ Retirer</button>
         </div>
         <input id="c_img" placeholder="…ou URL d'image" style="margin-top:8px" autocapitalize="none">
@@ -515,7 +568,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <!-- MODAL SCANNER -->
 <div class="overlay" id="scanModal" style="z-index:60" onclick="if(event.target===this)closeScanner()">
   <div class="sheet" style="text-align:center">
-    <h2>📷 Scanner le code-barres</h2>
+    <h2><span data-spr="camera" data-spr-size="20"><svg class="icn"><use href="#i-camera"/></svg></span> Scanner le code-barres</h2>
     <video id="scanVideo" style="width:100%;max-height:45vh;border-radius:14px;background:#000" playsinline muted></video>
     <div class="isbnmsg" id="scanMsg" style="margin-top:10px">Vise le code-barres au dos du livre…</div>
     <button class="btn ghost" onclick="closeScanner()">Annuler</button>
@@ -724,11 +777,48 @@ function toast(msg){
   t.textContent=msg;t.className='show';
   clearTimeout(t._h);t._h=setTimeout(()=>t.className='',3000);
 }
-function coverEl(url,cls,emo){
+/* Icônes : PNG personnalisés si disponibles, sinon SVG intégrés */
+const IC_FILES={
+  book:'book.png',shelf:'shelf.png',folder:'collection.png',trophy:'rank.png',
+  chart:'stats.png',calendar:'calendar.png',refresh:'refresh.png',gear:'settings.png',
+  search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
+  tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
+  pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png'
+};
+const icSvg=n=>IC_FILES[n]
+  ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
+  :'<svg class="icn"><use href="#i-'+n+'"/></svg>';
+/* Icônes personnalisées : fichiers PNG individuels à côté d'index.html.
+   Chaque icône marquée data-spr est remplacée si son fichier existe,
+   sinon l'icône SVG d'origine reste affichée. */
+const SPR_FILES={
+  book:'book.png',shelf:'shelf.png',collection:'collection.png',trophy:'rank.png',
+  pile:'book_pile.png',chart:'stats.png',calendar:'calendar.png',
+  refresh:'refresh.png',gear:'settings.png',
+  paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
+  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png'
+};
+document.querySelectorAll('[data-spr]').forEach(el=>{
+  const f=SPR_FILES[el.dataset.spr];if(!f)return;
+  const px=+el.dataset.sprSize||22;
+  const im=new Image();
+  im.onload=()=>{
+    im.className='sprimg';
+    im.style.height=px+'px';im.style.width='auto';
+    el.innerHTML='';el.appendChild(im);
+  };
+  im.src=f;
+});
+function imgFallback(el,cls,n){
+  const d=document.createElement('div');
+  d.className=cls;d.innerHTML=icSvg(n);
+  el.replaceWith(d);
+}
+function coverEl(url,cls,icon){
   const c='cover '+(cls||'');
-  if(!url)return `<div class="${c} ph">${emo||'📕'}</div>`;
+  if(!url)return `<div class="${c} ph">${icSvg(icon||'book')}</div>`;
   return `<img class="${c}" src="${esc(url)}" loading="lazy" alt=""
-    onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'${c} ph',textContent:'📕'}))">`;
+    onerror="imgFallback(this,'${c} ph','${icon||'book'}')">`;
 }
 
 /* Épaisseur estimée si non fournie : ~0,006 cm/page + couverture */
@@ -776,13 +866,13 @@ function colMatch(c,q){
 let colFilter=null,colSel=new Set();
 function renderColChips(){
   document.getElementById('colChips').innerHTML=
-    `<div class="chip ${colFilter===null?'active':''}" onclick="colFilter=null;renderLib()">📚 Tout</div>`+
+    `<div class="chip ${colFilter===null?'active':''}" onclick="colFilter=null;renderLib()">${icSvg('book')} Tout</div>`+
     db.collections.map(c=>`<div class="chip ${colFilter===c.id?'active':''}" onclick="colFilter='${c.id}';renderLib()">${esc(c.nom)} (${c.bookIds.length})</div>`).join('')+
     `<div class="chip dashed" onclick="newCollection(false)">＋ Collection</div>`;
   const c=db.collections.find(x=>x.id===colFilter);
   document.getElementById('colActions').innerHTML=c?
-    `<button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">✏️ Modifier (nom, image, livres)</button>
-     <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">🗑 Supprimer</button>`:'';
+    `<button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">${icSvg('pencil')} Modifier (nom, image, livres)</button>
+     <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">${icSvg('trash')} Supprimer</button>`:'';
 }
 function newCollection(fromPicker){
   askText('Nom de la collection','',nom=>{
@@ -806,12 +896,12 @@ function deleteCollection(id){
 function renderCols(){
   const el=document.getElementById('colsList');
   if(!db.collections.length){
-    el.innerHTML='<div class="empty"><span class="big">🗂</span>Aucune collection.<br>Appuie sur <b>+</b> pour en créer une !</div>';
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('folder')}</span>Aucune collection.<br>Appuie sur <b>+</b> pour en créer une !</div>`;
     return;
   }
   const q=(document.getElementById('colsSearch').value||'').toLowerCase().trim();
   const list=q?db.collections.filter(c=>colMatch(c,q)):db.collections;
-  if(!list.length){el.innerHTML='<div class="empty">Aucune collection ne correspond 🔍</div>';return;}
+  if(!list.length){el.innerHTML='<div class="empty">Aucune collection ne correspond.</div>';return;}
   el.innerHTML=list.map(c=>{
     const i=db.collections.indexOf(c);
     const covers=c.bookIds.slice(0,8).map(bid=>{
@@ -827,9 +917,9 @@ function renderCols(){
         </div></div>
       <div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto">${covers||'<span style="color:var(--txt2);font-size:.8rem">Vide pour l\'instant</span>'}</div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">✏️ Modifier</button>
-        <button class="smallbtn" onclick="colFilter='${c.id}';switchTab('lib')">👁 Voir dans la bibli</button>
-        <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">🗑</button>
+        <button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">${icSvg('pencil')} Modifier</button>
+        <button class="smallbtn" onclick="colFilter='${c.id}';switchTab('lib')">${icSvg('eye')} Voir dans la bibli</button>
+        <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">${icSvg('trash')}</button>
       </div></div>`;
   }).join('');
 }
@@ -894,7 +984,7 @@ function renderGenreFilter(){
   const sel=document.getElementById('genreFilter');
   const cur=sel.value;
   const genres=[...new Set(db.books.map(b=>b.genre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  sel.innerHTML='<option value="">🏷 Tous les genres</option>'+
+  sel.innerHTML='<option value="">Tous les genres</option>'+
     genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
   if(genres.includes(cur))sel.value=cur;
 }
@@ -910,7 +1000,7 @@ function renderLib(){
   list.sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const el=document.getElementById('bookList');
   if(!list.length){
-    el.innerHTML=`<div class="empty"><span class="big">📖</span>${db.books.length?'Aucun résultat.':'Ta bibliothèque est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier livre !'}</div>`;
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('book')}</span>${db.books.length?'Aucun résultat.':'Ta bibliothèque est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier livre !'}</div>`;
     return;
   }
   el.innerHTML=list.map(b=>{
@@ -919,14 +1009,14 @@ function renderLib(){
       <div class="top">${coverEl(b.couverture,'')}<div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div></div>
       <span class="badge ${sc}">${sl}</span></div>
       <div class="meta">
-        <span>${FMT[fmt(b)]}</span>
-        ${b.genre?`<span>🏷 ${esc(b.genre)}</span>`:''}
+        <span>${icSvg(FMT_IC[fmt(b)])} ${FMT[fmt(b)]}</span>
+        ${b.genre?`<span>${icSvg('tag')} ${esc(b.genre)}</span>`:''}
         ${b.pages?`<span>${b.pages} p.</span>`:''}
         ${b.statut==='done'&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
         ${b.statut==='reading'?`<span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span>`:''}
       </div>
       ${b.statut==='reading'?`<div class="pbar"><div style="width:${b.progression||0}%"></div></div>
-      <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">📖 Mettre à jour mon avancement</button>`:''}
+      <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>`:''}
     </div>`;
   }).join('');
 }
@@ -936,7 +1026,8 @@ let editId=null,starVal=0;
 function segPick(btn){[...btn.parentNode.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
 function segVal(id){return document.querySelector('#'+id+' button.on').dataset.val;}
 function segSet(id,val){[...document.querySelectorAll('#'+id+' button')].forEach(b=>b.classList.toggle('on',b.dataset.val===val));}
-const FMT={papier:'📖 Papier',numerique:'📱 Numérique',audio:'🎧 Audio'};
+const FMT={papier:'Papier',numerique:'Numérique',audio:'Audio'};
+const FMT_IC={papier:'book',numerique:'tablet',audio:'headphones'};
 const fmt=b=>b.format||'papier';
 function toggleStatutFields(){
   const s=segVal('segStatut'),f=segVal('segFormat');
@@ -1471,7 +1562,7 @@ function renderStats(){
   const count=(arr,fn)=>arr.reduce((o,b)=>{const k=fn(b);if(k)o[k]=(o[k]||0)+1;return o;},{});
   document.getElementById('genreBars').innerHTML=bars(count(done,b=>b.genre||'Sans genre'),done.length||1);
   document.getElementById('langBars').innerHTML=bars(count(done,b=>b.langue||'?'),done.length||1);
-  document.getElementById('fmtBars').innerHTML=bars(count(done,b=>FMT[fmt(b)]),done.length||1);
+  document.getElementById('fmtBars').innerHTML=bars(count(done,b=>FMT[fmt(b)]||'Papier'),done.length||1);
   document.getElementById('ficBars').innerHTML=bars(count(done,b=>b.fiction===false?'Non-fiction':'Fiction'),done.length||1);
   const mois=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
   document.getElementById('monthBars').innerHTML=bars(count(done.filter(b=>b.dateFin),b=>{
@@ -1524,8 +1615,8 @@ function onImgPicked(inp){
 /* Image de collection */
 function colImgEl(c,cls){
   return c.image
-    ?`<img class="cover ${cls}" src="${esc(c.image)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cover ${cls} ph',textContent:'🗂'}))">`
-    :`<div class="cover ${cls} ph">🗂</div>`;
+    ?`<img class="cover ${cls}" src="${esc(c.image)}" loading="lazy" onerror="imgFallback(this,'cover ${cls} ph','folder')">`
+    :`<div class="cover ${cls} ph">${icSvg('folder')}</div>`;
 }
 function renderColImg(){
   const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
@@ -1570,23 +1661,23 @@ function openInfo(id){
   const subHtml=SUBCATS.filter(([k])=>sn[k]>0).map(([k,l])=>
     `<div class="inforow"><span>${l}</span><b class="stars">${'★'.repeat(sn[k])}${'☆'.repeat(5-sn[k])}</b></div>`).join('');
   const spineImg=b.spine
-    ?`<img class="spineimg" src="${esc(b.spine)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'spinefake',style:'background:${spineColor(b.id)};width:30px;height:118px',textContent:'📕'}))">`
+    ?`<img class="spineimg" src="${esc(b.spine)}" onerror="imgFallback(this,'spineimg ph','book')">`
     :`<div class="spinefake" style="background:${spineColor(b.id)};width:30px;height:118px;margin:0 auto">${esc(b.titre)}</div>`;
   document.getElementById('infoBody').innerHTML=`
     <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
       <div class="imgcol">
         ${coverEl(b.couverture,'lg')}
         <div class="btns">
-          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','couverture',false)">📁</button>
-          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','couverture',true)">📷</button>
+          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','couverture',false)">${icSvg('image')}</button>
+          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','couverture',true)">${icSvg('camera')}</button>
         </div>
         <div class="lbl">Couverture</div>
       </div>
       <div class="imgcol">
         ${spineImg}
         <div class="btns">
-          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">📁</button>
-          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">📷</button>
+          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">${icSvg('image')}</button>
+          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">${icSvg('camera')}</button>
         </div>
         <div class="lbl">Tranche</div>
       </div>
@@ -1665,12 +1756,12 @@ function shelfVisual(s){
 function renderShelves(){
   const el=document.getElementById('shelfList');
   if(!db.shelves.length){
-    el.innerHTML='<div class="empty"><span class="big">🖼</span>Aucune étagère virtuelle.<br>Appuie sur <b>+</b> pour créer ta première étagère !</div>';
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('shelf')}</span>Aucune étagère virtuelle.<br>Appuie sur <b>+</b> pour créer ta première étagère !</div>`;
     return;
   }
   el.innerHTML=db.shelves.map(s=>`<div class="shelfcard">
     <div class="shelfhead"><h3>${esc(s.nom)}</h3>
-    <button class="smallbtn" onclick="openShelfEdit('${s.id}')">✏️ Modifier</button></div>
+    <button class="smallbtn" onclick="openShelfEdit('${s.id}')">${icSvg('pencil')} Modifier</button></div>
     ${shelfVisual(s)}</div>`).join('');
 }
 /* Éditeur */
@@ -1762,7 +1853,7 @@ function renderRank(){
   const el=document.getElementById('rankList');
   const items=rankItems();
   if(!items.length){
-    el.innerHTML='<div class="empty"><span class="big">🏆</span>Ton classement est vide.<br>Cherche ci-dessous un livre ou une collection à classer !</div>';
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('trophy')}</span>Ton classement est vide.<br>Cherche ci-dessous un livre ou une collection à classer !</div>`;
     renderRankAdd();return;
   }
   el.innerHTML=items.map((it,i)=>{
@@ -1823,8 +1914,8 @@ function renderCal(){
     const iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const pg=pagesBy[iso],fin=finBy[iso];
     const finHtml=fin?`<div class="fin">${fin.slice(0,2).map(b=>b.couverture
-      ?`<img class="calcover" src="${esc(b.couverture)}" loading="lazy" onerror="this.replaceWith('📕')">`
-      :'📕').join('')}${fin.length>2?`<span style="font-size:.6rem;color:var(--txt2)">+${fin.length-2}</span>`:''}</div>`:'';
+      ?`<img class="calcover" src="${esc(b.couverture)}" loading="lazy" onerror="imgFallback(this,'calfall','book')">`
+      :icSvg('book')).join('')}${fin.length>2?`<span style="font-size:.6rem;color:var(--txt2)">+${fin.length-2}</span>`:''}</div>`:'';
     html+=`<div class="calday ${iso===today?'today':''} ${calSel===iso?'sel':''}" onclick="calSel='${iso}';renderCal()">
       <div class="dnum">${d}</div>
       ${finHtml}
@@ -1841,7 +1932,7 @@ function renderCal(){
   fin.forEach(b=>out+=`<div class="mile" style="cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
   ses.forEach(s=>{
     const bk=db.books.find(b=>b.id===s.bookId);
-    out+=`<div class="mile"${bk?` style="cursor:pointer" onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','📖')}<span class="name">${esc(s.titre)}</span><span class="h">+${s.pages} p.</span></div>`;
+    out+=`<div class="mile"${bk?` style="cursor:pointer" onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','book-open')}<span class="name">${esc(s.titre)}</span><span class="h">+${s.pages} p.</span></div>`;
   });
   det.innerHTML=out;
 }
