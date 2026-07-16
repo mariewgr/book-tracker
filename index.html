@@ -890,8 +890,11 @@ function colMatch(c,q){
 /* Collections */
 let colFilter=null,colSel=new Set();
 function renderColChips(){
+  const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
+  const nbSans=db.books.filter(b=>!inCol.has(b.id)).length;
   document.getElementById('colChips').innerHTML=
     `<div class="chip ${colFilter===null?'active':''}" onclick="colFilter=null;renderLib()">${icSvg('book')} Tout</div>`+
+    `<div class="chip ${colFilter==='__none__'?'active':''}" onclick="colFilter='__none__';renderLib()">Sans collection (${nbSans})</div>`+
     db.collections.map(c=>`<div class="chip ${colFilter===c.id?'active':''}" onclick="colFilter='${c.id}';renderLib()">${esc(c.nom)} (${c.bookIds.length})</div>`).join('')+
     `<div class="chip dashed" onclick="newCollection(false)">＋ Collection</div>`;
   const c=db.collections.find(x=>x.id===colFilter);
@@ -1018,8 +1021,13 @@ function renderLib(){
   const q=document.getElementById('search').value.toLowerCase().trim();
   const gf=document.getElementById('genreFilter').value;
   let list=db.books.filter(b=>filter==='all'||b.statut===filter);
-  const col=db.collections.find(x=>x.id===colFilter);
-  if(col)list=list.filter(b=>col.bookIds.includes(b.id));
+  if(colFilter==='__none__'){
+    const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
+    list=list.filter(b=>!inCol.has(b.id));
+  }else{
+    const col=db.collections.find(x=>x.id===colFilter);
+    if(col)list=list.filter(b=>col.bookIds.includes(b.id));
+  }
   if(gf)list=list.filter(b=>b.genre===gf);
   if(q)list=list.filter(b=>bookMatch(b,q));
   list.sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
@@ -1105,7 +1113,7 @@ function openAdd(){
   document.getElementById('f_page').value='';
   segSet('segFic','fiction');segSet('segStatut','tbr');segSet('segFormat','papier');
   document.getElementById('delBookBtn').classList.add('hidden');
-  colSel=new Set();if(colFilter)colSel.add(colFilter);
+  colSel=new Set();if(colFilter&&colFilter!=='__none__')colSel.add(colFilter);
   resetFormImgs();
   document.getElementById('f_search').value='';
   document.getElementById('searchResults').innerHTML='';searchMsg('');
