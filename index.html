@@ -214,7 +214,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .calday{background:var(--card);border:1px solid #322847;border-radius:10px;min-height:54px;padding:4px 3px;cursor:pointer;text-align:center}
 .calday .dnum{font-size:.72rem;color:var(--txt2);font-weight:600}
 .calday .pg{font-size:.68rem;color:var(--accent);font-weight:800}
-.calday .fin{font-size:.75rem}
+.calday .fin{font-size:.7rem;display:flex;justify-content:center;align-items:center;gap:1px}
+.calcover{width:15px;height:22px;object-fit:cover;border-radius:2px;display:block}
 .calday.today{border-color:var(--accent)}
 .calday.sel{background:var(--accent2);border-color:var(--accent2)}
 .calday.sel .dnum,.calday.sel .pg{color:#fff}
@@ -1402,15 +1403,18 @@ function renderCal(){
   for(let d=1;d<=nb;d++){
     const iso=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const pg=pagesBy[iso],fin=finBy[iso];
+    const finHtml=fin?`<div class="fin">${fin.slice(0,2).map(b=>b.couverture
+      ?`<img class="calcover" src="${esc(b.couverture)}" loading="lazy" onerror="this.replaceWith('📕')">`
+      :'📕').join('')}${fin.length>2?`<span style="font-size:.6rem;color:var(--txt2)">+${fin.length-2}</span>`:''}</div>`:'';
     html+=`<div class="calday ${iso===today?'today':''} ${calSel===iso?'sel':''}" onclick="calSel='${iso}';renderCal()">
       <div class="dnum">${d}</div>
-      ${fin?'<div class="fin">📕'+(fin.length>1?'×'+fin.length:'')+'</div>':''}
+      ${finHtml}
       ${pg?`<div class="pg">${pg} p.</div>`:''}
     </div>`;
   }
   document.getElementById('calGrid').innerHTML=html+'</div>';
   const det=document.getElementById('dayDetail');
-  if(!calSel){det.innerHTML='<div class="empty" style="padding:24px 10px">Touche un jour pour voir le détail.<br>📕 = livre terminé · p. = pages lues</div>';return;}
+  if(!calSel){det.innerHTML='<div class="empty" style="padding:24px 10px">Touche un jour pour voir le détail.<br>couverture = livre terminé ce jour-là · p. = pages lues</div>';return;}
   const fin=finBy[calSel]||[],ses=db.sessions.filter(s=>s.date===calSel);
   const dstr=new Date(calSel+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   let out=`<h2>${dstr}</h2>`;
