@@ -21,13 +21,45 @@
 
 L'app s'ouvre alors en plein écran, comme une vraie app.
 
-## 3. À savoir
+## 3. Activer la BDD cloud (Supabase — sauvegarde + sync temps réel)
+
+Tes données sont stockées dans une base Postgres gratuite et synchronisées instantanément entre tous tes appareils.
+
+### a) Créer le projet (une seule fois, ~5 min)
+
+1. Crée un compte gratuit sur [supabase.com](https://supabase.com) → **New project** (nom : `ma-bibli`, région Europe, choisis un mot de passe de base — tu n'en auras plus besoin ensuite).
+2. Dans le projet : **SQL Editor** → colle ce script → **Run** :
+
+```sql
+create table public.bibli (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.bibli enable row level security;
+create policy "acces perso" on public.bibli
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+alter publication supabase_realtime add table public.bibli;
+```
+
+3. **Authentication** → **Sign In / Providers** → **Email** : désactive « Confirm email » (plus simple pour un usage perso).
+4. **Project Settings** → **API** : note l'**URL** du projet et la clé **anon public**.
+
+### b) Connecter l'app
+
+L'URL du projet et la clé publique sont **déjà préremplies** dans l'app. Il suffit de : ⚙️ → **Sync cloud** → entre un e-mail + mot de passe de ton choix → **Créer mon compte** (la première fois ; ensuite « Se connecter » sur tout autre appareil).
+
+C'est tout : chaque modification part en base ~1 s après, et tout appareil connecté au même compte se met à jour **instantanément**. Pour un nouvel appareil : installe l'app (§2), ⚙️ → mêmes URL/clé/identifiants → Se connecter → ta bibliothèque revient.
+
+Note : la clé « anon public » n'est pas un secret — tes données sont protégées par ton compte (règle RLS : seule toi peux lire/écrire ta ligne).
+
+## 4. À savoir
 
 - **Tes données restent sur ton téléphone** (rien n'est envoyé en ligne). Personne d'autre ne voit tes livres, même si l'URL est publique.
 - **Fais des sauvegardes** : ⚙️ → « Exporter mes données ». Le fichier JSON s'enregistre dans Fichiers. Tu peux le réimporter à tout moment.
 - Important : ouvre l'app depuis le raccourci régulièrement. Si tu supprimes le raccourci ou effaces les données Safari, les données locales peuvent être perdues — d'où les sauvegardes.
 - **Pour modifier l'app plus tard** : remplace `index.html` dans ton dépôt GitHub (Upload files → même nom → Commit).
 
-## 4. Réglage du défi
+## 5. Réglage du défi
 
 ⚙️ → entre ta taille en cm. Chaque livre terminé ajoute son épaisseur à la pile (réelle si tu la renseignes, sinon estimée d'après le nombre de pages).

@@ -459,6 +459,20 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <label>Ta taille (cm) — pour le défi de la pile</label>
     <input id="s_taille" type="number" inputmode="numeric" placeholder="165">
     <button class="btn" onclick="saveSettings()">Enregistrer</button>
+    <h2 style="margin-top:24px">Sync cloud (BDD Supabase)</h2>
+    <label>URL du projet</label>
+    <input id="sb_url" placeholder="https://xxxx.supabase.co" autocapitalize="none">
+    <label>Clé « anon public »</label>
+    <input id="sb_key" type="password" placeholder="eyJ…" autocapitalize="none">
+    <label>E-mail</label>
+    <input id="sb_email" type="email" placeholder="ton@email.fr" autocapitalize="none">
+    <label>Mot de passe</label>
+    <input id="sb_pass" type="password">
+    <button class="btn" onclick="sbLogin(false)">🔗 Se connecter</button>
+    <button class="btn ghost" onclick="sbLogin(true)">Créer mon compte</button>
+    <button class="btn ghost" onclick="sbLogout()">Se déconnecter</button>
+    <div class="isbnmsg" id="syncStatus" style="margin-top:8px"></div>
+    <p class="note-io">URL et clé sont déjà préremplies pour ton projet — il ne te reste qu'à entrer e-mail + mot de passe (« Créer mon compte » la première fois). Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
@@ -471,17 +485,133 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <script>
 /* ---------- Données ---------- */
 const KEY='mabibli_v1';
+function normalizeDb(d){
+  d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
+  d.collections=d.collections||[];d.shelves=d.shelves||[];
+  d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
+  return d;
+}
 let db=load();
 function load(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY));
-    if(d&&d.books){d.sessions=d.sessions||[];d.loans=d.loans||[];d.collections=d.collections||[];d.shelves=d.shelves||[];d.settings=d.settings||{taille:165};return d;}
+    if(d&&d.books)return normalizeDb(d);
   }catch(e){}
-  return {books:[],loans:[],sessions:[],collections:[],shelves:[],settings:{taille:165}};
+  return normalizeDb({});
 }
 function save(){
+  db.meta={updatedAt:Date.now()};
   try{localStorage.setItem(KEY,JSON.stringify(db));}
   catch(e){toast('⚠️ Stockage plein — exporte tes données puis retire quelques photos');}
+  scheduleSync();
+}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+
+/* ---------- Sync cloud : BDD Supabase (Postgres), temps réel ---------- */
+const SBKEY='mabibli_sb';
+/* Valeurs par défaut du projet Supabase (clé publique — protégée par RLS) */
+let sbCfg={url:'https://nfyxidwrpzeiasxdwnhn.supabase.co',key:'sb_publishable_z5wPhdz64pl4KGXHTj0T7w_rd7TwSf5'};
+try{sbCfg={...sbCfg,...JSON.parse(localStorage.getItem(SBKEY)||'{}')};}catch(e){}
+if(!sbCfg.url)sbCfg.url='https://nfyxidwrpzeiasxdwnhn.supabase.co';
+if(!sbCfg.key)sbCfg.key='sb_publishable_z5wPhdz64pl4KGXHTj0T7w_rd7TwSf5';
+let sb=null,sbUser=null,sbChannel=null;
+function setSyncStatus(t){const e=document.getElementById('syncStatus');if(e)e.textContent=t;}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
+async function sbClient(){
+  if(sb)return sb;
+  if(!sbCfg.url||!sbCfg.key)return null;
+  if(!window.supabase)await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
+  sb=window.supabase.createClient(sbCfg.url,sbCfg.key);
+  return sb;
+}
+async function sbInit(){
+  try{
+    const c=await sbClient();if(!c)return;
+    const {data:{session}}=await c.auth.getSession();
+    if(session){sbUser=session.user;startCloud();}
+  }catch(e){}
+}
+async function sbLogin(create){
+  sbCfg.url=(document.getElementById('sb_url').value||'').trim().replace(/\/$/,'');
+  sbCfg.key=(document.getElementById('sb_key').value||'').trim();
+  localStorage.setItem(SBKEY,JSON.stringify(sbCfg));
+  const email=(document.getElementById('sb_email').value||'').trim();
+  const pass=document.getElementById('sb_pass').value;
+  if(!sbCfg.url||!sbCfg.key||!email||!pass){setSyncStatus('Remplis URL, clé, e-mail et mot de passe');return;}
+  setSyncStatus('⏳ Connexion…');
+  try{
+    sb=null;const c=await sbClient();
+    const r=create
+      ?await c.auth.signUp({email,password:pass})
+      :await c.auth.signInWithPassword({email,password:pass});
+    if(r.error){setSyncStatus('⚠️ '+r.error.message);return;}
+    if(create&&!r.data.session){
+      setSyncStatus('Compte créé — confirme ton e-mail puis « Se connecter » (ou désactive « Confirm email » dans Supabase)');
+      return;
+    }
+    sbUser=r.data.user;
+    startCloud();
+  }catch(e){setSyncStatus("⚠️ Connexion impossible — vérifie l'URL et la clé");}
+}
+async function pullCloud(notify){
+  const c=await sbClient();if(!c||!sbUser)return 'none';
+  const {data:row,error}=await c.from('bibli').select('data').eq('user_id',sbUser.id).maybeSingle();
+  if(error)throw error;
+  const remote=row&&row.data;
+  const rT=(remote&&remote.meta&&remote.meta.updatedAt)||0;
+  const lT=(db.meta&&db.meta.updatedAt)||0;
+  if(remote&&remote.books&&rT>lT){
+    db=normalizeDb(remote);
+    try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}
+    render();
+    if(notify)toast('Données mises à jour depuis le cloud ✅ ('+db.books.length+' livres)');
+    return 'adopted';
+  }
+  return !remote?'none':(lT>rT?'localNewer':'same');
+}
+async function startCloud(){
+  setSyncStatus('⏳ Récupération…');
+  try{
+    const st=await pullCloud(true);
+    if(st==='none'||st==='localNewer')await sbPush();
+    const c=await sbClient();
+    if(sbChannel)c.removeChannel(sbChannel);
+    /* temps réel : une modif sur un autre appareil arrive instantanément */
+    sbChannel=c.channel('bibli-sync').on('postgres_changes',
+      {event:'*',schema:'public',table:'bibli',filter:'user_id=eq.'+sbUser.id},
+      ()=>{pullCloud(true).catch(()=>{});}
+    ).subscribe();
+    setSyncStatus('✅ Connectée ('+(sbUser.email||'')+') — sync temps réel active');
+  }catch(e){setSyncStatus('⚠️ Erreur BDD — la table « bibli » est-elle créée ? (voir guide §3)');}
+}
+async function sbPush(){
+  const c=await sbClient();if(!c||!sbUser)return;
+  const {error}=await c.from('bibli').upsert({user_id:sbUser.id,data:db,updated_at:new Date().toISOString()});
+  if(error)throw error;
+}
+let syncTimer=null,syncing=false;
+function scheduleSync(){
+  if(!sbUser)return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(doPush,1200);
+}
+async function doPush(){
+  if(!sbUser)return;
+  if(syncing){scheduleSync();return;}
+  syncing=true;
+  try{
+    await sbPush();
+    setSyncStatus('✅ Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
+  }catch(e){setSyncStatus('⚠️ Échec de la sync');}
+  syncing=false;
+}
+async function sbLogout(){
+  try{
+    const c=await sbClient();
+    if(c){if(sbChannel)c.removeChannel(sbChannel);await c.auth.signOut();}
+  }catch(e){}
+  sbUser=null;sbChannel=null;
+  setSyncStatus('Déconnectée — les données restent sur cet appareil');
 }
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -1296,6 +1426,9 @@ function renderCal(){
 /* ---------- Réglages / sauvegarde ---------- */
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
+  document.getElementById('sb_url').value=sbCfg.url||'';
+  document.getElementById('sb_key').value=sbCfg.key||'';
+  setSyncStatus(sbUser?'✅ Connectée ('+(sbUser.email||'')+')':'Non connectée');
   document.getElementById('settingsModal').classList.add('open');
 }
 function saveSettings(){
@@ -1408,6 +1541,7 @@ function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classL
 /* ---------- Rendu global ---------- */
 function render(){renderLib();renderShelves();renderCols();renderDefi();renderStats();renderCal();}
 render();
+sbInit();
 </script>
 </body>
 </html>
