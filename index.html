@@ -1959,39 +1959,61 @@ function renderRankAdd(){
 
 /* ---------- Découvrir (recommandations façon Tinder) ---------- */
 const discNorm=s=>(s||'').toLowerCase().replace(/[^a-z0-9à-ÿ]/g,'');
-let discCards=[],discLoading=false;
+let discCards=[],discLoading=false,discTried=false;
+/* Nettoie un nom d'auteur, y compris le format inversé « Nom, Prénom » */
+function discAuthor(a){
+  a=(a||'').split(/[,;]/).map(x=>x.trim()).filter(Boolean);
+  if(a.length>=2&&a[0].split(' ').length<=2&&a[1].split(' ').length<=2)return a[1]+' '+a[0];
+  return a[0]||'';
+}
+async function discQuery(q,why,ctx,lang){
+  try{
+    const url='https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+
+      (lang?'&langRestrict=fr':'')+'&maxResults=15&country=FR';
+    const r=await fetch(url);
+    if(!r.ok)return;
+    const d=await r.json();
+    (d.items||[]).forEach(it=>{
+      const v=it.volumeInfo||{};if(!v.title)return;
+      const isbn=(v.industryIdentifiers||[]).map(x=>x.identifier).find(x=>/^97[89]\d{10}$/.test(x))||'';
+      const key=isbn||discNorm(v.title);
+      if(ctx.seen.has(key)||ctx.have.has(key)||ctx.have.has(discNorm(v.title)))return;
+      ctx.seen.add(key);
+      ctx.out.push({titre:v.title,auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
+        desc:v.description||'',genre:(v.categories||[])[0]||'',isbn,why,
+        langue:NV_LANG[v.language]||v.language||'',
+        couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
+    });
+  }catch(e){}
+}
 async function discLoad(){
-  discLoading=true;renderDisc();
+  discLoading=true;discTried=true;renderDisc();
   const liked=db.books.filter(b=>b.statut==='done'&&(b.note||0)>=4);
   const base=liked.length?liked:db.books;
-  const authors=[...new Set(base.map(b=>(b.auteur||'').split(',')[0].trim()).filter(Boolean))].slice(0,6);
+  const authors=[...new Set(base.map(b=>discAuthor(b.auteur)).filter(Boolean))].slice(0,6);
   const genres=[...new Set(base.map(b=>b.genre).filter(Boolean))].slice(0,4);
   const queries=[];
   authors.forEach(a=>queries.push({q:'inauthor:"'+a+'"',why:'Parce que tu as aimé '+a}));
-  genres.forEach(g=>queries.push({q:'subject:'+g,why:'Genre que tu adores : '+g}));
-  if(!queries.length)queries.push({q:'subject:fiction',why:'Populaire'});
-  const have=new Set();
-  db.books.forEach(b=>{if(b.isbn)have.add(b.isbn);have.add(discNorm(b.titre));});
-  db.discover.rejected.forEach(k=>have.add(k));
-  const out=[],seen=new Set();
-  await Promise.all(queries.slice(0,9).map(async ({q,why})=>{
-    try{
-      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&langRestrict=fr&maxResults=15&country=FR');
-      if(!r.ok)return;
-      const d=await r.json();
-      (d.items||[]).forEach(it=>{
-        const v=it.volumeInfo||{};if(!v.title)return;
-        const isbn=(v.industryIdentifiers||[]).map(x=>x.identifier).find(x=>/^97[89]\d{10}$/.test(x))||'';
-        const key=isbn||discNorm(v.title);
-        if(seen.has(key)||have.has(key)||have.has(discNorm(v.title)))return;
-        seen.add(key);
-        out.push({titre:v.title,auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
-          desc:v.description||'',genre:(v.categories||[])[0]||'',isbn,why,
-          langue:NV_LANG[v.language]||v.language||'',
-          couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
-      });
-    }catch(e){}
-  }));
+  genres.forEach(g=>{
+    queries.push({q:'subject:"'+g+'"',why:'Genre que tu adores : '+g});
+    queries.push({q:g+' roman',why:'Genre que tu adores : '+g});
+  });
+  const ctx={out:[],seen:new Set(),have:new Set()};
+  db.books.forEach(b=>{if(b.isbn)ctx.have.add(b.isbn);ctx.have.add(discNorm(b.titre));});
+  db.discover.rejected.forEach(k=>ctx.have.add(k));
+  /* 1er essai : en français */
+  await Promise.all(queries.slice(0,12).map(({q,why})=>discQuery(q,why,ctx,true)));
+  /* 2e essai : sans restriction de langue */
+  if(ctx.out.length<5)
+    await Promise.all(queries.slice(0,8).map(({q,why})=>discQuery(q,why,ctx,false)));
+  /* 3e essai : requêtes génériques */
+  if(ctx.out.length<5)
+    await Promise.all([
+      discQuery('roman fantasy','Populaire en fantasy',ctx,true),
+      discQuery('romantasy','Tendance romantasy',ctx,true),
+      discQuery('roman romance new adult','Populaire en romance',ctx,true),
+    ]);
+  const out=ctx.out;
   for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
   discCards=out.slice(0,40);
   discLoading=false;renderDisc();
@@ -2001,8 +2023,10 @@ function renderDisc(){
   if(discLoading){el.innerHTML='<div class="empty">🔮 Je cherche des livres qui devraient te plaire…</div>';return;}
   if(!discCards.length){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('search')}</span>
-      Des suggestions basées sur tes lectures préférées (auteurs et genres notés ★★★★+).<br><br>
-      <button class="btn" style="max-width:280px;margin:0 auto" onclick="discLoad()">Trouver des livres</button></div>`;
+      ${discTried
+        ?'Aucune suggestion trouvée 😕<br>Vérifie ta connexion et réessaie.'
+        :'Des suggestions basées sur tes lectures préférées (auteurs et genres notés ★★★★+).'}<br><br>
+      <button class="btn" style="max-width:280px;margin:0 auto" onclick="discLoad()">${discTried?'Réessayer':'Trouver des livres'}</button></div>`;
     return;
   }
   const c=discCards[0];
