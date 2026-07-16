@@ -52,7 +52,20 @@ nav{
   background:rgba(24,18,33,.97);backdrop-filter:blur(10px);
   display:flex;border-top:1px solid #322847;
   padding-bottom:env(safe-area-inset-bottom);
+  overflow-x:auto;scrollbar-width:none;
 }
+nav::-webkit-scrollbar{display:none}
+nav button{flex:1 0 auto;min-width:52px}
+/* Découvrir (cartes swipe) */
+.disccard{background:var(--card);border:1px solid #3a2e52;border-radius:20px;padding:18px;text-align:center;touch-action:pan-y;user-select:none;-webkit-user-select:none;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.disccover{height:190px;width:auto;max-width:65%;border-radius:10px;margin:0 auto 12px;display:block;object-fit:cover}
+.disccover.ph{width:130px;display:flex;align-items:center;justify-content:center;background:var(--card2)}
+.discwhy{color:var(--accent);font-size:.78rem;font-weight:700;margin-top:6px}
+.discdesc{color:var(--txt2);font-size:.83rem;line-height:1.5;margin-top:10px;text-align:left;max-height:120px;overflow:auto}
+.discbtns{display:flex;justify-content:center;gap:26px;margin-top:14px}
+.discbtns button{width:60px;height:60px;border-radius:50%;border:1px solid #3a2e52;font-size:1.5rem;cursor:pointer}
+.discno{background:var(--card);color:var(--red)}
+.discyes{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;border:none}
 nav button{
   flex:1;background:none;border:none;color:var(--txt2);
   padding:9px 0 7px;font-size:.6rem;cursor:pointer;
@@ -356,6 +369,11 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <div id="rankAddEl"></div>
   </section>
 
+  <!-- DÉCOUVRIR -->
+  <section id="view-disc" class="hidden">
+    <div id="discWrap"></div>
+  </section>
+
   <!-- JOURNAL -->
   <section id="view-cal" class="hidden">
     <div class="calhead">
@@ -378,6 +396,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <button data-v="defi" onclick="switchTab('defi')"><span class="ic" data-spr="pile" data-spr-size="23"><svg class="icn"><use href="#i-ruler"/></svg></span>Défi</button>
   <button data-v="stats" onclick="switchTab('stats')"><span class="ic" data-spr="chart" data-spr-size="23"><svg class="icn"><use href="#i-chart"/></svg></span>Stats</button>
   <button data-v="cal" onclick="switchTab('cal')"><span class="ic" data-spr="calendar" data-spr-size="23"><svg class="icn"><use href="#i-calendar"/></svg></span>Journal</button>
+  <button data-v="disc" onclick="switchTab('disc')"><span class="ic" data-spr="search" data-spr-size="23"><svg class="icn"><use href="#i-search"/></svg></span>Découvrir</button>
 </nav>
 
 <!-- MODAL LIVRE -->
@@ -630,6 +649,7 @@ function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
   d.collections=d.collections||[];d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
+  d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
   return d;
 }
 let db=load();
@@ -838,7 +858,7 @@ let tab='lib';
 function switchTab(t){
   tab=t;
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===t));
-  ['lib','shelf','cols','rank','defi','stats','cal'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
+  ['lib','shelf','cols','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
   document.getElementById('fab').classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
   render();
 }
@@ -1900,6 +1920,122 @@ function renderRankAdd(){
     ||'<div class="isbnmsg">Aucun résultat.</div>';
 }
 
+/* ---------- Découvrir (recommandations façon Tinder) ---------- */
+const discNorm=s=>(s||'').toLowerCase().replace(/[^a-z0-9à-ÿ]/g,'');
+let discCards=[],discLoading=false;
+async function discLoad(){
+  discLoading=true;renderDisc();
+  const liked=db.books.filter(b=>b.statut==='done'&&(b.note||0)>=4);
+  const base=liked.length?liked:db.books;
+  const authors=[...new Set(base.map(b=>(b.auteur||'').split(',')[0].trim()).filter(Boolean))].slice(0,6);
+  const genres=[...new Set(base.map(b=>b.genre).filter(Boolean))].slice(0,4);
+  const queries=[];
+  authors.forEach(a=>queries.push({q:'inauthor:"'+a+'"',why:'Parce que tu as aimé '+a}));
+  genres.forEach(g=>queries.push({q:'subject:'+g,why:'Genre que tu adores : '+g}));
+  if(!queries.length)queries.push({q:'subject:fiction',why:'Populaire'});
+  const have=new Set();
+  db.books.forEach(b=>{if(b.isbn)have.add(b.isbn);have.add(discNorm(b.titre));});
+  db.discover.rejected.forEach(k=>have.add(k));
+  const out=[],seen=new Set();
+  await Promise.all(queries.slice(0,9).map(async ({q,why})=>{
+    try{
+      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&langRestrict=fr&maxResults=15&country=FR');
+      if(!r.ok)return;
+      const d=await r.json();
+      (d.items||[]).forEach(it=>{
+        const v=it.volumeInfo||{};if(!v.title)return;
+        const isbn=(v.industryIdentifiers||[]).map(x=>x.identifier).find(x=>/^97[89]\d{10}$/.test(x))||'';
+        const key=isbn||discNorm(v.title);
+        if(seen.has(key)||have.has(key)||have.has(discNorm(v.title)))return;
+        seen.add(key);
+        out.push({titre:v.title,auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
+          desc:v.description||'',genre:(v.categories||[])[0]||'',isbn,why,
+          langue:NV_LANG[v.language]||v.language||'',
+          couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
+      });
+    }catch(e){}
+  }));
+  for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
+  discCards=out.slice(0,40);
+  discLoading=false;renderDisc();
+}
+function renderDisc(){
+  const el=document.getElementById('discWrap');if(!el)return;
+  if(discLoading){el.innerHTML='<div class="empty">🔮 Je cherche des livres qui devraient te plaire…</div>';return;}
+  if(!discCards.length){
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('search')}</span>
+      Des suggestions basées sur tes lectures préférées (auteurs et genres notés ★★★★+).<br><br>
+      <button class="btn" style="max-width:280px;margin:0 auto" onclick="discLoad()">Trouver des livres</button></div>`;
+    return;
+  }
+  const c=discCards[0];
+  el.innerHTML=`
+  <div class="disccard" id="discCard">
+    ${c.couverture?`<img class="disccover" src="${esc(c.couverture)}" onerror="imgFallback(this,'disccover ph','book')">`:`<div class="disccover ph">${icSvg('book')}</div>`}
+    <h3>${esc(c.titre)}</h3>
+    <div style="color:var(--txt2);font-size:.9rem;margin-top:3px">${esc(c.auteur)||'—'}</div>
+    <div style="color:var(--txt2);font-size:.8rem;margin-top:4px">${c.pages?c.pages+' p.':''}${c.pages&&c.genre?' · ':''}${esc(c.genre)}</div>
+    <div class="discwhy">${esc(c.why||'')}</div>
+    ${c.desc?`<p class="discdesc">${esc(c.desc.slice(0,320))}${c.desc.length>320?'…':''}</p>`:''}
+  </div>
+  <div class="discbtns">
+    <button class="discno" onclick="discSwipe(false)" title="Pas intéressée">✕</button>
+    <button class="discyes" onclick="discSwipe(true)" title="À lire !">♥</button>
+  </div>
+  <div style="text-align:center;color:var(--txt2);font-size:.75rem;margin-top:10px">
+    ${discCards.length} suggestion${discCards.length>1?'s':''} — glisse la carte (→ à lire, ← passer)</div>`;
+  attachSwipe(document.getElementById('discCard'));
+}
+function discSwipe(like){
+  const c=discCards.shift();if(!c)return;
+  if(like){
+    db.books.push({id:uid(),titre:c.titre,auteur:c.auteur,genre:c.genre,
+      langue:c.langue||'Français',pages:c.pages,epaisseur:0,fiction:true,
+      format:'papier',statut:'tbr',progression:0,pageActuelle:0,note:0,avis:'',
+      isbn:c.isbn,couverture:c.couverture,spine:'',dateFin:'',dateAjout:Date.now()});
+    toast('Ajouté à ta pile à lire : '+c.titre+' 📚');
+  }else{
+    db.discover.rejected.push(c.isbn||discNorm(c.titre));
+    if(db.discover.rejected.length>600)db.discover.rejected=db.discover.rejected.slice(-600);
+  }
+  save();renderLib();renderStats();renderDisc();
+  if(!discCards.length)discLoad();
+}
+function attachSwipe(card){
+  if(!card)return;
+  let sx=0,dx=0,active=false;
+  const start=e=>{active=true;const t=e.touches?e.touches[0]:e;sx=t.clientX;card.style.transition='none';};
+  const move=e=>{
+    if(!active)return;
+    const t=e.touches?e.touches[0]:e;
+    dx=t.clientX-sx;
+    card.style.transform=`translateX(${dx}px) rotate(${dx/18}deg)`;
+    card.style.opacity=String(1-Math.min(.5,Math.abs(dx)/320));
+  };
+  const end=()=>{
+    if(!active)return;active=false;
+    if(Math.abs(dx)>90){
+      const like=dx>0;
+      card.style.transition='transform .25s,opacity .25s';
+      card.style.transform=`translateX(${like?520:-520}px) rotate(${like?30:-30}deg)`;
+      card.style.opacity='0';
+      setTimeout(()=>discSwipe(like),240);
+    }else{
+      card.style.transition='transform .2s,opacity .2s';
+      card.style.transform='';card.style.opacity='1';
+    }
+    dx=0;
+  };
+  card.addEventListener('touchstart',start,{passive:true});
+  card.addEventListener('touchmove',move,{passive:true});
+  card.addEventListener('touchend',end);
+  card.addEventListener('mousedown',e=>{
+    start(e);
+    const mm=ev=>move(ev),mu=()=>{end();removeEventListener('mousemove',mm);removeEventListener('mouseup',mu);};
+    addEventListener('mousemove',mm);addEventListener('mouseup',mu);
+  });
+}
+
 /* ---------- Journal (calendrier) ---------- */
 const MOIS_FULL=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 let calRef=new Date(),calSel=null;
@@ -2064,7 +2200,7 @@ function importData(input){
 function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));}
 
 /* ---------- Rendu global ---------- */
-function render(){renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();}
+function render(){renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();renderDisc();}
 render();
 sbInit();
 </script>
