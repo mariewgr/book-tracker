@@ -60,6 +60,14 @@ Note : la clé « anon public » n'est pas un secret — tes données sont prot�
 - Important : ouvre l'app depuis le raccourci régulièrement. Si tu supprimes le raccourci ou effaces les données Safari, les données locales peuvent être perdues — d'où les sauvegardes.
 - **Pour modifier l'app plus tard** : remplace `index.html` dans ton dépôt GitHub (Upload files → même nom → Commit).
 
-## 5. Réglage du défi
+## 5. Analyse de fiches de lecture (IA, optionnel)
+
+Pour remplir un livre en photographiant une fiche de lecture manuscrite :
+
+1. Va sur [aistudio.google.com](https://aistudio.google.com) → connecte-toi avec un compte Google → **Get API key** → **Create API key** (gratuit).
+2. Dans l'app : ⚙️ → **IA — analyse de fiches** → colle la clé → Enregistrer.
+3. Dans « Ajouter un livre » : **📄 Remplir depuis une photo de fiche** → prends la fiche en photo. Titre, auteur, notes détaillées, piments, résumé… tout se remplit — vérifie et enregistre.
+
+## 6. Réglage du défi
 
 ⚙️ → entre ta taille en cm. Chaque livre terminé ajoute son épaisseur à la pile (réelle si tu la renseignes, sinon estimée d'après le nombre de pages).

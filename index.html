@@ -137,6 +137,11 @@ textarea{min-height:70px;resize:vertical}
 .starpick{display:flex;gap:6px;font-size:1.7rem;padding:4px 0;cursor:pointer}
 .starpick span{color:#4a3d63}
 .starpick span.on{color:var(--gold)}
+.subrow{display:flex;justify-content:space-between;align-items:center;padding:7px 2px;font-size:.85rem;border-bottom:1px solid #2c2340}
+.substars span{cursor:pointer;font-size:1.15rem;color:#4a3d63;padding:0 1px}
+.substars span.on{color:var(--gold)}
+.substars span.pep{opacity:.25}
+.substars span.pep.on{opacity:1}
 .btn{
   width:100%;border:none;border-radius:13px;padding:14px;font-size:1rem;font-weight:700;
   cursor:pointer;margin-top:18px;background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;
@@ -230,7 +235,10 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 
 <header>
   <h1>📚 Ma <span>Bibli</span></h1>
-  <button class="iconbtn" onclick="openSettings()">⚙️</button>
+  <div style="display:flex;gap:8px">
+    <button class="iconbtn" onclick="location.reload()" title="Rafraîchir">🔄</button>
+    <button class="iconbtn" onclick="openSettings()">⚙️</button>
+  </div>
 </header>
 
 <main>
@@ -278,7 +286,16 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 
   <!-- COLLECTIONS -->
   <section id="view-cols" class="hidden">
+    <input class="search" id="colsSearch" placeholder="🔍 Chercher une collection, un titre, un auteur…" oninput="renderCols()">
     <div id="colsList"></div>
+  </section>
+
+  <!-- CLASSEMENT -->
+  <section id="view-rank" class="hidden">
+    <div id="rankList"></div>
+    <h2>Ajouter au classement</h2>
+    <input class="search" id="rankSearch" placeholder="🔍 Livre, auteur ou collection…" oninput="renderRankAdd()">
+    <div id="rankAddEl"></div>
   </section>
 
   <!-- JOURNAL -->
@@ -299,6 +316,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <button data-v="lib" class="active" onclick="switchTab('lib')"><span class="ic">📚</span>Bibli</button>
   <button data-v="shelf" onclick="switchTab('shelf')"><span class="ic">🖼</span>Étagères</button>
   <button data-v="cols" onclick="switchTab('cols')"><span class="ic">🗂</span>Collections</button>
+  <button data-v="rank" onclick="switchTab('rank')"><span class="ic">🏆</span>Top</button>
   <button data-v="defi" onclick="switchTab('defi')"><span class="ic">📏</span>Défi</button>
   <button data-v="stats" onclick="switchTab('stats')"><span class="ic">📊</span>Stats</button>
   <button data-v="cal" onclick="switchTab('cal')"><span class="ic">📅</span>Journal</button>
@@ -308,6 +326,15 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <div class="overlay" id="bookModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2 id="bookModalTitle">Ajouter un livre</h2>
+    <label>Recherche en ligne — titre, auteur…</label>
+    <div class="isbnrow">
+      <input id="f_search" placeholder="Ex : Fourth Wing Yarros" onkeydown="if(event.key==='Enter'){event.preventDefault();searchOnline();}">
+      <button type="button" onclick="searchOnline()" title="Chercher">🔍</button>
+    </div>
+    <div class="isbnmsg" id="searchMsg"></div>
+    <div id="searchResults"></div>
+    <button type="button" class="btn ghost" style="margin-top:8px" onclick="pickFiche()">📄 Remplir depuis une photo de fiche de lecture</button>
+    <div class="isbnmsg" id="ficheMsg"></div>
     <label>ISBN — saisis-le ou scanne le code-barres</label>
     <div class="isbnrow">
       <input id="f_isbn" inputmode="numeric" placeholder="Ex : 9782266200127" onkeydown="if(event.key==='Enter'){event.preventDefault();lookupISBN();}">
@@ -317,8 +344,20 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <div class="isbnmsg" id="isbnMsg"></div>
     <label>Titre *</label><input id="f_titre" placeholder="Ex : L'Étranger">
     <label>Auteur·ice</label><input id="f_auteur" placeholder="Ex : Albert Camus">
-    <label>Couverture (URL — remplie automatiquement via l'ISBN)</label><input id="f_couverture" placeholder="https://…">
-    <label>Image de la tranche / dos (URL — pour les étagères)</label><input id="f_spine" placeholder="https://… (optionnel)">
+    <label>Couverture (URL auto via ISBN, photothèque 📁 ou photo 📷)</label>
+    <div class="isbnrow">
+      <input id="f_couverture" placeholder="https://…">
+      <button type="button" onclick="pickImage(null,'couverture',false,'form')">📁</button>
+      <button type="button" onclick="pickImage(null,'couverture',true,'form')">📷</button>
+    </div>
+    <div class="isbnmsg" id="covMsg"></div>
+    <label>Image de la tranche / dos (pour les étagères)</label>
+    <div class="isbnrow">
+      <input id="f_spine" placeholder="https://… (optionnel)">
+      <button type="button" onclick="pickImage(null,'spine',false,'form')">📁</button>
+      <button type="button" onclick="pickImage(null,'spine',true,'form')">📷</button>
+    </div>
+    <div class="isbnmsg" id="spMsg"></div>
     <label>Collections</label>
     <div class="chipwrap" id="colPick"></div>
     <div class="row">
@@ -360,9 +399,27 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       </div>
     </div>
     <div id="doneWrap">
-      <label>Note</label>
+      <label>Note globale</label>
       <div class="starpick" id="starPick"></div>
-      <label>Avis / commentaire</label><textarea id="f_avis" placeholder="Qu'en as-tu pensé ?"></textarea>
+      <div class="row">
+        <div><label>FMC (héroïne)</label><input id="f_fmc" placeholder="Diana"></div>
+        <div><label>MMC (héros)</label><input id="f_mmc" placeholder="Samkiel"></div>
+      </div>
+      <label>Tropes</label><input id="f_tropes" placeholder="Enemies to lovers, dieux…">
+      <label>Notes détaillées</label>
+      <div id="subRatings"></div>
+      <div class="row" style="margin-top:4px">
+        <div><label>Recommander ?</label>
+          <div class="seg" id="segRec">
+            <button type="button" data-val="" class="on" onclick="segPick(this)">—</button>
+            <button type="button" data-val="oui" onclick="segPick(this)">👍 Oui</button>
+            <button type="button" data-val="non" onclick="segPick(this)">👎 Non</button>
+          </div></div>
+        <div><label>Smut</label><div class="substars" id="smutPick" style="padding:9px 0;display:block"></div></div>
+      </div>
+      <label>Résumé (pour toi)</label><textarea id="f_resume" placeholder="Ce qui s'est passé…"></textarea>
+      <label>La fin (spoilers)</label><textarea id="f_finNote" placeholder="Comment ça se termine…"></textarea>
+      <label>Commentaires</label><textarea id="f_avis" placeholder="Qu'en as-tu pensé ?"></textarea>
       <label>Date de fin</label><input id="f_dateFin" type="date">
     </div>
     <button class="btn" onclick="saveBook()">Enregistrer</button>
@@ -380,17 +437,34 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   </div>
 </div>
 <input type="file" id="imgPick" accept="image/*" class="hidden" onchange="onImgPicked(this)">
+<input type="file" id="fichePick" accept="image/*" class="hidden" onchange="onFichePicked(this)">
 
 <!-- MODAL COLLECTION -->
 <div class="overlay" id="colModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2 id="colModalTitle"></h2>
+    <label>Nom</label>
+    <input id="c_nom" placeholder="Nom de la collection">
+    <label>Image</label>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <div id="colImgPreview"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:6px">
+          <button class="smallbtn" onclick="pickImage(colEditId,'image',false,'col')">📁</button>
+          <button class="smallbtn" onclick="pickImage(colEditId,'image',true,'col')">📷</button>
+          <button class="smallbtn" style="color:var(--red)" onclick="colClearImg()">✕ Retirer</button>
+        </div>
+        <input id="c_img" placeholder="…ou URL d'image" style="margin-top:8px" autocapitalize="none">
+      </div>
+    </div>
     <label>Livres dans la collection</label>
     <div id="colItemsEl"></div>
     <label>Ajouter un livre</label>
     <input class="search" id="colSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderColAdd()">
     <div id="colAddEl"></div>
-    <button class="btn" onclick="closeModals()">Terminé</button>
+    <button class="btn" onclick="saveColEdit()">Enregistrer</button>
+    <button class="btn danger" onclick="deleteCollection(colEditId)">Supprimer la collection</button>
+    <button class="btn ghost" onclick="closeModals()">Annuler</button>
   </div>
 </div>
 
@@ -474,6 +548,10 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <button class="btn ghost" onclick="sbLogout()">Se déconnecter</button>
     <div class="isbnmsg" id="syncStatus" style="margin-top:8px"></div>
     <p class="note-io">URL et clé sont déjà préremplies pour ton projet — il ne te reste qu'à entrer e-mail + mot de passe (« Créer mon compte » la première fois). Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
+    <h2 style="margin-top:24px">IA — analyse de fiches de lecture</h2>
+    <label>Clé API Google Gemini (gratuite)</label>
+    <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
+    <p class="note-io">Permet de remplir un livre en photographiant ta fiche de lecture manuscrite. Clé gratuite : <b>aistudio.google.com</b> → « Get API key ». Elle reste uniquement sur cet appareil.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
@@ -488,7 +566,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 const KEY='mabibli_v1';
 function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
-  d.collections=d.collections||[];d.shelves=d.shelves||[];
+  d.collections=d.collections||[];d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   return d;
 }
@@ -661,7 +739,7 @@ let tab='lib';
 function switchTab(t){
   tab=t;
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===t));
-  ['lib','shelf','cols','defi','stats','cal'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
+  ['lib','shelf','cols','rank','defi','stats','cal'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
   document.getElementById('fab').classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
   render();
 }
@@ -677,6 +755,19 @@ function renderChips(){
     return `<div class="chip ${filter===v?'active':''}" onclick="filter='${v}';renderLib()">${l} (${n})</div>`;
   }).join('');
 }
+/* Recherche unifiée : titre, auteur ou nom de collection */
+function bookMatch(b,q){
+  if((b.titre+' '+(b.auteur||'')).toLowerCase().includes(q))return true;
+  return db.collections.some(c=>c.nom.toLowerCase().includes(q)&&c.bookIds.includes(b.id));
+}
+function colMatch(c,q){
+  if(c.nom.toLowerCase().includes(q))return true;
+  return c.bookIds.some(bid=>{
+    const b=db.books.find(x=>x.id===bid);
+    return b&&(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q);
+  });
+}
+
 /* Collections */
 let colFilter=null,colSel=new Set();
 function renderColChips(){
@@ -686,8 +777,7 @@ function renderColChips(){
     `<div class="chip dashed" onclick="newCollection(false)">＋ Collection</div>`;
   const c=db.collections.find(x=>x.id===colFilter);
   document.getElementById('colActions').innerHTML=c?
-    `<button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">📚 Gérer les livres</button>
-     <button class="smallbtn" onclick="renameCollection('${c.id}')">✏️ Renommer</button>
+    `<button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">✏️ Modifier (nom, image, livres)</button>
      <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">🗑 Supprimer</button>`:'';
 }
 function newCollection(fromPicker){
@@ -699,18 +789,13 @@ function newCollection(fromPicker){
     else{colFilter=c.id;renderLib();renderCols();}
   });
 }
-function renameCollection(id){
-  const c=db.collections.find(x=>x.id===id);if(!c)return;
-  askText('Nouveau nom',c.nom,nom=>{
-    if(nom){c.nom=nom;save();renderLib();renderCols();}
-  });
-}
 function deleteCollection(id){
   const c=db.collections.find(x=>x.id===id);if(!c)return;
   askConfirm('Supprimer la collection « '+c.nom+' » ? Les livres ne seront pas supprimés.',()=>{
     db.collections=db.collections.filter(x=>x.id!==id);
+    db.ranking=db.ranking.filter(r=>!(r.type==='col'&&r.id===id));
     if(colFilter===id)colFilter=null;
-    save();renderLib();renderCols();
+    save();renderLib();renderCols();renderRank();
   },'Supprimer');
 }
 /* Onglet Collections : classement + gestion */
@@ -720,13 +805,17 @@ function renderCols(){
     el.innerHTML='<div class="empty"><span class="big">🗂</span>Aucune collection.<br>Appuie sur <b>+</b> pour en créer une !</div>';
     return;
   }
-  el.innerHTML=db.collections.map((c,i)=>{
+  const q=(document.getElementById('colsSearch').value||'').toLowerCase().trim();
+  const list=q?db.collections.filter(c=>colMatch(c,q)):db.collections;
+  if(!list.length){el.innerHTML='<div class="empty">Aucune collection ne correspond 🔍</div>';return;}
+  el.innerHTML=list.map(c=>{
+    const i=db.collections.indexOf(c);
     const covers=c.bookIds.slice(0,8).map(bid=>{
       const b=db.books.find(x=>x.id===bid);
       return `<div style="flex:none">${coverEl(b&&b.couverture,'sm')}</div>`;
     }).join('');
     return `<div class="book" style="cursor:default">
-      <div class="top"><div class="tinfo"><h3>${esc(c.nom)}</h3>
+      <div class="top">${colImgEl(c,'')}<div class="tinfo"><h3>${esc(c.nom)}</h3>
         <div class="auth">${c.bookIds.length} livre${c.bookIds.length>1?'s':''}</div></div>
         <div style="display:flex;gap:6px;flex:none">
           <button class="smallbtn" style="${i===0?'opacity:.35':''}" onclick="colMove(${i},-1)">↑</button>
@@ -734,8 +823,7 @@ function renderCols(){
         </div></div>
       <div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto">${covers||'<span style="color:var(--txt2);font-size:.8rem">Vide pour l\'instant</span>'}</div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">📚 Gérer les livres</button>
-        <button class="smallbtn" onclick="renameCollection('${c.id}')">✏️ Renommer</button>
+        <button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">✏️ Modifier</button>
         <button class="smallbtn" onclick="colFilter='${c.id}';switchTab('lib')">👁 Voir dans la bibli</button>
         <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">🗑</button>
       </div></div>`;
@@ -752,9 +840,12 @@ let colEditId=null;
 function openColEdit(id){
   const c=db.collections.find(x=>x.id===id);if(!c)return;
   colEditId=id;
-  document.getElementById('colModalTitle').textContent=c.nom;
+  document.getElementById('colModalTitle').textContent='Modifier la collection';
+  document.getElementById('c_nom').value=c.nom;
+  document.getElementById('c_img').value=(c.image&&!c.image.startsWith('data:'))?c.image:'';
+  document.getElementById('c_img').placeholder=(c.image&&c.image.startsWith('data:'))?'(photo enregistrée)':'…ou URL d\'image';
   document.getElementById('colSearch').value='';
-  renderColItems();renderColAdd();
+  renderColImg();renderColItems();renderColAdd();
   document.getElementById('colModal').classList.add('open');
 }
 function renderColItems(){
@@ -772,7 +863,7 @@ function renderColAdd(){
   const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
   const q=document.getElementById('colSearch').value.toLowerCase().trim();
   const used=new Set(c.bookIds);
-  const list=db.books.filter(b=>!used.has(b.id)&&(!q||(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q))).slice(0,12);
+  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))).slice(0,12);
   document.getElementById('colAddEl').innerHTML=list.map(b=>
     `<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}</span>
      <button style="color:var(--green)" onclick="colAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
@@ -811,7 +902,7 @@ function renderLib(){
   const col=db.collections.find(x=>x.id===colFilter);
   if(col)list=list.filter(b=>col.bookIds.includes(b.id));
   if(gf)list=list.filter(b=>b.genre===gf);
-  if(q)list=list.filter(b=>(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q));
+  if(q)list=list.filter(b=>bookMatch(b,q));
   list.sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const el=document.getElementById('bookList');
   if(!list.length){
@@ -855,6 +946,22 @@ function renderStars(){
   document.getElementById('starPick').innerHTML=[1,2,3,4,5].map(i=>
     `<span class="${i<=starVal?'on':''}" onclick="starVal=${i};renderStars()">★</span>`).join('');
 }
+/* Notes détaillées (fiche de lecture) */
+const SUBCATS=[['ecriture','Qualité de l\'écriture'],['histoire','Qualité de l\'histoire'],
+  ['personnages','Personnages'],['tension','Tension'],['tristesse','Tristesse'],
+  ['romance','Romance'],['drole','Drôle'],['facile','Facile à lire'],['fin','Fin']];
+let subVals={},smutVal=0;
+function renderSubRatings(){
+  document.getElementById('subRatings').innerHTML=SUBCATS.map(([k,l])=>
+    `<div class="subrow"><span>${l}</span><span class="substars">${[1,2,3,4,5].map(i=>
+      `<span class="${(subVals[k]||0)>=i?'on':''}" onclick="setSub('${k}',${i})">★</span>`).join('')}</span></div>`).join('');
+}
+function setSub(k,i){subVals[k]=subVals[k]===i?0:i;renderSubRatings();}
+function renderSmut(){
+  document.getElementById('smutPick').innerHTML=[1,2,3,4,5].map(i=>
+    `<span class="pep ${smutVal>=i?'on':''}" onclick="setSmut(${i})">🌶</span>`).join('');
+}
+function setSmut(i){smutVal=smutVal===i?0:i;renderSmut();}
 function fillDatalists(){
   const g=[...new Set(db.books.map(b=>b.genre).filter(Boolean))];
   const l=[...new Set(db.books.map(b=>b.langue).filter(Boolean))];
@@ -864,7 +971,9 @@ function fillDatalists(){
 function openAdd(){
   if(tab==='shelf'){newShelf();return;}
   if(tab==='cols'){newCollection(false);return;}
-  editId=null;starVal=0;
+  editId=null;starVal=0;subVals={};smutVal=0;
+  ['f_fmc','f_mmc','f_tropes','f_resume','f_finNote'].forEach(i=>document.getElementById(i).value='');
+  segSet('segRec','');renderSubRatings();renderSmut();
   document.getElementById('bookModalTitle').textContent='Ajouter un livre';
   ['f_titre','f_auteur','f_genre','f_pages','f_epaisseur','f_avis','f_isbn','f_couverture','f_spine'].forEach(i=>document.getElementById(i).value='');
   isbnMsg('');
@@ -875,12 +984,23 @@ function openAdd(){
   segSet('segFic','fiction');segSet('segStatut','tbr');segSet('segFormat','papier');
   document.getElementById('delBookBtn').classList.add('hidden');
   colSel=new Set();if(colFilter)colSel.add(colFilter);
+  resetFormImgs();
+  document.getElementById('f_search').value='';
+  document.getElementById('searchResults').innerHTML='';searchMsg('');
   toggleStatutFields();renderStars();fillDatalists();renderColPick();
   document.getElementById('bookModal').classList.add('open');
 }
 function openEdit(id){
   const b=db.books.find(x=>x.id===id);if(!b)return;
   editId=id;starVal=b.note||0;
+  subVals={...(b.sousNotes||{})};smutVal=b.smut||0;
+  document.getElementById('f_fmc').value=b.fmc||'';
+  document.getElementById('f_mmc').value=b.mmc||'';
+  document.getElementById('f_tropes').value=b.tropes||'';
+  document.getElementById('f_resume').value=b.resume||'';
+  document.getElementById('f_finNote').value=b.finNote||'';
+  segSet('segRec',b.recommande===true?'oui':(b.recommande===false?'non':''));
+  renderSubRatings();renderSmut();
   document.getElementById('bookModalTitle').textContent='Modifier le livre';
   document.getElementById('f_titre').value=b.titre;
   document.getElementById('f_isbn').value=b.isbn||'';isbnMsg('');
@@ -900,6 +1020,9 @@ function openEdit(id){
   segSet('segStatut',b.statut);segSet('segFormat',fmt(b));
   document.getElementById('delBookBtn').classList.remove('hidden');
   colSel=new Set(db.collections.filter(c=>c.bookIds.includes(id)).map(c=>c.id));
+  resetFormImgs();
+  document.getElementById('f_search').value='';
+  document.getElementById('searchResults').innerHTML='';searchMsg('');
   toggleStatutFields();renderStars();fillDatalists();renderColPick();
   document.getElementById('bookModal').classList.add('open');
 }
@@ -919,8 +1042,8 @@ function saveBook(){
   const b={
     id:editId||uid(),titre,
     isbn:isbnClean(document.getElementById('f_isbn').value),
-    couverture:document.getElementById('f_couverture').value.trim(),
-    spine:document.getElementById('f_spine').value.trim(),
+    couverture:formImgs.couverture||document.getElementById('f_couverture').value.trim(),
+    spine:formImgs.spine||document.getElementById('f_spine').value.trim(),
     auteur:document.getElementById('f_auteur').value.trim(),
     genre:document.getElementById('f_genre').value.trim(),
     langue:document.getElementById('f_langue').value.trim(),
@@ -930,6 +1053,14 @@ function saveBook(){
     format,statut,progression,pageActuelle,
     note:statut==='done'?starVal:0,
     avis:statut==='done'?document.getElementById('f_avis').value.trim():'',
+    fmc:document.getElementById('f_fmc').value.trim(),
+    mmc:document.getElementById('f_mmc').value.trim(),
+    tropes:document.getElementById('f_tropes').value.trim(),
+    resume:document.getElementById('f_resume').value.trim(),
+    finNote:document.getElementById('f_finNote').value.trim(),
+    sousNotes:{...subVals},
+    smut:smutVal,
+    recommande:segVal('segRec')==='oui'?true:(segVal('segRec')==='non'?false:null),
     dateFin:statut==='done'?document.getElementById('f_dateFin').value:'',
     dateAjout:editId?(db.books.find(x=>x.id===editId)||{}).dateAjout||Date.now():Date.now(),
   };
@@ -1004,6 +1135,7 @@ function deleteBook(){
     db.books=db.books.filter(x=>x.id!==editId);
     db.collections.forEach(c=>c.bookIds=c.bookIds.filter(x=>x!==editId));
     db.shelves.forEach(s=>s.items=s.items.filter(it=>it.bookId!==editId));
+    db.ranking=db.ranking.filter(r=>!(r.type==='book'&&r.id===editId));
     save();closeModals();render();
   },'Supprimer');
 }
@@ -1011,14 +1143,157 @@ function deleteBook(){
 /* ---------- ISBN : recherche + scanner ---------- */
 const isbnClean=s=>(s||'').replace(/[^0-9Xx]/g,'');
 function isbnMsg(txt,cls){const m=document.getElementById('isbnMsg');m.textContent=txt;m.className='isbnmsg '+(cls||'');}
+/* Analyse d'une fiche de lecture photographiée (IA Gemini) */
+const GKEY='mabibli_gemini';
+let gemKey=localStorage.getItem(GKEY)||'';
+function ficheMsgSet(t,cls){const m=document.getElementById('ficheMsg');m.textContent=t;m.className='isbnmsg '+(cls||'');}
+function pickFiche(){
+  if(!gemKey){ficheMsgSet('Ajoute d\'abord ta clé Gemini gratuite dans ⚙️ Réglages','err');return;}
+  document.getElementById('fichePick').click();
+}
+const FICHE_PROMPT=`Voici la photo d'une fiche de lecture manuscrite en français. Extrais les informations et réponds UNIQUEMENT avec un JSON valide, sans commentaire, avec exactement ces clés (mets null si l'info est absente ou illisible) :
+{"titre":string,"auteur":string,"genre":string,"langue":string,"fmc":string,"mmc":string,"tropes":string,
+"note":0-5 (grande rangée d'étoiles : compte les étoiles coloriées/surlignées),
+"ecriture":0-5,"histoire":0-5,"personnages":0-5,"tension":0-5,"tristesse":0-5,"romance":0-5,"drole":0-5,"facile":0-5,"fin":0-5 (chaque catégorie : étoiles coloriées),
+"recommande":"oui" ou "non" (symbole entouré/colorié) ou null,
+"smut":0-5 (nombre de piments),
+"resume":string,"finNote":string (contenu de l'encadré Fin),"commentaires":string,
+"format":"papier" (si l'icône livre est cochée) ou "numerique" (si l'icône liseuse est cochée) ou null}`;
+function onFichePicked(inp){
+  const f=inp.files[0];inp.value='';
+  if(!f)return;
+  ficheMsgSet('⏳ Analyse de la fiche en cours…');
+  const img=new Image();
+  img.onload=async()=>{
+    const maxH=1500,scale=Math.min(1,maxH/img.height);
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(img.src);
+    const b64=c.toDataURL('image/jpeg',0.82).split(',')[1];
+    try{
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(gemKey),{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[{text:FICHE_PROMPT},{inline_data:{mime_type:'image/jpeg',data:b64}}]}],
+          generationConfig:{response_mime_type:'application/json',temperature:0}
+        })});
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      const d=await r.json();
+      const v=JSON.parse(d.candidates[0].content.parts[0].text);
+      applyFiche(v);
+      ficheMsgSet('✅ Fiche analysée — vérifie et corrige si besoin','ok');
+    }catch(e){ficheMsgSet('⚠️ Analyse impossible — vérifie ta clé Gemini (⚙️) ou réessaie avec une photo plus nette','err');}
+  };
+  img.onerror=()=>ficheMsgSet('Image illisible 😕','err');
+  img.src=URL.createObjectURL(f);
+}
+function applyFiche(v){
+  const set=(id,val)=>{if(val)document.getElementById(id).value=val;};
+  set('f_titre',v.titre);set('f_auteur',v.auteur);set('f_genre',v.genre);set('f_langue',v.langue);
+  set('f_fmc',v.fmc);set('f_mmc',v.mmc);set('f_tropes',v.tropes);
+  set('f_resume',v.resume);set('f_finNote',v.finNote);set('f_avis',v.commentaires);
+  if(v.format==='papier'||v.format==='numerique')segSet('segFormat',v.format);
+  segSet('segStatut','done');
+  const n=x=>Math.max(0,Math.min(5,Math.round(+x||0)));
+  starVal=n(v.note);
+  subVals={ecriture:n(v.ecriture),histoire:n(v.histoire),personnages:n(v.personnages),
+    tension:n(v.tension),tristesse:n(v.tristesse),romance:n(v.romance),
+    drole:n(v.drole),facile:n(v.facile),fin:n(v.fin)};
+  smutVal=n(v.smut);
+  segSet('segRec',v.recommande==='oui'?'oui':(v.recommande==='non'?'non':''));
+  toggleStatutFields();renderStars();renderSubRatings();renderSmut();
+}
+
+/* Recherche en ligne par titre/auteur */
+let searchRes=[];
+function searchMsg(t,cls){const m=document.getElementById('searchMsg');m.textContent=t;m.className='isbnmsg '+(cls||'');}
+async function searchOnline(){
+  const q=document.getElementById('f_search').value.trim();
+  if(q.length<3){searchMsg('Entre au moins 3 caractères','err');return;}
+  searchMsg('Recherche en cours…');searchRes=[];
+  document.getElementById('searchResults').innerHTML='';
+  try{
+    try{
+      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=6');
+      if(r.ok){
+        const d=await r.json();
+        (d.items||[]).forEach(it=>{
+          const v=it.volumeInfo||{};
+          if(!v.title)return;
+          const isbn=(v.industryIdentifiers||[]).map(x=>x.identifier).find(x=>/^97[89]\d{10}$/.test(x))||'';
+          searchRes.push({titre:v.title,auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
+            langue:NV_LANG[v.language]||v.language||'',genre:(v.categories||[])[0]||'',isbn,
+            couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
+        });
+      }
+    }catch(e){}
+    if(searchRes.length<3){
+      try{
+        const r=await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&fields=title,author_name,number_of_pages_median,cover_i,isbn&limit=6');
+        if(r.ok){
+          const d=await r.json();
+          (d.docs||[]).forEach(v=>{
+            if(!v.title)return;
+            if(searchRes.some(x=>x.titre.toLowerCase()===v.title.toLowerCase()))return;
+            searchRes.push({titre:v.title,auteur:(v.author_name||[]).join(', '),
+              pages:v.number_of_pages_median||0,langue:'',genre:'',
+              isbn:(v.isbn||[]).find(x=>/^97[89]\d{10}$/.test(x))||'',
+              couverture:v.cover_i?('https://covers.openlibrary.org/b/id/'+v.cover_i+'-M.jpg'):''});
+          });
+        }
+      }catch(e){}
+    }
+    if(!searchRes.length){searchMsg('Aucun résultat 😕 — essaie avec l\'ISBN ou remplis à la main','err');return;}
+    searchMsg(searchRes.length+' résultat(s) — touche celui qui correspond','ok');
+    document.getElementById('searchResults').innerHTML=searchRes.map((v,i)=>
+      `<div class="sitem" style="cursor:pointer" onclick="applySearch(${i})">${coverEl(v.couverture,'sm')}
+        <span class="nm">${esc(v.titre)}<br><span style="color:var(--txt2);font-size:.75rem">${esc(v.auteur)||'—'}${v.pages?' · '+v.pages+' p.':''}</span></span>
+        <button style="color:var(--green)">Utiliser</button></div>`).join('');
+  }catch(e){searchMsg('Erreur réseau — vérifie ta connexion','err');}
+}
+function applySearch(i){
+  const v=searchRes[i];if(!v)return;
+  document.getElementById('f_titre').value=v.titre;
+  if(v.auteur)document.getElementById('f_auteur').value=v.auteur;
+  if(v.pages)document.getElementById('f_pages').value=v.pages;
+  if(v.langue)document.getElementById('f_langue').value=v.langue;
+  if(v.genre&&!document.getElementById('f_genre').value)document.getElementById('f_genre').value=v.genre;
+  if(v.isbn)document.getElementById('f_isbn').value=v.isbn;
+  if(v.couverture)document.getElementById('f_couverture').value=v.couverture;
+  document.getElementById('searchResults').innerHTML='';
+  searchMsg('✅ Infos remplies — vérifie et complète si besoin','ok');
+}
+function isbn13to10(i){
+  if(!/^978\d{10}$/.test(i))return null;
+  const core=i.slice(3,12);let s=0;
+  for(let k=0;k<9;k++)s+=(10-k)*+core[k];
+  const c=(11-s%11)%11;
+  return core+(c===10?'X':c);
+}
+function isbn10to13(i){
+  if(!/^\d{9}[\dXx]$/.test(i))return null;
+  const core='978'+i.slice(0,9);let s=0;
+  for(let k=0;k<12;k++)s+=+core[k]*(k%2?3:1);
+  return core+((10-s%10)%10);
+}
 async function lookupISBN(){
   const isbn=isbnClean(document.getElementById('f_isbn').value);
   if(isbn.length!==10&&isbn.length!==13){isbnMsg('ISBN invalide (10 ou 13 chiffres)','err');return;}
   isbnMsg('Recherche en cours…');
+  const candidates=[isbn];
+  const alt=isbn.length===13?isbn13to10(isbn):isbn10to13(isbn);
+  if(alt)candidates.push(alt);
   try{
-    let info=await fetchGoogleBooks(isbn);
-    if(!info)info=await fetchOpenLibrary(isbn);
-    if(!info){isbnMsg('Livre introuvable pour cet ISBN 😕 — remplis les champs à la main','err');return;}
+    let info=null;
+    for(const src of [fetchGoogleBooks,fetchOpenLibrary,fetchOpenLibSearch]){
+      for(const code of candidates){
+        try{info=await src(code);}catch(e){}
+        if(info)break;
+      }
+      if(info)break;
+    }
+    if(!info){isbnMsg('Introuvable pour l\'ISBN '+isbn+' 😕 — vérifie le numéro ou remplis à la main','err');return;}
     if(info.titre)document.getElementById('f_titre').value=info.titre;
     if(info.auteur)document.getElementById('f_auteur').value=info.auteur;
     if(info.pages)document.getElementById('f_pages').value=info.pages;
@@ -1029,7 +1304,7 @@ async function lookupISBN(){
   }catch(e){isbnMsg('Erreur réseau — vérifie ta connexion','err');}
 }
 async function fetchGoogleBooks(isbn){
-  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:'+isbn);
+  const r=await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:'+isbn+'&country=FR');
   if(!r.ok)return null;
   const d=await r.json();
   const v=d.items&&d.items[0]&&d.items[0].volumeInfo;
@@ -1046,6 +1321,15 @@ async function fetchOpenLibrary(isbn){
   return {titre:v.title||'',auteur:(v.authors||[]).map(a=>a.name).join(', '),
     pages:v.number_of_pages||0,langue:'',genre:(v.subjects&&v.subjects[0]&&v.subjects[0].name)||'',
     couverture:(v.cover&&(v.cover.medium||v.cover.small))||''};
+}
+async function fetchOpenLibSearch(isbn){
+  const r=await fetch('https://openlibrary.org/search.json?q=isbn:'+isbn+'&fields=title,author_name,number_of_pages_median,cover_i&limit=1');
+  if(!r.ok)return null;
+  const d=await r.json();const v=d.docs&&d.docs[0];
+  if(!v||!v.title)return null;
+  return {titre:v.title,auteur:(v.author_name||[]).join(', '),
+    pages:v.number_of_pages_median||0,langue:'',genre:'',
+    couverture:v.cover_i?('https://covers.openlibrary.org/b/id/'+v.cover_i+'-M.jpg'):''};
 }
 /* Scanner : BarcodeDetector natif si dispo, sinon ZXing chargé à la demande */
 let scanStream=null,zxingReader=null,scanning=false;
@@ -1164,9 +1448,13 @@ function renderStats(){
 }
 
 /* ---------- Images : upload / photo ---------- */
-let imgTarget=null;
-function pickImage(id,field,camera){
-  imgTarget={id,field};
+let imgTarget=null,formImgs={couverture:'',spine:''};
+function resetFormImgs(){
+  formImgs={couverture:'',spine:''};
+  ['covMsg','spMsg'].forEach(i=>{const m=document.getElementById(i);if(m){m.textContent='';m.className='isbnmsg';}});
+}
+function pickImage(id,field,camera,kind){
+  imgTarget={id,field,kind:kind||'book'};
   const inp=document.getElementById('imgPick');
   if(camera)inp.setAttribute('capture','environment');
   else inp.removeAttribute('capture');
@@ -1182,13 +1470,48 @@ function onImgPicked(inp){
     c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
     URL.revokeObjectURL(img.src);
-    const b=db.books.find(x=>x.id===imgTarget.id);if(!b)return;
-    b[imgTarget.field]=c.toDataURL('image/jpeg',0.72);
-    save();render();openInfo(b.id);
+    const dataUrl=c.toDataURL('image/jpeg',0.72);
+    if(imgTarget.kind==='form'){
+      formImgs[imgTarget.field]=dataUrl;
+      const m=document.getElementById(imgTarget.field==='couverture'?'covMsg':'spMsg');
+      if(m){m.textContent='✅ Image ajoutée — sera utilisée à l\'enregistrement';m.className='isbnmsg ok';}
+      return;
+    }
+    const obj=imgTarget.kind==='col'
+      ?db.collections.find(x=>x.id===imgTarget.id)
+      :db.books.find(x=>x.id===imgTarget.id);
+    if(!obj)return;
+    obj[imgTarget.field]=dataUrl;
+    save();render();
+    if(imgTarget.kind==='col')renderColImg();else openInfo(obj.id);
     toast('Image mise à jour ✅');
   };
   img.onerror=()=>toast('Image illisible 😕');
   img.src=URL.createObjectURL(f);
+}
+/* Image de collection */
+function colImgEl(c,cls){
+  return c.image
+    ?`<img class="cover ${cls}" src="${esc(c.image)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'cover ${cls} ph',textContent:'🗂'}))">`
+    :`<div class="cover ${cls} ph">🗂</div>`;
+}
+function renderColImg(){
+  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
+  const el=document.getElementById('colImgPreview');
+  if(el)el.innerHTML=colImgEl(c,'lg');
+}
+function colClearImg(){
+  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
+  c.image='';save();render();renderColImg();
+  const f=document.getElementById('c_img');if(f){f.value='';f.placeholder='…ou URL d\'image';}
+}
+function saveColEdit(){
+  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
+  const nom=document.getElementById('c_nom').value.trim();
+  if(nom)c.nom=nom;
+  const url=document.getElementById('c_img').value.trim();
+  if(url)c.image=url;
+  save();closeModals();render();
 }
 
 /* ---------- Fiche info livre ---------- */
@@ -1203,9 +1526,17 @@ function openInfo(id){
     ['Pages',b.pages?b.pages+' p.':''],
     ['ISBN',b.isbn],
     ['Collections',cols.join(', ')],
+    ['FMC',b.fmc],
+    ['MMC',b.mmc],
+    ['Tropes',b.tropes],
     [b.statut==='reading'?'Avancement':'',b.statut==='reading'?(fmt(b)==='papier'&&b.pages?'p. '+(b.pageActuelle||0)+'/'+b.pages+' ('+(b.progression||0)+' %)':(b.progression||0)+' %'):''],
     ['Terminé le',b.dateFin?new Date(b.dateFin+'T12:00:00').toLocaleDateString('fr-FR'):''],
+    ['Recommander ?',b.recommande===true?'👍 Oui':(b.recommande===false?'👎 Non':'')],
+    ['Smut',b.smut?'🌶'.repeat(b.smut):''],
   ].filter(([l,v])=>l&&v);
+  const sn=b.sousNotes||{};
+  const subHtml=SUBCATS.filter(([k])=>sn[k]>0).map(([k,l])=>
+    `<div class="inforow"><span>${l}</span><b class="stars">${'★'.repeat(sn[k])}${'☆'.repeat(5-sn[k])}</b></div>`).join('');
   const spineImg=b.spine
     ?`<img class="spineimg" src="${esc(b.spine)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'spinefake',style:'background:${spineColor(b.id)};width:30px;height:118px',textContent:'📕'}))">`
     :`<div class="spinefake" style="background:${spineColor(b.id)};width:30px;height:118px;margin:0 auto">${esc(b.titre)}</div>`;
@@ -1235,7 +1566,10 @@ function openInfo(id){
       </div>
     </div>
     ${rows.map(([l,v])=>`<div class="inforow"><span>${l}</span><b>${esc(String(v))}</b></div>`).join('')}
-    ${b.avis?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Mon avis :</span><br>${esc(b.avis)}</div>`:''}`;
+    ${subHtml?`<div style="margin-top:12px;font-weight:700;font-size:.85rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Notes détaillées</div>${subHtml}`:''}
+    ${b.resume?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Résumé :</span><br>${esc(b.resume)}</div>`:''}
+    ${b.finNote?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--gold);cursor:pointer;font-weight:700">⚠️ La fin (spoilers)</summary><div style="margin-top:6px">${esc(b.finNote)}</div></details>`:''}
+    ${b.avis?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Commentaires :</span><br>${esc(b.avis)}</div>`:''}`;
   document.getElementById('infoEditBtn').onclick=()=>{closeModals();openEdit(id);};
   document.getElementById('infoModal').classList.add('open');
 }
@@ -1362,7 +1696,7 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfItems();renderShelfAd
 function renderShelfAdd(){
   const q=document.getElementById('shelfSearch').value.toLowerCase().trim();
   const used=new Set(shelfItemsW.map(x=>x.bookId));
-  const list=db.books.filter(b=>!used.has(b.id)&&(!q||(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q))).slice(0,12);
+  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))).slice(0,12);
   document.getElementById('shelfAddEl').innerHTML=list.map(b=>
     `<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}</span>
      <button style="color:var(--green)" onclick="shelfAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
@@ -1383,6 +1717,59 @@ function deleteShelf(){
     db.shelves=db.shelves.filter(x=>x.id!==shelfId);
     save();closeModals();render();
   },'Supprimer');
+}
+
+/* ---------- Classement (livres + collections confondus) ---------- */
+function rankItems(){
+  return db.ranking.map(r=>{
+    if(r.type==='book'){const b=db.books.find(x=>x.id===r.id);return b?{...r,b}:null;}
+    const c=db.collections.find(x=>x.id===r.id);return c?{...r,c}:null;
+  }).filter(Boolean);
+}
+function renderRank(){
+  const el=document.getElementById('rankList');
+  const items=rankItems();
+  if(!items.length){
+    el.innerHTML='<div class="empty"><span class="big">🏆</span>Ton classement est vide.<br>Cherche ci-dessous un livre ou une collection à classer !</div>';
+    renderRankAdd();return;
+  }
+  el.innerHTML=items.map((it,i)=>{
+    const isBook=it.type==='book';
+    const name=isBook?it.b.titre:it.c.nom;
+    const sub=isBook?(it.b.auteur||''):(it.c.bookIds.length+' livre'+(it.c.bookIds.length>1?'s':''));
+    const vis=isBook?coverEl(it.b.couverture,'sm'):colImgEl(it.c,'sm');
+    return `<div class="sitem"${isBook?` onclick="openInfo('${it.b.id}')" style="cursor:pointer"`:''}>
+      <b style="min-width:26px;color:var(--accent)">${i+1}.</b>${vis}
+      <span class="nm">${esc(name)}${sub?` <span style="color:var(--txt2)">· ${esc(sub)}</span>`:''}</span>
+      <button onclick="event.stopPropagation();rankMove(${i},-1)">↑</button>
+      <button onclick="event.stopPropagation();rankMove(${i},1)">↓</button>
+      <button style="color:var(--red)" onclick="event.stopPropagation();rankRemove(${i})">✕</button></div>`;
+  }).join('');
+  renderRankAdd();
+}
+function rankMove(i,d){
+  const j=i+d;if(j<0||j>=db.ranking.length)return;
+  [db.ranking[i],db.ranking[j]]=[db.ranking[j],db.ranking[i]];
+  save();renderRank();
+}
+function rankRemove(i){db.ranking.splice(i,1);save();renderRank();}
+function rankAdd(type,id){
+  if(db.ranking.some(r=>r.type===type&&r.id===id))return;
+  db.ranking.push({type,id});save();renderRank();
+}
+function renderRankAdd(){
+  const q=(document.getElementById('rankSearch').value||'').toLowerCase().trim();
+  const inRank=new Set(db.ranking.map(r=>r.type+'|'+r.id));
+  const cols=db.collections.filter(c=>!inRank.has('col|'+c.id)&&(!q||colMatch(c,q))).slice(0,6);
+  const books=db.books.filter(b=>!inRank.has('book|'+b.id)&&(!q||bookMatch(b,q))).slice(0,8);
+  document.getElementById('rankAddEl').innerHTML=
+    cols.map(c=>`<div class="sitem">${colImgEl(c,'sm')}
+      <span class="nm">${esc(c.nom)} <span style="color:var(--txt2)">· collection</span></span>
+      <button style="color:var(--green)" onclick="rankAdd('col','${c.id}')">＋</button></div>`).join('')+
+    books.map(b=>`<div class="sitem">${coverEl(b.couverture,'sm')}
+      <span class="nm">${esc(b.titre)}</span>
+      <button style="color:var(--green)" onclick="rankAdd('book','${b.id}')">＋</button></div>`).join('')
+    ||'<div class="isbnmsg">Aucun résultat.</div>';
 }
 
 /* ---------- Journal (calendrier) ---------- */
@@ -1419,10 +1806,10 @@ function renderCal(){
   const dstr=new Date(calSel+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   let out=`<h2>${dstr}</h2>`;
   if(!fin.length&&!ses.length)out+='<div class="empty" style="padding:14px">Rien noté ce jour-là 🌙</div>';
-  fin.forEach(b=>out+=`<div class="mile">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
+  fin.forEach(b=>out+=`<div class="mile" style="cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
   ses.forEach(s=>{
     const bk=db.books.find(b=>b.id===s.bookId);
-    out+=`<div class="mile">${coverEl(bk&&bk.couverture,'sm','📖')}<span class="name">${esc(s.titre)}</span><span class="h">+${s.pages} p.</span></div>`;
+    out+=`<div class="mile"${bk?` style="cursor:pointer" onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','📖')}<span class="name">${esc(s.titre)}</span><span class="h">+${s.pages} p.</span></div>`;
   });
   det.innerHTML=out;
 }
@@ -1430,6 +1817,7 @@ function renderCal(){
 /* ---------- Réglages / sauvegarde ---------- */
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
+  document.getElementById('g_key').value=gemKey||'';
   document.getElementById('sb_url').value=sbCfg.url||'';
   document.getElementById('sb_key').value=sbCfg.key||'';
   setSyncStatus(sbUser?'✅ Connectée ('+(sbUser.email||'')+')':'Non connectée');
@@ -1437,6 +1825,8 @@ function openSettings(){
 }
 function saveSettings(){
   db.settings.taille=+document.getElementById('s_taille').value||165;
+  gemKey=document.getElementById('g_key').value.trim();
+  localStorage.setItem(GKEY,gemKey);
   save();closeModals();render();
 }
 function exportData(){
@@ -1508,7 +1898,7 @@ function importData(input){
       if(!Array.isArray(d.books))throw 0;
       /* Book Nova ou format natif ? */
       const isNative=!d.books.length||d.books[0].titre!==undefined;
-      const inc=isNative?{books:d.books,loans:d.loans||[],sessions:d.sessions||[],collections:d.collections||[],shelves:d.shelves||[],settings:d.settings||db.settings}:fromBookNova(d);
+      const inc=isNative?{books:d.books,loans:d.loans||[],sessions:d.sessions||[],collections:d.collections||[],shelves:d.shelves||[],ranking:d.ranking||[],settings:d.settings||db.settings}:fromBookNova(d);
       const apply=merge=>{
         if(merge){
           const ids=new Set(db.books.map(b=>b.id));
@@ -1522,8 +1912,10 @@ function importData(input){
           db.collections.push(...(inc.collections||[]).filter(c=>!cids.has(c.id)));
           const shids=new Set(db.shelves.map(s=>s.id));
           db.shelves.push(...(inc.shelves||[]).filter(s=>!shids.has(s.id)));
+          const rids=new Set(db.ranking.map(r=>r.type+'|'+r.id));
+          db.ranking.push(...(inc.ranking||[]).filter(r=>!rids.has(r.type+'|'+r.id)));
         }else{
-          db={books:inc.books,loans:inc.loans||[],sessions:inc.sessions||[],collections:inc.collections||[],shelves:inc.shelves||[],settings:inc.settings||db.settings};
+          db=normalizeDb({books:inc.books,loans:inc.loans||[],sessions:inc.sessions||[],collections:inc.collections||[],shelves:inc.shelves||[],ranking:inc.ranking||[],settings:inc.settings||db.settings});
         }
         colFilter=null;
         save();closeModals();render();
@@ -1543,7 +1935,7 @@ function importData(input){
 function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));}
 
 /* ---------- Rendu global ---------- */
-function render(){renderLib();renderShelves();renderCols();renderDefi();renderStats();renderCal();}
+function render(){renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();}
 render();
 sbInit();
 </script>
