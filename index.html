@@ -43,7 +43,7 @@ header h1{font-size:1.35rem;font-weight:800;letter-spacing:.3px}
 header h1 span{color:var(--accent)}
 .iconbtn{background:var(--card);border:none;color:var(--txt);font-size:1.1rem;
   width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-main{padding:14px 16px 30px;max-width:640px;margin:0 auto}
+main{padding:14px 16px calc(110px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
 h2{font-size:1.05rem;margin:18px 2px 10px;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px;font-size:.8rem}
 
 /* Tabs */
@@ -134,7 +134,14 @@ nav button.active{color:var(--accent)}
   position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:25;
   width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
   background:linear-gradient(135deg,var(--accent2),var(--accent));color:#fff;
-  font-size:2rem;box-shadow:0 6px 20px rgba(139,92,246,.45);
+  box-shadow:0 6px 20px rgba(139,92,246,.45);
+  display:flex;align-items:center;justify-content:center;
+}
+.fab .icn{width:27px;height:27px}
+.fab .plus{
+  position:absolute;top:4px;right:5px;width:17px;height:17px;
+  background:#fff;color:var(--accent2);border-radius:50%;
+  font-size:.8rem;font-weight:800;line-height:17px;text-align:center;
 }
 
 /* Modal */
@@ -386,7 +393,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   </section>
 </main>
 
-<button class="fab" id="fab" onclick="openAdd()">+</button>
+<button class="fab" id="fab" onclick="openAdd()" title="Ajouter"></button>
 
 <nav>
   <button data-v="lib" class="active" onclick="switchTab('lib')"><span class="ic" data-spr="book" data-spr-size="23"><svg class="icn"><use href="#i-book"/></svg></span>Bibli</button>
@@ -878,7 +885,10 @@ function switchTab(t){
   tab=t;
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===t));
   ['lib','shelf','cols','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
-  document.getElementById('fab').classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
+  const fab=document.getElementById('fab');
+  fab.classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
+  const FAB_IC={lib:'book',shelf:'shelf',cols:'folder'};
+  if(FAB_IC[t])fab.innerHTML=icSvg(FAB_IC[t])+'<span class="plus">+</span>';
   render();
 }
 
@@ -2244,6 +2254,7 @@ function render(){renderLib();renderShelves();renderCols();renderRank();renderDe
   render();
   sbInit();
 })();
+document.getElementById('fab').innerHTML=icSvg('book')+'<span class="plus">+</span>';
 render();
 </script>
 </body>
