@@ -652,18 +652,37 @@ function normalizeDb(d){
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
   return d;
 }
-let db=load();
-function load(){
-  try{
-    const d=JSON.parse(localStorage.getItem(KEY));
-    if(d&&d.books)return normalizeDb(d);
-  }catch(e){}
-  return normalizeDb({});
+let db=normalizeDb({});
+/* Stockage local : IndexedDB (~centaines de Mo), migration auto depuis localStorage */
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('mabibli',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>res(r.result);
+    r.onerror=()=>rej(r.error);
+  });
+}
+async function idbGet(k){
+  const d=await idbOpen();
+  return new Promise((res,rej)=>{
+    const t=d.transaction('kv').objectStore('kv').get(k);
+    t.onsuccess=()=>res(t.result);t.onerror=()=>rej(t.error);
+  });
+}
+async function idbSet(k,v){
+  const d=await idbOpen();
+  return new Promise((res,rej)=>{
+    const t=d.transaction('kv','readwrite');
+    t.objectStore('kv').put(v,k);
+    t.oncomplete=res;t.onerror=()=>rej(t.error);
+  });
+}
+function saveLocal(){
+  idbSet('db',db).catch(()=>toast('⚠️ Impossible d\'enregistrer localement'));
 }
 function save(){
   db.meta={updatedAt:Date.now()};
-  try{localStorage.setItem(KEY,JSON.stringify(db));}
-  catch(e){toast('⚠️ Stockage plein — exporte tes données puis retire quelques photos');}
+  saveLocal();
   scheduleSync();
 }
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
@@ -723,7 +742,7 @@ async function pullCloud(notify){
   const lT=(db.meta&&db.meta.updatedAt)||0;
   if(remote&&remote.books&&rT>lT){
     db=normalizeDb(remote);
-    try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){}
+    saveLocal();
     render();
     if(notify)toast('Données mises à jour depuis le cloud ✅ ('+db.books.length+' livres)');
     return 'adopted';
@@ -2209,8 +2228,23 @@ function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classL
 
 /* ---------- Rendu global ---------- */
 function render(){renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();renderDisc();}
+(async function initStore(){
+  try{
+    let d=await idbGet('db');
+    if(!d){
+      /* migration depuis l'ancien stockage localStorage */
+      try{d=JSON.parse(localStorage.getItem(KEY));}catch(e){}
+      if(d&&d.books){
+        await idbSet('db',d);
+        try{localStorage.removeItem(KEY);}catch(e){}
+      }
+    }
+    if(d&&d.books)db=normalizeDb(d);
+  }catch(e){}
+  render();
+  sbInit();
+})();
 render();
-sbInit();
 </script>
 </body>
 </html>
