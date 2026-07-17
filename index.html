@@ -90,6 +90,7 @@ nav button.active{color:var(--accent)}
 .colactions{display:flex;gap:8px;margin:0 2px 10px}
 .colactions:empty{display:none}
 .smallbtn{background:var(--card);border:1px solid #3a2e52;color:var(--txt2);padding:7px 12px;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer}
+.menub{display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left}
 .chipwrap{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
 .search{
   width:100%;background:var(--card);border:1px solid #3a2e52;border-radius:12px;
@@ -107,7 +108,7 @@ nav button.active{color:var(--accent)}
 .cover{width:46px;height:66px;border-radius:6px;object-fit:cover;background:var(--card2);flex:none}
 .cover.sm{width:34px;height:48px;border-radius:5px}
 .cover.lg{width:82px;height:118px;border-radius:8px}
-.spineimg{width:30px;height:118px;object-fit:cover;border-radius:4px;background:var(--card2);display:block;margin:0 auto}
+.spineimg{width:auto;max-width:46px;min-width:16px;height:118px;object-fit:cover;border-radius:4px;background:var(--card2);display:block;margin:0 auto}
 .imgcol{text-align:center;flex:none}
 .imgcol .lbl{font-size:.66rem;color:var(--txt2);margin-top:4px}
 .imgcol .btns{display:flex;gap:5px;justify-content:center;margin-top:6px}
@@ -121,6 +122,7 @@ nav button.active{color:var(--accent)}
 .b-tbr{background:#2d3a55;color:var(--blue)}
 .b-reading{background:#4a3a1e;color:var(--gold)}
 .b-done{background:#1e4032;color:var(--green)}
+.b-dnf{background:#42222e;color:var(--red)}
 .book .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--txt2)}
 .stars{color:var(--gold);letter-spacing:1px}
 .pbar{height:6px;background:#191323;border-radius:3px;margin-top:10px;overflow:hidden}
@@ -196,6 +198,18 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .stackwrap{display:flex;align-items:flex-end;justify-content:center;gap:26px;margin:16px 0 6px;min-height:180px}
 .stack{display:flex;flex-direction:column-reverse;align-items:center;width:110px}
 .sbook{width:100%;border-radius:3px;margin-top:1px;min-height:3px}
+.sbook.r{
+  border-radius:3px 4px 4px 3px;position:relative;overflow:hidden;
+  background:
+    linear-gradient(90deg,rgba(0,0,0,.38),transparent 14%,transparent 86%,rgba(0,0,0,.32)),
+    linear-gradient(180deg,rgba(255,255,255,.22),rgba(0,0,0,.2)),
+    var(--c);
+  box-shadow:0 2px 5px rgba(0,0,0,.4);
+}
+.sbook.r::after{
+  content:'';position:absolute;left:14%;right:14%;top:32%;height:24%;
+  min-height:1px;border-radius:2px;background:rgba(255,255,255,.25);
+}
 .human{display:flex;flex-direction:column;align-items:center;color:var(--txt2);font-weight:600}
 .human small{font-size:.72rem;margin-top:5px}
 .bignum{font-size:2.2rem;font-weight:800;color:var(--accent)}
@@ -231,7 +245,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .shelfinner{display:inline-block;min-width:100%}
 .shelfrow{display:flex;align-items:flex-end;gap:5px;min-height:150px;padding:0 6px}
 .board{height:11px;background:linear-gradient(180deg,#7a5233,#4a3220);border-radius:3px;margin-top:2px;box-shadow:0 3px 6px rgba(0,0,0,.4)}
-.spinebook{height:138px;border-radius:3px 3px 0 0;object-fit:cover;display:block}
+.spinebook{height:138px;width:auto;max-width:64px;min-width:12px;border-radius:3px 3px 0 0;object-fit:cover;display:block}
 .spinefake{height:138px;border-radius:3px 3px 0 0;color:#fff;font-size:.6rem;font-weight:700;writing-mode:vertical-rl;padding:8px 0;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .standcover{height:138px;width:auto;border-radius:3px 3px 0 0;display:block}
 .pilestack{display:flex;flex-direction:column-reverse;gap:2px}
@@ -242,6 +256,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .sitem .nm{flex:1;font-size:.83rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sitem button{background:var(--card2);border:1px solid #3a2e52;color:var(--txt);border-radius:8px;padding:6px 8px;font-size:.72rem;cursor:pointer;flex:none}
 .sitem .mode{color:var(--accent);font-weight:700;min-width:62px}
+.drag{cursor:grab;color:var(--txt2);font-size:1.15rem;padding:4px 7px;touch-action:none;flex:none;user-select:none;-webkit-user-select:none}
+.sitem.dragging{opacity:.9;border-color:var(--accent);box-shadow:0 8px 20px rgba(0,0,0,.55);background:var(--card2)}
 
 /* Calendrier */
 .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -294,6 +310,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <symbol id="i-tablet" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
   <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><path d="M7 7h.01"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
 </svg>
 
 <header>
@@ -305,8 +323,13 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 </header>
 
 <main>
+  <!-- ACCUEIL -->
+  <section id="view-home">
+    <div id="homeWrap"></div>
+  </section>
+
   <!-- BIBLIOTHÈQUE -->
-  <section id="view-lib">
+  <section id="view-lib" class="hidden">
     <input class="search" id="search" placeholder="🔍 Rechercher un titre ou un auteur…" oninput="renderLib()">
     <select class="search" id="genreFilter" onchange="renderLib()"></select>
     <div class="chips" id="filterChips"></div>
@@ -317,32 +340,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 
   <!-- DÉFI -->
   <section id="view-defi" class="hidden">
-    <div class="challenge-card">
-      <div style="font-size:.8rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Défi de la pile</div>
-      <div class="bignum" id="stackHeight">0 cm</div>
-      <div style="font-size:.85rem;color:var(--txt2)" id="stackGoal"></div>
-      <div class="stackwrap">
-        <div class="stack" id="stackViz"></div>
-        <div class="human">
-          <span data-spr="human" data-spr-size="165">
-          <svg viewBox="0 0 60 180" style="height:176px;width:auto;display:block" aria-label="Ta taille">
-            <g fill="var(--accent2)">
-              <circle cx="30" cy="11" r="9"/>
-              <rect x="10" y="27" width="5.5" height="42" rx="2.7"/>
-              <rect x="44.5" y="27" width="5.5" height="42" rx="2.7"/>
-              <path d="M30 21c-10 0-14 9-15 21l-5 35c7 5 33 5 40 0l-5-35c-1-12-5-21-15-21z"/>
-              <rect x="21" y="75" width="7.5" height="99" rx="3.5"/>
-              <rect x="31.5" y="75" width="7.5" height="99" rx="3.5"/>
-            </g>
-            <circle cx="30" cy="11" r="9" fill="var(--accent)" opacity=".35"/>
-          </svg>
-          </span>
-          <small id="humanH"></small>
-        </div>
-      </div>
-      <div class="pbar" style="height:10px"><div id="stackBar" style="width:0%"></div></div>
-      <div style="font-size:.78rem;color:var(--txt2);margin-top:8px">Chaque livre terminé ajoute son épaisseur à ta pile.</div>
-    </div>
+    <div id="defiCard"></div>
     <h2>Paliers</h2>
     <div class="milestones" id="milestones"></div>
   </section>
@@ -359,6 +357,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 
   <!-- ÉTAGÈRES -->
   <section id="view-shelf" class="hidden">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère depuis des collections</button>
+    </div>
     <div id="shelfList"></div>
   </section>
 
@@ -393,17 +394,27 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   </section>
 </main>
 
-<button class="fab" id="fab" onclick="openAdd()" title="Ajouter"></button>
+<button class="fab hidden" id="fab" onclick="openAdd()" title="Ajouter"></button>
+
+<!-- MENU PLUS -->
+<div class="overlay" id="plusModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2>Plus</h2>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('cols')"><span data-spr="collection" data-spr-size="20"><svg class="icn"><use href="#i-folder"/></svg></span> Collections</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('rank')"><span data-spr="trophy" data-spr-size="20"><svg class="icn"><use href="#i-trophy"/></svg></span> Top — mon classement</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('disc')"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span> Découvrir des livres</button>
+    <button class="btn ghost" onclick="closeModals()">Fermer</button>
+  </div>
+</div>
 
 <nav>
-  <button data-v="lib" class="active" onclick="switchTab('lib')"><span class="ic" data-spr="book" data-spr-size="23"><svg class="icn"><use href="#i-book"/></svg></span>Bibli</button>
+  <button data-v="home" class="active" onclick="switchTab('home')"><span class="ic" data-spr="home" data-spr-size="23"><svg class="icn"><use href="#i-home"/></svg></span>Accueil</button>
+  <button data-v="lib" onclick="switchTab('lib')"><span class="ic" data-spr="book" data-spr-size="23"><svg class="icn"><use href="#i-book"/></svg></span>Bibli</button>
   <button data-v="shelf" onclick="switchTab('shelf')"><span class="ic" data-spr="shelf" data-spr-size="23"><svg class="icn"><use href="#i-shelf"/></svg></span>Étagères</button>
-  <button data-v="cols" onclick="switchTab('cols')"><span class="ic" data-spr="collection" data-spr-size="23"><svg class="icn"><use href="#i-folder"/></svg></span>Collections</button>
-  <button data-v="rank" onclick="switchTab('rank')"><span class="ic" data-spr="trophy" data-spr-size="23"><svg class="icn"><use href="#i-trophy"/></svg></span>Top</button>
-  <button data-v="defi" onclick="switchTab('defi')"><span class="ic" data-spr="pile" data-spr-size="23"><svg class="icn"><use href="#i-ruler"/></svg></span>Défi</button>
-  <button data-v="stats" onclick="switchTab('stats')"><span class="ic" data-spr="chart" data-spr-size="23"><svg class="icn"><use href="#i-chart"/></svg></span>Stats</button>
   <button data-v="cal" onclick="switchTab('cal')"><span class="ic" data-spr="calendar" data-spr-size="23"><svg class="icn"><use href="#i-calendar"/></svg></span>Journal</button>
-  <button data-v="disc" onclick="switchTab('disc')"><span class="ic" data-spr="search" data-spr-size="23"><svg class="icn"><use href="#i-search"/></svg></span>Découvrir</button>
+  <button data-v="plus" onclick="openPlus()"><span class="ic"><svg class="icn"><use href="#i-dots"/></svg></span>Plus</button>
 </nav>
 
 <!-- MODAL LIVRE -->
@@ -442,6 +453,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <button type="button" onclick="pickImage(null,'spine',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="spMsg"></div>
+    <button type="button" class="smallbtn" style="color:var(--accent);margin-top:6px" onclick="openSpineFind('form')">🔍 Trouver la tranche en ligne</button>
     <label>Collections</label>
     <div class="chipwrap" id="colPick"></div>
     <div class="row">
@@ -468,6 +480,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <button type="button" data-val="tbr" class="on" onclick="segPick(this);toggleStatutFields()">À lire</button>
       <button type="button" data-val="reading" onclick="segPick(this);toggleStatutFields()">En cours</button>
       <button type="button" data-val="done" onclick="segPick(this);toggleStatutFields()">Terminé</button>
+      <button type="button" data-val="dnf" onclick="segPick(this);toggleStatutFields()">DNF</button>
     </div>
     <div id="progWrap">
       <div id="progPages">
@@ -556,6 +569,17 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   </div>
 </div>
 
+<!-- MODAL ÉTAGÈRE DEPUIS COLLECTIONS -->
+<div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2>Étagère depuis des collections</h2>
+    <label>Choisis une ou plusieurs collections</label>
+    <div class="chipwrap" id="sfcPick"></div>
+    <button class="btn" onclick="createShelfFromCols()">Créer l'étagère</button>
+    <button class="btn ghost" onclick="closeModals()">Annuler</button>
+  </div>
+</div>
+
 <!-- MODAL ÉTAGÈRE -->
 <div class="overlay" id="shelfModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
@@ -593,6 +617,37 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <button class="btn" onclick="saveQuick(false)">Enregistrer</button>
     <button class="btn ghost" onclick="saveQuick(true)">🎉 J'ai terminé ce livre !</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL RECHERCHE DE TRANCHES EN LIGNE -->
+<div class="overlay" id="spineFindModal" style="z-index:60" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="sheet">
+    <h2>Tranches trouvées en ligne</h2>
+    <div class="isbnmsg" id="sfMsg"></div>
+    <div id="sfGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px"></div>
+    <button class="btn ghost" onclick="document.getElementById('spineFindModal').classList.remove('open')">Fermer</button>
+  </div>
+</div>
+
+<!-- MODAL CAMÉRA TRANCHE -->
+<div class="overlay" id="spineCamModal" style="z-index:60" onclick="if(event.target===this)closeSpineCam()">
+  <div class="sheet" style="text-align:center">
+    <h2>Photographier la tranche</h2>
+    <div id="scStage" style="position:relative;overflow:hidden;border-radius:14px;background:#000">
+      <video id="scVideo" playsinline muted style="width:100%;display:block"></video>
+      <div id="scBox" style="position:absolute;border:3px solid var(--green);border-radius:6px;box-shadow:0 0 0 2000px rgba(10,7,15,.45);display:none;pointer-events:none"></div>
+    </div>
+    <div class="isbnmsg" id="scMsg" style="margin-top:10px">Tiens le livre vertical, tranche face à toi</div>
+    <div id="scPreviewWrap" class="hidden" style="margin-top:8px">
+      <img id="scPreview" style="height:170px;border-radius:8px;border:1px solid #3a2e52">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" style="margin:0;flex:1" onclick="spineUse()">✓ Utiliser</button>
+        <button class="btn ghost" style="margin:0;flex:1" onclick="spineRetake()">↺ Reprendre</button>
+      </div>
+    </div>
+    <button class="btn" id="scShot" onclick="spineShoot()">Prendre la photo</button>
+    <button class="btn ghost" onclick="closeSpineCam()">Annuler</button>
   </div>
 </div>
 
@@ -636,6 +691,12 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <button class="btn ghost" onclick="sbLogout()">Se déconnecter</button>
     <div class="isbnmsg" id="syncStatus" style="margin-top:8px"></div>
     <p class="note-io">URL et clé sont déjà préremplies pour ton projet — il ne te reste qu'à entrer e-mail + mot de passe (« Créer mon compte » la première fois). Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
+    <h2 style="margin-top:24px">Recherche d'images (tranches)</h2>
+    <label>Clé API Google Custom Search</label>
+    <input id="gcs_key" type="password" placeholder="AIza…" autocapitalize="none">
+    <label>ID du moteur (cx)</label>
+    <input id="gcs_cx" placeholder="a1b2c3…" autocapitalize="none">
+    <p class="note-io">Pour le bouton « Trouver la tranche en ligne » (gratuit, 100 recherches/jour). Setup : <b>programmablesearchengine.google.com</b> → créer un moteur (« Rechercher sur tout le Web » + Recherche d'images activée) → copie l'<b>ID du moteur</b> ; puis sur la doc « Custom Search JSON API » → <b>Get a key</b> pour la clé. Stockées uniquement sur cet appareil.</p>
     <h2 style="margin-top:24px">IA — analyse de fiches de lecture</h2>
     <label>Clé API Google Gemini (gratuite)</label>
     <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
@@ -828,6 +889,38 @@ function toast(msg){
   t.textContent=msg;t.className='show';
   clearTimeout(t._h);t._h=setTimeout(()=>t.className='',3000);
 }
+/* Réordonnancement par glisser-déposer (poignée ⠿, tactile + souris) */
+function makeSortable(container,onDone){
+  if(!container)return;
+  container.querySelectorAll('.drag').forEach(h=>{
+    h.addEventListener('pointerdown',e=>{
+      e.preventDefault();
+      const row=h.closest('.sitem');if(!row)return;
+      row.classList.add('dragging');
+      h.setPointerCapture(e.pointerId);
+      const move=ev=>{
+        row.style.pointerEvents='none';
+        const el=document.elementFromPoint(ev.clientX,ev.clientY);
+        row.style.pointerEvents='';
+        const t=el&&el.closest?el.closest('.sitem'):null;
+        if(t&&t!==row&&t.parentNode===container){
+          const r=t.getBoundingClientRect();
+          container.insertBefore(row,ev.clientY<r.top+r.height/2?t:t.nextSibling);
+        }
+      };
+      const up=()=>{
+        row.classList.remove('dragging');
+        h.removeEventListener('pointermove',move);
+        h.removeEventListener('pointerup',up);
+        h.removeEventListener('pointercancel',up);
+        onDone([...container.querySelectorAll('.sitem')].map(x=>+x.dataset.i));
+      };
+      h.addEventListener('pointermove',move);
+      h.addEventListener('pointerup',up);
+      h.addEventListener('pointercancel',up);
+    });
+  });
+}
 /* Icônes : PNG personnalisés si disponibles, sinon SVG intégrés */
 const IC_FILES={
   book:'book.png',shelf:'shelf.png',folder:'collection.png',trophy:'rank.png',
@@ -847,7 +940,7 @@ const SPR_FILES={
   pile:'book_pile.png',chart:'stats.png',calendar:'calendar.png',
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
-  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png'
+  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png'
 };
 document.querySelectorAll('[data-spr]').forEach(el=>{
   const f=SPR_FILES[el.dataset.spr];if(!f)return;
@@ -880,22 +973,55 @@ function thickness(b){
 }
 
 /* ---------- Navigation ---------- */
-let tab='lib';
+let tab='home';
+const PLUS_TABS=new Set(['cols','rank','defi','stats','disc']);
 function switchTab(t){
   tab=t;
-  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.v===t));
-  ['lib','shelf','cols','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
+  document.querySelectorAll('nav button').forEach(b=>
+    b.classList.toggle('active',b.dataset.v===t||(b.dataset.v==='plus'&&PLUS_TABS.has(t))));
+  ['home','lib','shelf','cols','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
   const fab=document.getElementById('fab');
   fab.classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
   const FAB_IC={lib:'book',shelf:'shelf',cols:'folder'};
   if(FAB_IC[t])fab.innerHTML=icSvg(FAB_IC[t])+'<span class="plus">+</span>';
   render();
+  window.scrollTo(0,0);
+}
+function openPlus(){document.getElementById('plusModal').classList.add('open');}
+
+/* ---------- Accueil ---------- */
+function renderHome(){
+  const el=document.getElementById('homeWrap');if(!el)return;
+  const reading=db.books.filter(b=>b.statut==='reading').sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
+  const year=String(new Date().getFullYear());
+  const doneY=db.books.filter(b=>b.statut==='done'&&b.dateFin&&b.dateFin.startsWith(year)).length;
+  const tbr=db.books.filter(b=>b.statut==='tbr').length;
+  let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
+    <div class="stat"><div class="n">${reading.length}</div><div class="l">En cours</div></div>
+    <div class="stat"><div class="n">${doneY}</div><div class="l">Terminés en ${year}</div></div>
+    <div class="stat"><div class="n">${tbr}</div><div class="l">Dans ma PAL</div></div>
+  </div>
+  <h2>Mes lectures en cours</h2>`;
+  if(!reading.length)
+    out+=`<div class="empty">Aucune lecture en cours 🌙<br>Passe un livre « En cours » depuis la Bibli !</div>`;
+  reading.forEach(b=>{
+    out+=`<div class="book" onclick="openInfo('${b.id}')">
+      <div class="top">${coverEl(b.couverture,'')}
+        <div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div>
+        <div class="meta"><span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span></div></div>
+      </div>
+      <div class="pbar"><div style="width:${b.progression||0}%"></div></div>
+      <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
+    </div>`;
+  });
+  out+=`<h2>Défi de la pile</h2>${defiCardHTML()}`;
+  el.innerHTML=out;
 }
 
 /* ---------- Bibliothèque ---------- */
 let filter='all';
-const FILTERS=[['all','Tous'],['reading','En cours'],['tbr','À lire'],['done','Terminés']];
-const STATUT={tbr:['À lire','b-tbr'],reading:['En cours','b-reading'],done:['Terminé','b-done']};
+const FILTERS=[['all','Tous'],['reading','En cours'],['tbr','À lire'],['done','Terminés'],['dnf','DNF']];
+const STATUT={tbr:['À lire','b-tbr'],reading:['En cours','b-reading'],done:['Terminé','b-done'],dnf:['DNF','b-dnf']};
 
 function renderChips(){
   document.getElementById('filterChips').innerHTML=FILTERS.map(([v,l])=>{
@@ -1074,8 +1200,9 @@ function renderLib(){
         <span>${icSvg(FMT_IC[fmt(b)])} ${FMT[fmt(b)]}</span>
         ${b.genre?`<span>${icSvg('tag')} ${esc(b.genre)}</span>`:''}
         ${b.pages?`<span>${b.pages} p.</span>`:''}
-        ${b.statut==='done'&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
+        ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
         ${b.statut==='reading'?`<span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span>`:''}
+        ${b.statut==='dnf'&&b.progression?`<span style="color:var(--red);font-weight:700">arrêté à ${b.progression} %</span>`:''}
       </div>
       ${b.statut==='reading'?`<div class="pbar"><div style="width:${b.progression||0}%"></div></div>
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>`:''}
@@ -1093,8 +1220,8 @@ const FMT_IC={papier:'book',numerique:'tablet',audio:'headphones'};
 const fmt=b=>b.format||'papier';
 function toggleStatutFields(){
   const s=segVal('segStatut'),f=segVal('segFormat');
-  document.getElementById('progWrap').classList.toggle('hidden',s!=='reading');
-  document.getElementById('doneWrap').classList.toggle('hidden',s!=='done');
+  document.getElementById('progWrap').classList.toggle('hidden',s!=='reading'&&s!=='dnf');
+  document.getElementById('doneWrap').classList.toggle('hidden',s!=='done'&&s!=='dnf');
   /* papier : suivi par page ; numérique & audio : suivi par % */
   document.getElementById('progPages').classList.toggle('hidden',f!=='papier');
   document.getElementById('progPct').classList.toggle('hidden',f==='papier');
@@ -1194,7 +1321,7 @@ function saveBook(){
   const statut=segVal('segStatut'),format=segVal('segFormat');
   const pages=+document.getElementById('f_pages').value||0;
   let progression=statut==='done'?100:0,pageActuelle=0;
-  if(statut==='reading'){
+  if(statut==='reading'||statut==='dnf'){
     if(format==='papier'){
       pageActuelle=Math.max(0,+document.getElementById('f_page').value||0);
       if(pages)pageActuelle=Math.min(pageActuelle,pages);
@@ -1213,8 +1340,8 @@ function saveBook(){
     epaisseur:+document.getElementById('f_epaisseur').value||0,
     fiction:segVal('segFic')==='fiction',
     format,statut,progression,pageActuelle,
-    note:statut==='done'?starVal:0,
-    avis:statut==='done'?document.getElementById('f_avis').value.trim():'',
+    note:(statut==='done'||statut==='dnf')?starVal:0,
+    avis:(statut==='done'||statut==='dnf')?document.getElementById('f_avis').value.trim():'',
     fmc:document.getElementById('f_fmc').value.trim(),
     mmc:document.getElementById('f_mmc').value.trim(),
     tropes:document.getElementById('f_tropes').value.trim(),
@@ -1223,7 +1350,7 @@ function saveBook(){
     sousNotes:{...subVals},
     smut:smutVal,
     recommande:segVal('segRec')==='oui'?true:(segVal('segRec')==='non'?false:null),
-    dateFin:(statut==='done'&&!document.getElementById('f_noDate').checked)?document.getElementById('f_dateFin').value:'',
+    dateFin:((statut==='done'||statut==='dnf')&&!document.getElementById('f_noDate').checked)?document.getElementById('f_dateFin').value:'',
     dateAjout:editId?(db.books.find(x=>x.id===editId)||{}).dateAjout||Date.now():Date.now(),
   };
   /* Journal : pages lues aujourd'hui = différence avec l'état précédent */
@@ -1582,19 +1709,39 @@ const MILESTONES=[
   ['🧍‍♀️','Ta taille !',null],['🦩','Autruche',250],['🦒','Girafe',500],
 ];
 const COLORS=['#8b5cf6','#c9a2ff','#f5c86e','#6ee7a8','#7fc5ff','#ff9ad5','#ff8a8a'];
-function renderDefi(){
+function defiCardHTML(){
   const taille=db.settings.taille||165;
   const done=db.books.filter(b=>b.statut==='done');
   const h=+done.reduce((s,b)=>s+thickness(b),0).toFixed(1);
-  document.getElementById('stackHeight').textContent=h+' cm';
-  document.getElementById('humanH').textContent=taille+' cm';
-  document.getElementById('stackGoal').textContent=`Objectif : ta taille (${taille} cm) — ${done.length} livre${done.length>1?'s':''} terminé${done.length>1?'s':''}`;
-  document.getElementById('stackBar').style.width=Math.min(100,h/taille*100)+'%';
-  /* pile : max 180px pour la taille */
   const scale=180/taille;
-  document.getElementById('stackViz').innerHTML=done.slice(-40).map((b,i)=>
-    `<div class="sbook" style="height:${Math.max(3,thickness(b)*scale)}px;background:${COLORS[i%COLORS.length]}" title="${esc(b.titre)}"></div>`
-  ).join('')||'<div style="color:var(--txt2);font-size:.8rem">Pas encore de pile 🌱</div>';
+  const SPINE_COLORS=['#a5433c','#2e5d8a','#3e6b4f','#c99a3c','#7a3b5e','#37747c','#8a5a3b','#5a4a7a','#94323f','#4a6d3b'];
+  const stack=done.slice(-40).map(b=>{
+    const hash=[...(b.id||'x')].reduce((s,c)=>s+c.charCodeAt(0),0);
+    const col=SPINE_COLORS[hash%SPINE_COLORS.length];
+    const dx=(hash%15)-7;
+    const rot=(((hash>>3)%5)-2)*0.5;
+    return `<div class="sbook r" style="height:${Math.max(4,thickness(b)*scale)}px;--c:${col};transform:translateX(${dx}px) rotate(${rot}deg)" title="${esc(b.titre)}"></div>`;
+  }).join('')||'<div style="color:var(--txt2);font-size:.8rem">Pas encore de pile 🌱</div>';
+  const fallback="this.replaceWith(Object.assign(document.createElement('div'),{innerHTML:'<svg viewBox=\\'0 0 60 180\\' style=\\'height:176px\\'><g fill=\\'#8b5cf6\\'><circle cx=\\'30\\' cy=\\'11\\' r=\\'9\\'/><path d=\\'M30 21c-10 0-14 9-15 21l-5 35c7 5 33 5 40 0l-5-35c-1-12-5-21-15-21z\\'/><rect x=\\'21\\' y=\\'75\\' width=\\'7.5\\' height=\\'99\\' rx=\\'3.5\\'/><rect x=\\'31.5\\' y=\\'75\\' width=\\'7.5\\' height=\\'99\\' rx=\\'3.5\\'/></g></svg>'}))";
+  return `<div class="challenge-card">
+    <div style="font-size:.8rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Défi de la pile</div>
+    <div class="bignum">${h} cm</div>
+    <div style="font-size:.85rem;color:var(--txt2)">Objectif : ta taille (${taille} cm) — ${done.length} livre${done.length>1?'s':''} terminé${done.length>1?'s':''}</div>
+    <div class="stackwrap">
+      <div class="stack">${stack}</div>
+      <div class="human">
+        <img src="human.png" style="height:176px;display:block" alt="" onerror="${fallback}">
+        <small>${taille} cm</small>
+      </div>
+    </div>
+    <div class="pbar" style="height:10px"><div style="width:${Math.min(100,h/taille*100)}%"></div></div>
+    <div style="font-size:.78rem;color:var(--txt2);margin-top:8px">Chaque livre terminé ajoute son épaisseur à ta pile.</div>
+  </div>`;
+}
+function renderDefi(){
+  const taille=db.settings.taille||165;
+  document.getElementById('defiCard').innerHTML=defiCardHTML();
+  const h=+db.books.filter(b=>b.statut==='done').reduce((s,b)=>s+thickness(b),0).toFixed(1);
   const ms=MILESTONES.map(([e,n,v])=>[e,n,v===null?taille:v]).sort((a,b)=>a[2]-b[2]);
   document.getElementById('milestones').innerHTML=ms.map(([e,n,v])=>{
     const ok=h>=v;
@@ -1639,6 +1786,7 @@ function resetFormImgs(){
   ['covMsg','spMsg'].forEach(i=>{const m=document.getElementById(i);if(m){m.textContent='';m.className='isbnmsg';}});
 }
 function pickImage(id,field,camera,kind){
+  if(field==='spine'&&camera){openSpineCam({id,field,kind:kind||'book'});return;}
   imgTarget={id,field,kind:kind||'book'};
   const inp=document.getElementById('imgPick');
   if(camera)inp.setAttribute('capture','environment');
@@ -1699,6 +1847,184 @@ function saveColEdit(){
   save();closeModals();render();
 }
 
+/* ---------- Recherche de tranches en ligne (Google Custom Search) ---------- */
+const GCSKEY='mabibli_gcs';
+let gcs={key:'',cx:''};
+try{gcs={...gcs,...JSON.parse(localStorage.getItem(GCSKEY)||'{}')};}catch(e){}
+let sfTarget=null;
+function sfMsgSet(t,cls){const m=document.getElementById('sfMsg');m.textContent=t;m.className='isbnmsg '+(cls||'');}
+async function openSpineFind(kind,id){
+  sfTarget={kind,id};
+  document.getElementById('sfGrid').innerHTML='';
+  document.getElementById('spineFindModal').classList.add('open');
+  let titre,auteur;
+  if(kind==='form'){
+    titre=document.getElementById('f_titre').value.trim();
+    auteur=document.getElementById('f_auteur').value.trim();
+  }else{
+    const b=db.books.find(x=>x.id===id);if(!b)return;
+    titre=b.titre;auteur=b.auteur||'';
+  }
+  if(!titre){sfMsgSet('Renseigne d\'abord le titre du livre','err');return;}
+  if(!gcs.key||!gcs.cx){
+    sfMsgSet('Configure d\'abord la recherche d\'images dans ⚙️ Réglages (clé + ID de moteur, gratuit — voir le mode d\'emploi dans les réglages)','err');
+    return;
+  }
+  sfMsgSet('Recherche des tranches de « '+titre+' »…');
+  const qs=['"'+titre+'" '+auteur+' book spine',titre+' '+auteur+' tranche livre'];
+  const items=[],seen=new Set();
+  for(const q of qs){
+    try{
+      const r=await fetch('https://www.googleapis.com/customsearch/v1?key='+encodeURIComponent(gcs.key)+
+        '&cx='+encodeURIComponent(gcs.cx)+'&searchType=image&num=10&q='+encodeURIComponent(q));
+      if(!r.ok){
+        const er=await r.json().catch(()=>({}));
+        sfMsgSet('⚠️ '+((er.error&&er.error.message)||('HTTP '+r.status)),'err');
+        continue;
+      }
+      const d=await r.json();
+      (d.items||[]).forEach(it=>{
+        if(seen.has(it.link))return;seen.add(it.link);
+        items.push({url:it.link,
+          thumb:(it.image&&it.image.thumbnailLink)||it.link,
+          ratio:it.image&&it.image.width?it.image.height/it.image.width:1});
+      });
+    }catch(e){sfMsgSet('⚠️ Recherche impossible — vérifie ta connexion','err');}
+  }
+  if(!items.length){if(!document.getElementById('sfMsg').classList.contains('err'))sfMsgSet('Aucune image trouvée 😕 — essaie la photo 📷','err');return;}
+  /* les images les plus verticales (format tranche) d'abord */
+  items.sort((a,b)=>b.ratio-a.ratio);
+  document.getElementById('sfGrid').innerHTML=items.slice(0,14).map(it=>
+    `<img src="${esc(it.thumb)}" data-u="${esc(it.url)}" loading="lazy"
+      style="height:150px;width:auto;border-radius:6px;border:2px solid #3a2e52;cursor:pointer"
+      onclick="chooseSpine(this.dataset.u)" onerror="this.remove()">`).join('');
+  sfMsgSet(Math.min(14,items.length)+' résultat(s) — touche la tranche qui correspond','ok');
+}
+function chooseSpine(url){
+  if(!sfTarget)return;
+  if(sfTarget.kind==='form'){
+    document.getElementById('f_spine').value=url;
+    formImgs.spine='';
+    const m=document.getElementById('spMsg');
+    if(m){m.textContent='✅ Tranche choisie en ligne';m.className='isbnmsg ok';}
+  }else{
+    const b=db.books.find(x=>x.id===sfTarget.id);
+    if(b){b.spine=url;save();render();openInfo(b.id);}
+  }
+  document.getElementById('spineFindModal').classList.remove('open');
+  toast('Tranche enregistrée ✅');
+}
+
+/* ---------- Caméra tranche : détection + surlignage + recadrage auto ---------- */
+let scStream=null,scTimer=null,scSpineTarget=null,scRange=null,scDataUrl=null;
+const scCv=document.createElement('canvas');
+function openSpineCam(target){
+  scSpineTarget=target;scRange=null;scDataUrl=null;
+  document.getElementById('scPreviewWrap').classList.add('hidden');
+  document.getElementById('scShot').classList.remove('hidden');
+  document.getElementById('scBox').style.display='none';
+  document.getElementById('spineCamModal').classList.add('open');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})
+    .then(st=>{
+      scStream=st;
+      const v=document.getElementById('scVideo');
+      v.srcObject=st;v.play();
+      scTimer=setInterval(scDetect,350);
+    })
+    .catch(()=>{closeSpineCam();toast("Impossible d'accéder à la caméra 😕");});
+}
+function scDetect(){
+  const v=document.getElementById('scVideo');
+  if(!v.videoWidth)return;
+  const W=96,H=Math.max(32,Math.round(W*v.videoHeight/v.videoWidth));
+  scCv.width=W;scCv.height=H;
+  const cx=scCv.getContext('2d',{willReadFrequently:true});
+  cx.drawImage(v,0,0,W,H);
+  const d=cx.getImageData(0,0,W,H).data;
+  /* énergie d'arête verticale par colonne */
+  const col=new Float32Array(W);
+  for(let y=2;y<H-2;y+=2){
+    const row=y*W;
+    for(let x=1;x<W-1;x++){
+      const i=(row+x)*4;
+      col[x]+=Math.abs((d[i+4]+d[i+5]+d[i+6])-(d[i-4]+d[i-3]+d[i-2]));
+    }
+  }
+  const s=new Float32Array(W);
+  let mean=0;
+  for(let x=1;x<W-1;x++){s[x]=(col[x-1]+col[x]*2+col[x+1])/4;mean+=s[x];}
+  mean/=(W-2);
+  /* bord gauche = pic dans la moitié gauche, bord droit = pic dans la moitié droite */
+  let l=0,lv=0,r=W-1,rv=0;
+  for(let x=Math.floor(W*.02);x<W*.46;x++)if(s[x]>lv){lv=s[x];l=x;}
+  for(let x=Math.ceil(W*.54);x<W*.98;x++)if(s[x]>rv){rv=s[x];r=x;}
+  const conf=mean?Math.min(lv,rv)/mean:0;
+  const box=document.getElementById('scBox'),msg=document.getElementById('scMsg');
+  if(conf>1.8&&r-l>=W*.06){
+    scRange={l:l/W,r:(r+1)/W};
+    const vw=v.clientWidth,vh=v.clientHeight;
+    box.style.display='block';
+    box.style.left=(scRange.l*vw)+'px';
+    box.style.top='0px';
+    box.style.width=((scRange.r-scRange.l)*vw)+'px';
+    box.style.height=vh+'px';
+    msg.textContent='Tranche repérée ✅ — la photo sera recadrée dessus';
+    msg.className='isbnmsg ok';
+  }else{
+    scRange=null;box.style.display='none';
+    msg.textContent='Tiens le livre vertical, tranche centrée, fond contrasté';
+    msg.className='isbnmsg';
+  }
+}
+function spineShoot(){
+  const v=document.getElementById('scVideo');
+  if(!v.videoWidth)return;
+  let sx=0,sw=v.videoWidth;
+  if(scRange){
+    sx=Math.floor(scRange.l*v.videoWidth);
+    sw=Math.max(8,Math.ceil((scRange.r-scRange.l)*v.videoWidth));
+  }
+  const scale=Math.min(1,640/v.videoHeight);
+  const c=document.createElement('canvas');
+  c.width=Math.round(sw*scale);c.height=Math.round(v.videoHeight*scale);
+  c.getContext('2d').drawImage(v,sx,0,sw,v.videoHeight,0,0,c.width,c.height);
+  scDataUrl=c.toDataURL('image/jpeg',0.78);
+  document.getElementById('scPreview').src=scDataUrl;
+  document.getElementById('scPreviewWrap').classList.remove('hidden');
+  document.getElementById('scShot').classList.add('hidden');
+  document.getElementById('scMsg').textContent=scRange?'Recadrée sur la tranche repérée ✂️':'Pas de tranche repérée — image entière conservée';
+  if(scTimer){clearInterval(scTimer);scTimer=null;}
+  v.pause();
+  if(navigator.vibrate)navigator.vibrate(60);
+}
+function spineRetake(){
+  scDataUrl=null;
+  document.getElementById('scPreviewWrap').classList.add('hidden');
+  document.getElementById('scShot').classList.remove('hidden');
+  const v=document.getElementById('scVideo');
+  v.play();
+  if(!scTimer)scTimer=setInterval(scDetect,350);
+}
+function spineUse(){
+  if(!scDataUrl||!scSpineTarget)return;
+  if(scSpineTarget.kind==='form'){
+    formImgs.spine=scDataUrl;
+    const m=document.getElementById('spMsg');
+    if(m){m.textContent='✅ Tranche capturée — sera utilisée à l\'enregistrement';m.className='isbnmsg ok';}
+  }else{
+    const b=db.books.find(x=>x.id===scSpineTarget.id);
+    if(b){b.spine=scDataUrl;save();render();openInfo(b.id);}
+  }
+  closeSpineCam();
+  toast('Tranche enregistrée ✅');
+}
+function closeSpineCam(){
+  if(scTimer){clearInterval(scTimer);scTimer=null;}
+  if(scStream){scStream.getTracks().forEach(t=>t.stop());scStream=null;}
+  const v=document.getElementById('scVideo');if(v)v.srcObject=null;
+  document.getElementById('spineCamModal').classList.remove('open');
+}
+
 /* ---------- Fiche info livre ---------- */
 function openInfo(id){
   const b=db.books.find(x=>x.id===id);if(!b)return;
@@ -1715,7 +2041,8 @@ function openInfo(id){
     ['MMC',b.mmc],
     ['Tropes',b.tropes],
     [b.statut==='reading'?'Avancement':'',b.statut==='reading'?(fmt(b)==='papier'&&b.pages?'p. '+(b.pageActuelle||0)+'/'+b.pages+' ('+(b.progression||0)+' %)':(b.progression||0)+' %'):''],
-    ['Terminé le',b.dateFin?new Date(b.dateFin+'T12:00:00').toLocaleDateString('fr-FR'):(b.statut==='done'?'Il y a longtemps 🕰':'')],
+    [b.statut==='dnf'?'Abandonné le':'Terminé le',b.dateFin?new Date(b.dateFin+'T12:00:00').toLocaleDateString('fr-FR'):((b.statut==='done'||b.statut==='dnf')?'Il y a longtemps 🕰':'')],
+    ['Arrêté à',b.statut==='dnf'&&b.progression?b.progression+' %':''],
     ['Recommander ?',b.recommande===true?'👍 Oui':(b.recommande===false?'👎 Non':'')],
     ['Smut',b.smut?'🌶'.repeat(b.smut):''],
   ].filter(([l,v])=>l&&v);
@@ -1741,13 +2068,16 @@ function openInfo(id){
           <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">${icSvg('image')}</button>
           <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">${icSvg('camera')}</button>
         </div>
+        <div class="btns" style="margin-top:4px">
+          <button class="smallbtn" title="Chercher en ligne" onclick="openSpineFind('book','${id}')">🔍</button>
+        </div>
         <div class="lbl">Tranche</div>
       </div>
       <div style="min-width:0">
         <h2 style="margin:0 0 4px">${esc(b.titre)}</h2>
         <div class="auth" style="color:var(--txt2);margin-bottom:8px">${esc(b.auteur)||'—'}</div>
         <span class="badge ${sc}">${sl}</span>
-        ${b.statut==='done'&&b.note?`<div class="stars" style="margin-top:8px;font-size:1.1rem">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</div>`:''}
+        ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<div class="stars" style="margin-top:8px;font-size:1.1rem">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</div>`:''}
       </div>
     </div>
     ${rows.map(([l,v])=>`<div class="inforow"><span>${l}</span><b>${esc(String(v))}</b></div>`).join('')}
@@ -1768,7 +2098,7 @@ function standEl(b,mode){
     return `<div class="spinefake" style="background:${spineColor(b.id)};width:90px">${esc(b.titre)}</div>`;
   }
   const w=spineW(b);
-  if(b.spine)return `<img class="spinebook" src="${esc(b.spine)}" style="width:${w}px" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'spinefake',style:'background:${spineColor(b.id)};width:${w}px',textContent:'${esc(b.titre).replace(/'/g,'’')}'}))">`;
+  if(b.spine)return `<img class="spinebook" src="${esc(b.spine)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'spinefake',style:'background:${spineColor(b.id)};width:${w}px',textContent:'${esc(b.titre).replace(/'/g,'’')}'}))">`;
   return `<div class="spinefake" style="background:${spineColor(b.id)};width:${w}px">${esc(b.titre)}</div>`;
 }
 function pileEl(b){
@@ -1817,14 +2147,45 @@ function shelfVisual(s){
 }
 function renderShelves(){
   const el=document.getElementById('shelfList');
-  if(!db.shelves.length){
-    el.innerHTML=`<div class="empty"><span class="big">${icSvg('shelf')}</span>Aucune étagère virtuelle.<br>Appuie sur <b>+</b> pour créer ta première étagère !</div>`;
-    return;
-  }
-  el.innerHTML=db.shelves.map(s=>`<div class="shelfcard">
+  /* Étagère de base : la PAL (automatique, toujours à jour) */
+  const tbr=db.books.filter(b=>b.statut==='tbr');
+  const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
+  let html=`<div class="shelfcard">
+    <div class="shelfhead"><h3>${icSvg('pile')} Ma PAL (${tbr.length})</h3>
+    <span style="font-size:.72rem;color:var(--txt2)">automatique</span></div>
+    ${shelfVisual(pal)}</div>`;
+  html+=db.shelves.map(s=>`<div class="shelfcard">
     <div class="shelfhead"><h3>${esc(s.nom)}</h3>
     <button class="smallbtn" onclick="openShelfEdit('${s.id}')">${icSvg('pencil')} Modifier</button></div>
     ${shelfVisual(s)}</div>`).join('');
+  if(!db.shelves.length)
+    html+=`<div class="empty">Crée tes propres étagères avec <b>+</b>, ou depuis tes collections avec le bouton ci-dessus.</div>`;
+  el.innerHTML=html;
+}
+/* Étagère à partir de collections */
+let sfcSel=new Set();
+function openShelfFromCols(){
+  if(!db.collections.length){toast('Crée d\'abord une collection 🗂');return;}
+  sfcSel=new Set();
+  renderSfc();
+  document.getElementById('shelfColsModal').classList.add('open');
+}
+function renderSfc(){
+  document.getElementById('sfcPick').innerHTML=db.collections.map(c=>
+    `<div class="chip ${sfcSel.has(c.id)?'active':''}" onclick="sfcSel.has('${c.id}')?sfcSel.delete('${c.id}'):sfcSel.add('${c.id}');renderSfc()">${esc(c.nom)} (${c.bookIds.length})</div>`).join('');
+}
+function createShelfFromCols(){
+  const cols=db.collections.filter(c=>sfcSel.has(c.id));
+  if(!cols.length){toast('Choisis au moins une collection');return;}
+  const seen=new Set(),items=[];
+  cols.forEach(c=>c.bookIds.forEach(bid=>{
+    if(seen.has(bid)||!db.books.some(b=>b.id===bid))return;
+    seen.add(bid);items.push({bookId:bid,mode:'spine'});
+  }));
+  const s={id:uid(),nom:cols.map(c=>c.nom).join(' + '),rows:1,items};
+  db.shelves.push(s);save();
+  closeModals();render();
+  openShelfEdit(s.id);
 }
 /* Éditeur */
 let shelfId=null,shelfItemsW=[];
@@ -1852,7 +2213,7 @@ function renderShelfItems(){
   if(!shelfItemsW.length){el.innerHTML='<div class="isbnmsg">Aucun livre pour l\'instant.</div>';return;}
   el.innerHTML=shelfItemsW.map((it,i)=>{
     const b=db.books.find(x=>x.id===it.bookId);
-    return `<div class="sitem"${it.mode==='pile'?' style="border-left:3px solid var(--gold)"':''}>${coverEl(b&&b.couverture,'sm')}
+    return `<div class="sitem" data-i="${i}"${it.mode==='pile'?' style="border-left:3px solid var(--gold)"':''}><span class="drag">⠿</span>${coverEl(b&&b.couverture,'sm')}
       <span class="nm">${esc(b?b.titre:'?')}</span>
       <button class="mode" onclick="shelfCycle(${i})">${SHELF_MODES[it.mode]}</button>
       <button onclick="shelfCycleRow(${i})" title="Étage">${it.row?'Ét.'+it.row:'Auto'}</button>
@@ -1860,6 +2221,10 @@ function renderShelfItems(){
       <button onclick="shelfMove(${i},1)">↓</button>
       <button style="color:var(--red)" onclick="shelfRemove(${i})">✕</button></div>`;
   }).join('');
+  makeSortable(el,order=>{
+    shelfItemsW=order.map(i=>shelfItemsW[i]).filter(Boolean);
+    renderShelfItems();
+  });
 }
 function shelfCycle(i){
   const modes=['spine','cover','pile'];
@@ -1913,6 +2278,7 @@ function rankItems(){
 }
 function renderRank(){
   const el=document.getElementById('rankList');
+  db.ranking=db.ranking.filter(r=>r.type==='book'?db.books.some(x=>x.id===r.id):db.collections.some(x=>x.id===r.id));
   const items=rankItems();
   if(!items.length){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('trophy')}</span>Ton classement est vide.<br>Cherche ci-dessous un livre ou une collection à classer !</div>`;
@@ -1923,13 +2289,18 @@ function renderRank(){
     const name=isBook?it.b.titre:it.c.nom;
     const sub=isBook?(it.b.auteur||''):(it.c.bookIds.length+' livre'+(it.c.bookIds.length>1?'s':''));
     const vis=isBook?coverEl(it.b.couverture,'sm'):colImgEl(it.c,'sm');
-    return `<div class="sitem"${isBook?` onclick="openInfo('${it.b.id}')" style="cursor:pointer"`:''}>
+    return `<div class="sitem" data-i="${i}"${isBook?` onclick="openInfo('${it.b.id}')" style="cursor:pointer"`:''}>
+      <span class="drag" onclick="event.stopPropagation()">⠿</span>
       <b style="min-width:26px;color:var(--accent)">${i+1}.</b>${vis}
       <span class="nm">${esc(name)}${sub?` <span style="color:var(--txt2)">· ${esc(sub)}</span>`:''}</span>
       <button onclick="event.stopPropagation();rankMove(${i},-1)">↑</button>
       <button onclick="event.stopPropagation();rankMove(${i},1)">↓</button>
       <button style="color:var(--red)" onclick="event.stopPropagation();rankRemove(${i})">✕</button></div>`;
   }).join('');
+  makeSortable(el,order=>{
+    db.ranking=order.map(i=>db.ranking[i]).filter(Boolean);
+    save();renderRank();
+  });
   renderRankAdd();
 }
 function rankMove(i,d){
@@ -1966,12 +2337,13 @@ function discAuthor(a){
   if(a.length>=2&&a[0].split(' ').length<=2&&a[1].split(' ').length<=2)return a[1]+' '+a[0];
   return a[0]||'';
 }
+let discErr='';
 async function discQuery(q,why,ctx,lang){
   try{
     const url='https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+
       (lang?'&langRestrict=fr':'')+'&maxResults=15&country=FR';
     const r=await fetch(url);
-    if(!r.ok)return;
+    if(!r.ok){discErr='Google Books : HTTP '+r.status;return;}
     const d=await r.json();
     (d.items||[]).forEach(it=>{
       const v=it.volumeInfo||{};if(!v.title)return;
@@ -1984,10 +2356,29 @@ async function discQuery(q,why,ctx,lang){
         langue:NV_LANG[v.language]||v.language||'',
         couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
     });
-  }catch(e){}
+  }catch(e){discErr='Google Books injoignable';}
+}
+/* Source de secours : Open Library */
+async function discQueryOL(params,why,ctx){
+  try{
+    const r=await fetch('https://openlibrary.org/search.json?'+params+
+      '&fields=title,author_name,number_of_pages_median,cover_i,isbn,language&limit=20');
+    if(!r.ok){discErr='Open Library : HTTP '+r.status;return;}
+    const d=await r.json();
+    (d.docs||[]).forEach(v=>{
+      if(!v.title)return;
+      const isbn=(v.isbn||[]).find(x=>/^97[89]\d{10}$/.test(x))||'';
+      const key=isbn||discNorm(v.title);
+      if(ctx.seen.has(key)||ctx.have.has(key)||ctx.have.has(discNorm(v.title)))return;
+      ctx.seen.add(key);
+      ctx.out.push({titre:v.title,auteur:(v.author_name||[]).join(', '),
+        pages:v.number_of_pages_median||0,desc:'',genre:'',isbn,why,langue:'',
+        couverture:v.cover_i?('https://covers.openlibrary.org/b/id/'+v.cover_i+'-M.jpg'):''});
+    });
+  }catch(e){discErr='Open Library injoignable';}
 }
 async function discLoad(){
-  discLoading=true;discTried=true;renderDisc();
+  discLoading=true;discTried=true;discErr='';renderDisc();
   const liked=db.books.filter(b=>b.statut==='done'&&(b.note||0)>=4);
   const base=liked.length?liked:db.books;
   const authors=[...new Set(base.map(b=>discAuthor(b.auteur)).filter(Boolean))].slice(0,6);
@@ -2013,6 +2404,15 @@ async function discLoad(){
       discQuery('romantasy','Tendance romantasy',ctx,true),
       discQuery('roman romance new adult','Populaire en romance',ctx,true),
     ]);
+  /* 4e essai : Open Library en secours */
+  if(ctx.out.length<5){
+    await Promise.all(authors.slice(0,4).map(a=>
+      discQueryOL('author='+encodeURIComponent(a)+'&language=fre','Parce que tu as aimé '+a,ctx)));
+    await Promise.all(genres.slice(0,3).map(g=>
+      discQueryOL('subject='+encodeURIComponent(g.toLowerCase())+'&language=fre','Genre que tu adores : '+g,ctx)));
+    if(!ctx.out.length)
+      await discQueryOL('subject=fantasy&language=fre','Populaire en fantasy',ctx);
+  }
   const out=ctx.out;
   for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}
   discCards=out.slice(0,40);
@@ -2024,7 +2424,7 @@ function renderDisc(){
   if(!discCards.length){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('search')}</span>
       ${discTried
-        ?'Aucune suggestion trouvée 😕<br>Vérifie ta connexion et réessaie.'
+        ?'Aucune suggestion trouvée 😕'+(discErr?'<br><span style="font-size:.8rem">Détail : '+esc(discErr)+'</span>':'<br>Vérifie ta connexion et réessaie.')
         :'Des suggestions basées sur tes lectures préférées (auteurs et genres notés ★★★★+).'}<br><br>
       <button class="btn" style="max-width:280px;margin:0 auto" onclick="discLoad()">${discTried?'Réessayer':'Trouver des livres'}</button></div>`;
     return;
@@ -2144,6 +2544,8 @@ function renderCal(){
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
   document.getElementById('g_key').value=gemKey||'';
+  document.getElementById('gcs_key').value=gcs.key||'';
+  document.getElementById('gcs_cx').value=gcs.cx||'';
   document.getElementById('sb_url').value=sbCfg.url||'';
   document.getElementById('sb_key').value=sbCfg.key||'';
   setSyncStatus(sbUser?'✅ Connectée ('+(sbUser.email||'')+')':'Non connectée');
@@ -2153,6 +2555,9 @@ function saveSettings(){
   db.settings.taille=+document.getElementById('s_taille').value||165;
   gemKey=document.getElementById('g_key').value.trim();
   localStorage.setItem(GKEY,gemKey);
+  gcs.key=document.getElementById('gcs_key').value.trim();
+  gcs.cx=document.getElementById('gcs_cx').value.trim();
+  localStorage.setItem(GCSKEY,JSON.stringify(gcs));
   save();closeModals();render();
 }
 function exportData(){
@@ -2261,7 +2666,7 @@ function importData(input){
 function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));}
 
 /* ---------- Rendu global ---------- */
-function render(){renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();renderDisc();}
+function render(){renderHome();renderLib();renderShelves();renderCols();renderRank();renderDefi();renderStats();renderCal();renderDisc();}
 (async function initStore(){
   try{
     let d=await idbGet('db');
