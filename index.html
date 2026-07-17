@@ -626,6 +626,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <h2>Tranches trouvées en ligne</h2>
     <div class="isbnmsg" id="sfMsg"></div>
     <div id="sfGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px"></div>
+    <a id="sfGoogle" class="btn ghost" target="_blank" rel="noopener" style="display:block;text-decoration:none">🌐 Chercher sur Google Images</a>
+    <p class="note-io">Astuce : sur Google Images, appuie longuement sur l'image voulue → « Copier le lien de l'image », puis colle-le dans le champ « Image de la tranche » du livre.</p>
     <button class="btn ghost" onclick="document.getElementById('spineFindModal').classList.remove('open')">Fermer</button>
   </div>
 </div>
@@ -696,7 +698,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <input id="gcs_key" type="password" placeholder="AIza…" autocapitalize="none">
     <label>ID du moteur (cx)</label>
     <input id="gcs_cx" placeholder="a1b2c3…" autocapitalize="none">
-    <p class="note-io">Pour le bouton « Trouver la tranche en ligne » (gratuit, 100 recherches/jour). Setup : <b>programmablesearchengine.google.com</b> → créer un moteur (« Rechercher sur tout le Web » + Recherche d'images activée) → copie l'<b>ID du moteur</b> ; puis sur la doc « Custom Search JSON API » → <b>Get a key</b> pour la clé. Stockées uniquement sur cet appareil.</p>
+    <p class="note-io">Optionnel — l'API Google Custom Search est <b>fermée aux nouveaux comptes</b> (arrêt en 2027). Sans clé, le bouton « Trouver la tranche en ligne » utilise automatiquement Openverse (gratuit, sans configuration) + un accès direct à Google Images. Ne remplis ces champs que si tu possèdes déjà une clé.</p>
     <h2 style="margin-top:24px">IA — analyse de fiches de lecture</h2>
     <label>Clé API Google Gemini (gratuite)</label>
     <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
@@ -1866,32 +1868,47 @@ async function openSpineFind(kind,id){
     titre=b.titre;auteur=b.auteur||'';
   }
   if(!titre){sfMsgSet('Renseigne d\'abord le titre du livre','err');return;}
-  if(!gcs.key||!gcs.cx){
-    sfMsgSet('Configure d\'abord la recherche d\'images dans ⚙️ Réglages (clé + ID de moteur, gratuit — voir le mode d\'emploi dans les réglages)','err');
+  document.getElementById('sfGoogle').href=
+    'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(titre+' '+auteur+' tranche livre book spine');
+  sfMsgSet('Recherche des tranches de « '+titre+' »…');
+  const items=[],seen=new Set();
+  /* Google Custom Search si une clé est configurée (anciens comptes) */
+  if(gcs.key&&gcs.cx){
+    for(const q of ['"'+titre+'" '+auteur+' book spine',titre+' '+auteur+' tranche livre']){
+      try{
+        const r=await fetch('https://www.googleapis.com/customsearch/v1?key='+encodeURIComponent(gcs.key)+
+          '&cx='+encodeURIComponent(gcs.cx)+'&searchType=image&num=10&q='+encodeURIComponent(q));
+        if(!r.ok)continue;
+        const d=await r.json();
+        (d.items||[]).forEach(it=>{
+          if(seen.has(it.link))return;seen.add(it.link);
+          items.push({url:it.link,
+            thumb:(it.image&&it.image.thumbnailLink)||it.link,
+            ratio:it.image&&it.image.width?it.image.height/it.image.width:1});
+        });
+      }catch(e){}
+    }
+  }
+  /* Openverse : gratuit, sans clé */
+  if(items.length<4){
+    for(const q of [titre+' '+auteur+' book spine',titre+' book spine']){
+      try{
+        const r=await fetch('https://api.openverse.org/v1/images/?q='+encodeURIComponent(q)+'&page_size=20');
+        if(!r.ok)continue;
+        const d=await r.json();
+        (d.results||[]).forEach(it=>{
+          if(!it.url||seen.has(it.url))return;seen.add(it.url);
+          items.push({url:it.url,thumb:it.thumbnail||it.url,
+            ratio:it.width?it.height/it.width:1});
+        });
+      }catch(e){}
+      if(items.length>=8)break;
+    }
+  }
+  if(!items.length){
+    sfMsgSet('Aucune image trouvée automatiquement 😕 — utilise le bouton Google Images ci-dessous, ou la photo 📷','err');
     return;
   }
-  sfMsgSet('Recherche des tranches de « '+titre+' »…');
-  const qs=['"'+titre+'" '+auteur+' book spine',titre+' '+auteur+' tranche livre'];
-  const items=[],seen=new Set();
-  for(const q of qs){
-    try{
-      const r=await fetch('https://www.googleapis.com/customsearch/v1?key='+encodeURIComponent(gcs.key)+
-        '&cx='+encodeURIComponent(gcs.cx)+'&searchType=image&num=10&q='+encodeURIComponent(q));
-      if(!r.ok){
-        const er=await r.json().catch(()=>({}));
-        sfMsgSet('⚠️ '+((er.error&&er.error.message)||('HTTP '+r.status)),'err');
-        continue;
-      }
-      const d=await r.json();
-      (d.items||[]).forEach(it=>{
-        if(seen.has(it.link))return;seen.add(it.link);
-        items.push({url:it.link,
-          thumb:(it.image&&it.image.thumbnailLink)||it.link,
-          ratio:it.image&&it.image.width?it.image.height/it.image.width:1});
-      });
-    }catch(e){sfMsgSet('⚠️ Recherche impossible — vérifie ta connexion','err');}
-  }
-  if(!items.length){if(!document.getElementById('sfMsg').classList.contains('err'))sfMsgSet('Aucune image trouvée 😕 — essaie la photo 📷','err');return;}
   /* les images les plus verticales (format tranche) d'abord */
   items.sort((a,b)=>b.ratio-a.ratio);
   document.getElementById('sfGrid').innerHTML=items.slice(0,14).map(it=>
