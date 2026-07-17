@@ -693,12 +693,6 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <button class="btn ghost" onclick="sbLogout()">Se déconnecter</button>
     <div class="isbnmsg" id="syncStatus" style="margin-top:8px"></div>
     <p class="note-io">URL et clé sont déjà préremplies pour ton projet — il ne te reste qu'à entrer e-mail + mot de passe (« Créer mon compte » la première fois). Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
-    <h2 style="margin-top:24px">Recherche d'images (tranches)</h2>
-    <label>Clé API Google Custom Search</label>
-    <input id="gcs_key" type="password" placeholder="AIza…" autocapitalize="none">
-    <label>ID du moteur (cx)</label>
-    <input id="gcs_cx" placeholder="a1b2c3…" autocapitalize="none">
-    <p class="note-io">Optionnel — l'API Google Custom Search est <b>fermée aux nouveaux comptes</b> (arrêt en 2027). Sans clé, le bouton « Trouver la tranche en ligne » utilise automatiquement Openverse (gratuit, sans configuration) + un accès direct à Google Images. Ne remplis ces champs que si tu possèdes déjà une clé.</p>
     <h2 style="margin-top:24px">IA — analyse de fiches de lecture</h2>
     <label>Clé API Google Gemini (gratuite)</label>
     <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
@@ -1728,7 +1722,8 @@ function defiCardHTML(){
   return `<div class="challenge-card">
     <div style="font-size:.8rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Défi de la pile</div>
     <div class="bignum">${h} cm</div>
-    <div style="font-size:.85rem;color:var(--txt2)">Objectif : ta taille (${taille} cm) — ${done.length} livre${done.length>1?'s':''} terminé${done.length>1?'s':''}</div>
+    <div style="font-size:1rem;font-weight:800;color:var(--accent)">${Math.round(h/taille*100)} % de ta taille</div>
+    <div style="font-size:.85rem;color:var(--txt2);margin-top:2px">Objectif : ta taille (${taille} cm) — ${done.length} livre${done.length>1?'s':''} terminé${done.length>1?'s':''}</div>
     <div class="stackwrap">
       <div class="stack">${stack}</div>
       <div class="human">
@@ -1849,10 +1844,7 @@ function saveColEdit(){
   save();closeModals();render();
 }
 
-/* ---------- Recherche de tranches en ligne (Google Custom Search) ---------- */
-const GCSKEY='mabibli_gcs';
-let gcs={key:'',cx:''};
-try{gcs={...gcs,...JSON.parse(localStorage.getItem(GCSKEY)||'{}')};}catch(e){}
+/* ---------- Recherche de tranches en ligne (Openverse, sans clé) ---------- */
 let sfTarget=null;
 function sfMsgSet(t,cls){const m=document.getElementById('sfMsg');m.textContent=t;m.className='isbnmsg '+(cls||'');}
 async function openSpineFind(kind,id){
@@ -1872,25 +1864,8 @@ async function openSpineFind(kind,id){
     'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(titre+' '+auteur+' tranche livre book spine');
   sfMsgSet('Recherche des tranches de « '+titre+' »…');
   const items=[],seen=new Set();
-  /* Google Custom Search si une clé est configurée (anciens comptes) */
-  if(gcs.key&&gcs.cx){
-    for(const q of ['"'+titre+'" '+auteur+' book spine',titre+' '+auteur+' tranche livre']){
-      try{
-        const r=await fetch('https://www.googleapis.com/customsearch/v1?key='+encodeURIComponent(gcs.key)+
-          '&cx='+encodeURIComponent(gcs.cx)+'&searchType=image&num=10&q='+encodeURIComponent(q));
-        if(!r.ok)continue;
-        const d=await r.json();
-        (d.items||[]).forEach(it=>{
-          if(seen.has(it.link))return;seen.add(it.link);
-          items.push({url:it.link,
-            thumb:(it.image&&it.image.thumbnailLink)||it.link,
-            ratio:it.image&&it.image.width?it.image.height/it.image.width:1});
-        });
-      }catch(e){}
-    }
-  }
   /* Openverse : gratuit, sans clé */
-  if(items.length<4){
+  {
     for(const q of [titre+' '+auteur+' book spine',titre+' book spine']){
       try{
         const r=await fetch('https://api.openverse.org/v1/images/?q='+encodeURIComponent(q)+'&page_size=20');
@@ -2561,8 +2536,6 @@ function renderCal(){
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
   document.getElementById('g_key').value=gemKey||'';
-  document.getElementById('gcs_key').value=gcs.key||'';
-  document.getElementById('gcs_cx').value=gcs.cx||'';
   document.getElementById('sb_url').value=sbCfg.url||'';
   document.getElementById('sb_key').value=sbCfg.key||'';
   setSyncStatus(sbUser?'✅ Connectée ('+(sbUser.email||'')+')':'Non connectée');
@@ -2572,9 +2545,6 @@ function saveSettings(){
   db.settings.taille=+document.getElementById('s_taille').value||165;
   gemKey=document.getElementById('g_key').value.trim();
   localStorage.setItem(GKEY,gemKey);
-  gcs.key=document.getElementById('gcs_key').value.trim();
-  gcs.cx=document.getElementById('gcs_cx').value.trim();
-  localStorage.setItem(GCSKEY,JSON.stringify(gcs));
   save();closeModals();render();
 }
 function exportData(){
