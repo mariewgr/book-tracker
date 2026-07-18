@@ -491,6 +491,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <div><label>Saga (optionnel)</label><input id="f_saga" placeholder="Ex : ACOTAR" list="sagaList"><datalist id="sagaList"></datalist></div>
       <div><label>Tome</label><input id="f_tome" type="number" inputmode="numeric" placeholder="1"></div>
     </div>
+    <label>Résumé du livre (éditeur — rempli automatiquement)</label>
+    <textarea id="f_synopsis" placeholder="La 4e de couverture…"></textarea>
     <div class="row">
       <div><label>Pages</label><input id="f_pages" type="number" inputmode="numeric" placeholder="250"></div>
       <div><label>Épaisseur (cm, optionnel)</label><input id="f_epaisseur" type="number" step="0.1" inputmode="decimal" placeholder="auto"></div>
@@ -741,6 +743,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <label>Clé API Google Gemini (gratuite)</label>
     <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
     <p class="note-io">Permet de remplir un livre en photographiant ta fiche de lecture manuscrite. Clé gratuite : <b>aistudio.google.com</b> → « Get API key ». Elle reste uniquement sur cet appareil.</p>
+    <h2 style="margin-top:24px">Données</h2>
+    <button class="btn ghost" style="margin-top:0" id="bfBtn" onclick="backfillSynopsis()">📖 Récupérer les résumés manquants</button>
+    <p class="note-io">Cherche en ligne (Google Books) le résumé éditeur de chaque livre qui n'en a pas encore — via l'ISBN, sinon par titre + auteur.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
@@ -1373,7 +1378,7 @@ function openAdd(){
   ['f_fmc','f_mmc','f_tropes','f_resume','f_finNote'].forEach(i=>document.getElementById(i).value='');
   segSet('segRec','');renderSubRatings();renderSmut();
   document.getElementById('bookModalTitle').textContent='Ajouter un livre';
-  ['f_titre','f_auteur','f_genre','f_pages','f_epaisseur','f_avis','f_isbn','f_couverture','f_spine','f_saga','f_tome'].forEach(i=>document.getElementById(i).value='');
+  ['f_titre','f_auteur','f_genre','f_pages','f_epaisseur','f_avis','f_isbn','f_couverture','f_spine','f_saga','f_tome','f_synopsis'].forEach(i=>document.getElementById(i).value='');
   isbnMsg('');
   document.getElementById('f_langue').value='Français';
   document.getElementById('f_dateFin').value=new Date().toISOString().slice(0,10);
@@ -1411,6 +1416,7 @@ function openEdit(id){
   document.getElementById('f_langue').value=b.langue||'';
   document.getElementById('f_saga').value=b.saga||'';
   document.getElementById('f_tome').value=b.tome||'';
+  document.getElementById('f_synopsis').value=b.synopsis||'';
   document.getElementById('f_pages').value=b.pages||'';
   document.getElementById('f_epaisseur').value=b.epaisseur||'';
   document.getElementById('f_avis').value=b.avis||'';
@@ -1449,6 +1455,7 @@ function saveBook(){
     id:editId||uid(),titre,
     saga:document.getElementById('f_saga').value.trim(),
     tome:+document.getElementById('f_tome').value||0,
+    synopsis:document.getElementById('f_synopsis').value.trim(),
     citations:(prev&&prev.citations)||[],
     relectures:(prev&&prev.relectures)||0,
     isbn:isbnClean(document.getElementById('f_isbn').value),
@@ -1696,6 +1703,7 @@ function applySearch(i){
   if(v.genre&&!document.getElementById('f_genre').value)document.getElementById('f_genre').value=v.genre;
   if(v.isbn)document.getElementById('f_isbn').value=v.isbn;
   if(v.couverture)document.getElementById('f_couverture').value=v.couverture;
+  if(v.desc)document.getElementById('f_synopsis').value=v.desc;
   document.getElementById('searchResults').innerHTML='';
   searchMsg('✅ Infos remplies — vérifie et complète si besoin','ok');
 }
@@ -1735,6 +1743,7 @@ async function lookupISBN(){
     if(info.langue)document.getElementById('f_langue').value=info.langue;
     if(info.genre&&!document.getElementById('f_genre').value)document.getElementById('f_genre').value=info.genre;
     document.getElementById('f_couverture').value=info.couverture||('https://covers.openlibrary.org/b/isbn/'+isbn+'-M.jpg?default=false');
+    if(info.desc)document.getElementById('f_synopsis').value=info.desc;
     isbnMsg('✅ Infos trouvées — vérifie et complète si besoin','ok');
   }catch(e){isbnMsg('Erreur réseau — vérifie ta connexion','err');}
 }
@@ -1746,6 +1755,7 @@ async function fetchGoogleBooks(isbn){
   if(!v)return null;
   return {titre:v.title||'',auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
     langue:NV_LANG[v.language]||v.language||'',genre:(v.categories||[])[0]||'',
+    desc:v.description||'',
     couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')};
 }
 async function fetchOpenLibrary(isbn){
@@ -2276,7 +2286,8 @@ function openInfo(id){
     ${b.statut==='done'?`<button class="btn ghost" style="margin:4px 0 10px" onclick="rereadBook('${b.id}')">↺ J'ai relu ce livre${b.relectures?' — déjà '+(1+b.relectures)+' lectures':''}</button>`:''}
     ${rows.map(([l,v])=>`<div class="inforow"><span>${l}</span><b>${esc(String(v))}</b></div>`).join('')}
     ${subHtml?`<div style="margin-top:12px;font-weight:700;font-size:.85rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Notes détaillées</div>${subHtml}`:''}
-    ${b.resume?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Résumé :</span><br>${esc(b.resume)}</div>`:''}
+    ${b.synopsis?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--txt2);cursor:pointer;font-weight:700">📖 Résumé du livre</summary><div style="margin-top:6px">${esc(b.synopsis)}</div></details>`:''}
+    ${b.resume?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Mon résumé :</span><br>${esc(b.resume)}</div>`:''}
     ${b.finNote?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--gold);cursor:pointer;font-weight:700">⚠️ La fin (spoilers)</summary><div style="margin-top:6px">${esc(b.finNote)}</div></details>`:''}
     ${b.avis?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Commentaires :</span><br>${esc(b.avis)}</div>`:''}
     <div style="margin-top:14px">
@@ -2716,7 +2727,7 @@ function renderDisc(){
 function discSwipe(like){
   const c=discCards.shift();if(!c)return;
   if(like){
-    db.books.push({id:uid(),titre:c.titre,auteur:c.auteur,genre:c.genre,
+    db.books.push({id:uid(),titre:c.titre,auteur:c.auteur,genre:c.genre,synopsis:c.desc||'',
       langue:c.langue||'Français',pages:c.pages,epaisseur:0,fiction:true,
       format:'papier',statut:'tbr',progression:0,pageActuelle:0,note:0,avis:'',
       isbn:c.isbn,couverture:c.couverture,spine:'',dateFin:'',dateAjout:Date.now()});
@@ -2807,6 +2818,39 @@ function renderCal(){
 }
 
 /* ---------- Réglages / sauvegarde ---------- */
+/* Récupère les résumés éditeur manquants pour toute la bibliothèque */
+async function gbDesc(q){
+  for(const lang of ['&langRestrict=fr','']){
+    try{
+      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=3'+lang);
+      if(!r.ok)continue;
+      const d=await r.json();
+      const it=(d.items||[]).find(x=>x.volumeInfo&&x.volumeInfo.description);
+      if(it)return it.volumeInfo.description;
+    }catch(e){}
+  }
+  return null;
+}
+async function backfillSynopsis(){
+  const btn=document.getElementById('bfBtn');
+  const missing=db.books.filter(b=>!b.synopsis);
+  if(!missing.length){toast('Tous tes livres ont déjà un résumé ✅');return;}
+  btn.disabled=true;
+  let ok=0,i=0;
+  for(const b of missing){
+    i++;
+    btn.textContent='⏳ '+i+'/'+missing.length+' — '+b.titre.slice(0,22)+'…';
+    let d=null;
+    if(b.isbn)d=await gbDesc('isbn:'+b.isbn);
+    if(!d)d=await gbDesc('intitle:"'+b.titre+'" '+(b.auteur||''));
+    if(d){b.synopsis=d;ok++;}
+    await new Promise(r=>setTimeout(r,250));
+  }
+  save();render();
+  btn.disabled=false;
+  btn.textContent='📖 Récupérer les résumés manquants';
+  toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
+}
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
   document.getElementById('s_objectif').value=db.settings.objectif||'';
@@ -2853,6 +2897,7 @@ function fromBookNova(d){
     return {
       id:b.id||uid(),
       titre:b.title||'Sans titre',
+      synopsis:b.description||'',
       isbn:b.isbn||'',
       couverture:(b.imageUrl&&/^https?:/.test(b.imageUrl))?b.imageUrl:(b.isbn?'https://covers.openlibrary.org/b/isbn/'+b.isbn+'-M.jpg?default=false':''),
       format:NV_FMT[b.format]||'papier',
