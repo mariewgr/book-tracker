@@ -1,0 +1,12 @@
+{
+  "name": "Ma Bibli",
+  "short_name": "Ma Bibli",
+  "description": "Carnet de lecture — bibliothèque, étagères virtuelles, défi de la pile",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#141019",
+  "theme_color": "#1a1523",
+  "icons": [
+    {"src": "book.png", "sizes": "any", "type": "image/png", "purpose": "any"}
+  ]
+}

@@ -43,6 +43,16 @@ alter publication supabase_realtime add table public.bibli;
 ```
 
 3. **Authentication** → **Sign In / Providers** → **Email** : désactive « Confirm email » (plus simple pour un usage perso).
+4. *(Recommandé — photos)* Toujours dans **SQL Editor**, exécute aussi ce script pour que les photos soient stockées dans le cloud (sync beaucoup plus rapide) :
+
+```sql
+insert into storage.buckets (id, name, public) values ('bibli','bibli', true);
+create policy "upload perso" on storage.objects for insert to authenticated
+  with check (bucket_id='bibli' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "maj perso" on storage.objects for update to authenticated
+  using (bucket_id='bibli' and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "lecture publique" on storage.objects for select using (bucket_id='bibli');
+```
 4. **Project Settings** → **API** : note l'**URL** du projet et la clé **anon public**.
 
 ### b) Connecter l'app
