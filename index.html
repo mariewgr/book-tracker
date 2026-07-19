@@ -972,33 +972,39 @@ function toast(msg){
 /* Réordonnancement par glisser-déposer (poignée ⠿, tactile + souris) */
 function makeSortable(container,onDone){
   if(!container)return;
-  container.querySelectorAll('.drag').forEach(h=>{
-    h.addEventListener('pointerdown',e=>{
-      e.preventDefault();
-      const row=h.closest('.sitem');if(!row)return;
-      row.classList.add('dragging');
-      h.setPointerCapture(e.pointerId);
-      const move=ev=>{
-        row.style.pointerEvents='none';
-        const el=document.elementFromPoint(ev.clientX,ev.clientY);
-        row.style.pointerEvents='';
-        const t=el&&el.closest?el.closest('.sitem'):null;
-        if(t&&t!==row&&t.parentNode===container){
-          const r=t.getBoundingClientRect();
-          container.insertBefore(row,ev.clientY<r.top+r.height/2?t:t.nextSibling);
-        }
-      };
-      const up=()=>{
-        row.classList.remove('dragging');
-        h.removeEventListener('pointermove',move);
-        h.removeEventListener('pointerup',up);
-        h.removeEventListener('pointercancel',up);
-        onDone([...container.querySelectorAll('.sitem')].map(x=>+x.dataset.i));
-      };
-      h.addEventListener('pointermove',move);
-      h.addEventListener('pointerup',up);
-      h.addEventListener('pointercancel',up);
-    });
+  container._onDone=onDone;
+  if(container._sortInit)return;
+  container._sortInit=true;
+  container.addEventListener('pointerdown',e=>{
+    const h=e.target.closest('.drag');
+    if(!h)return;
+    const row=h.closest('.sitem');
+    if(!row||row.parentNode!==container)return;
+    e.preventDefault();
+    row.classList.add('dragging');
+    let moved=false;
+    const move=ev=>{
+      ev.preventDefault();
+      moved=true;
+      row.style.pointerEvents='none';
+      const el=document.elementFromPoint(ev.clientX,ev.clientY);
+      row.style.pointerEvents='';
+      const t=el&&el.closest?el.closest('.sitem'):null;
+      if(t&&t!==row&&t.parentNode===container){
+        const r=t.getBoundingClientRect();
+        container.insertBefore(row,ev.clientY<r.top+r.height/2?t:t.nextSibling);
+      }
+    };
+    const up=()=>{
+      row.classList.remove('dragging');
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',up);
+      window.removeEventListener('pointercancel',up);
+      if(moved)container._onDone([...container.querySelectorAll('.sitem')].map(x=>+x.dataset.i));
+    };
+    window.addEventListener('pointermove',move,{passive:false});
+    window.addEventListener('pointerup',up);
+    window.addEventListener('pointercancel',up);
   });
 }
 /* Icônes : PNG personnalisés si disponibles, sinon SVG intégrés */
@@ -1333,7 +1339,7 @@ function renderLib(){
   }
   el.innerHTML=list.map(b=>{
     const[sl,sc]=STATUT[b.statut];
-    return `<div class="book" onclick="openEdit('${b.id}')">
+    return `<div class="book" onclick="openInfo('${b.id}')">
       <div class="top">${coverEl(b.couverture,'')}<div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div></div>
       <span class="badge ${sc}">${sl}</span></div>
       <div class="meta">
