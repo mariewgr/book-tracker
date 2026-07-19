@@ -88,6 +88,18 @@ nav button{
 nav button .ic{font-size:1.25rem;line-height:1}
 nav button.active{color:var(--accent)}
 
+/* Filtres genre/saga en pilules */
+.filterrow{display:flex;gap:8px;margin-bottom:10px}
+.filterrow select{
+  flex:1;min-width:0;appearance:none;-webkit-appearance:none;
+  background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a89bc0' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/12px;
+  border:1px solid var(--line2);border-radius:20px;color:var(--txt2);
+  padding:9px 32px 9px 14px;font-size:.82rem;font-weight:600;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.filterrow select.on{background-color:var(--accent2);color:#fff;border-color:var(--accent2);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")}
+
 /* Chips / filters */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
@@ -347,9 +359,11 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 
   <!-- BIBLIOTHÈQUE -->
   <section id="view-lib" class="hidden">
-    <input class="search" id="search" placeholder="🔍 Rechercher un titre ou un auteur…" oninput="renderLib()">
-    <select class="search" id="genreFilter" onchange="renderLib()"></select>
-    <select class="search" id="sagaFilter" onchange="renderLib()"></select>
+    <input class="search" id="search" placeholder="🔍 Rechercher un titre, un auteur, une saga…" oninput="renderLib()">
+    <div class="filterrow">
+      <select id="genreFilter" onchange="renderLib()"></select>
+      <select id="sagaFilter" onchange="renderLib()"></select>
+    </div>
     <div class="chips" id="filterChips"></div>
     <div class="chips" id="colChips"></div>
     <div class="colactions" id="colActions"></div>
@@ -488,9 +502,10 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <div><label>Langue</label><input id="f_langue" placeholder="Français" list="langList"><datalist id="langList"></datalist></div>
     </div>
     <div class="row">
-      <div><label>Saga (optionnel)</label><input id="f_saga" placeholder="Ex : ACOTAR" list="sagaList"><datalist id="sagaList"></datalist></div>
+      <div><label>Saga (optionnel)</label><input id="f_saga" placeholder="Ex : ACOTAR" list="sagaList" oninput="sagaSuggest()" onfocus="sagaSuggest()"><datalist id="sagaList"></datalist></div>
       <div><label>Tome</label><input id="f_tome" type="number" inputmode="numeric" placeholder="1"></div>
     </div>
+    <div class="chipwrap" id="sagaSug"></div>
     <label>Résumé du livre (éditeur — rempli automatiquement)</label>
     <textarea id="f_synopsis" placeholder="La 4e de couverture…"></textarea>
     <div class="row">
@@ -1275,15 +1290,17 @@ function renderGenreFilter(){
   const sel=document.getElementById('genreFilter');
   const cur=sel.value;
   const genres=[...new Set(db.books.map(b=>b.genre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  sel.innerHTML='<option value="">Tous les genres</option>'+
+  sel.innerHTML='<option value="">🏷 Genre : tous</option>'+
     genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
   if(genres.includes(cur))sel.value=cur;
+  sel.classList.toggle('on',!!sel.value);
   const ss=document.getElementById('sagaFilter');
   const sc=ss.value;
   const sagas=sagaNames();
-  ss.innerHTML='<option value="">Toutes les sagas</option>'+
+  ss.innerHTML='<option value="">📚 Saga : toutes</option>'+
     sagas.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
   if(sagas.includes(sc))ss.value=sc;
+  ss.classList.toggle('on',!!ss.value);
 }
 function renderLib(){
   renderChips();renderColChips();renderGenreFilter();
@@ -1363,6 +1380,16 @@ function renderSmut(){
     `<span class="pep ${smutVal>=i?'on':''}" onclick="setSmut(${i})">🌶</span>`).join('');
 }
 function setSmut(i){smutVal=smutVal===i?0:i;renderSmut();}
+function sagaSuggest(){
+  const v=document.getElementById('f_saga').value.toLowerCase().trim();
+  const names=sagaNames().filter(n=>n.toLowerCase()!==v&&(!v||n.toLowerCase().includes(v))).slice(0,8);
+  document.getElementById('sagaSug').innerHTML=names.map(n=>
+    `<div class="chip" onclick="pickSaga(this.dataset.n)" data-n="${esc(n)}">${esc(n)}</div>`).join('');
+}
+function pickSaga(n){
+  document.getElementById('f_saga').value=n;
+  document.getElementById('sagaSug').innerHTML='';
+}
 function fillDatalists(){
   const g=[...new Set(db.books.map(b=>b.genre).filter(Boolean))];
   const l=[...new Set(db.books.map(b=>b.langue).filter(Boolean))];
@@ -1392,6 +1419,7 @@ function openAdd(){
   resetFormImgs();
   document.getElementById('f_search').value='';
   document.getElementById('searchResults').innerHTML='';searchMsg('');
+  document.getElementById('sagaSug').innerHTML='';
   toggleStatutFields();renderStars();fillDatalists();renderColPick();
   document.getElementById('bookModal').classList.add('open');
 }
@@ -1434,6 +1462,7 @@ function openEdit(id){
   resetFormImgs();
   document.getElementById('f_search').value='';
   document.getElementById('searchResults').innerHTML='';searchMsg('');
+  document.getElementById('sagaSug').innerHTML='';
   toggleStatutFields();renderStars();fillDatalists();renderColPick();
   document.getElementById('bookModal').classList.add('open');
 }
@@ -2819,23 +2848,44 @@ function renderCal(){
 
 /* ---------- Réglages / sauvegarde ---------- */
 /* Récupère les résumés éditeur manquants pour toute la bibliothèque */
+let gbFail=0;
 async function gbDesc(q){
   for(const lang of ['&langRestrict=fr','']){
     try{
-      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=3'+lang);
-      if(!r.ok)continue;
+      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=5'+lang);
+      if(!r.ok){gbFail++;continue;}
       const d=await r.json();
       const it=(d.items||[]).find(x=>x.volumeInfo&&x.volumeInfo.description);
       if(it)return it.volumeInfo.description;
-    }catch(e){}
+    }catch(e){gbFail++;}
   }
   return null;
+}
+/* Secours : Open Library (édition → œuvre → description) */
+async function olDesc(isbn,titre,auteur){
+  try{
+    let workKey=null;
+    if(isbn){
+      const r=await fetch('https://openlibrary.org/isbn/'+isbn+'.json');
+      if(r.ok){const d=await r.json();workKey=d.works&&d.works[0]&&d.works[0].key;}
+    }
+    if(!workKey&&titre){
+      const r=await fetch('https://openlibrary.org/search.json?title='+encodeURIComponent(titre)+
+        (auteur?'&author='+encodeURIComponent(auteur):'')+'&fields=key&limit=1');
+      if(r.ok){const d=await r.json();workKey=d.docs&&d.docs[0]&&d.docs[0].key;}
+    }
+    if(!workKey)return null;
+    const r2=await fetch('https://openlibrary.org'+workKey+'.json');
+    if(!r2.ok)return null;
+    const w=await r2.json();
+    return typeof w.description==='string'?w.description:((w.description&&w.description.value)||null);
+  }catch(e){return null;}
 }
 async function backfillSynopsis(){
   const btn=document.getElementById('bfBtn');
   const missing=db.books.filter(b=>!b.synopsis);
   if(!missing.length){toast('Tous tes livres ont déjà un résumé ✅');return;}
-  btn.disabled=true;
+  btn.disabled=true;gbFail=0;
   let ok=0,i=0;
   for(const b of missing){
     i++;
@@ -2843,13 +2893,16 @@ async function backfillSynopsis(){
     let d=null;
     if(b.isbn)d=await gbDesc('isbn:'+b.isbn);
     if(!d)d=await gbDesc('intitle:"'+b.titre+'" '+(b.auteur||''));
-    if(d){b.synopsis=d;ok++;}
+    if(!d)d=await gbDesc(b.titre+' '+(b.auteur||''));
+    if(!d)d=await olDesc(b.isbn,b.titre,b.auteur);
+    if(d){b.synopsis=d;ok++;save();}
     await new Promise(r=>setTimeout(r,250));
   }
   save();render();
   btn.disabled=false;
   btn.textContent='📖 Récupérer les résumés manquants';
-  toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
+  if(!ok&&gbFail>0)toast('⚠️ Google Books semble inaccessible depuis ton réseau ('+gbFail+' échecs) — Open Library n\'a rien trouvé non plus');
+  else toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
 }
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
