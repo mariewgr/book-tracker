@@ -1617,6 +1617,51 @@ function pickFiche(){
   if(!gemKey){ficheMsgSet('Ajoute d\'abord ta clé Gemini gratuite dans ⚙️ Réglages','err');return;}
   document.getElementById('fichePick').click();
 }
+/* Appel vision Gemini : modèles stables uniquement, bascule auto si quota/indispo */
+async function gemModels(){
+  const base=['models/gemini-2.5-flash','models/gemini-2.0-flash'];
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',
+      {headers:{'x-goog-api-key':gemKey}});
+    if(r.ok){
+      const d=await r.json();
+      (d.models||[]).filter(m=>
+        (m.supportedGenerationMethods||[]).includes('generateContent')&&
+        /flash/i.test(m.name)&&
+        !/preview|exp|lite|image|tts|live|audio|thinking|8b|latest/i.test(m.name))
+        .sort((a,b)=>b.name.localeCompare(a.name))
+        .forEach(m=>{if(!base.includes(m.name))base.push(m.name);});
+    }
+  }catch(e){}
+  return base;
+}
+async function gemVision(prompt,b64,json){
+  const models=await gemModels();
+  let lastErr='';
+  for(const model of models){
+    try{
+      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+model+':generateContent',{
+        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},
+        body:JSON.stringify({
+          contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64}}]}],
+          generationConfig:json?{response_mime_type:'application/json',temperature:0}:{temperature:0}
+        })});
+      if(!r.ok){
+        const er=await r.json().catch(()=>({}));
+        lastErr=((er.error&&er.error.message)||('HTTP '+r.status));
+        /* quota atteint ou modèle indisponible → on tente le modèle suivant */
+        if(r.status===429||r.status===404||r.status===400)continue;
+        throw new Error(lastErr);
+      }
+      const d=await r.json();
+      const txt=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[])
+        .map(p=>p.text||'').join('').trim();
+      if(txt)return txt;
+      lastErr='réponse vide du modèle';
+    }catch(e){lastErr=e.message||lastErr;}
+  }
+  throw new Error(lastErr||'aucun modèle Gemini disponible pour cette clé');
+}
 const FICHE_PROMPT=`Voici la photo d'une fiche de lecture manuscrite en français. Extrais les informations et réponds UNIQUEMENT avec un JSON valide, sans commentaire, avec exactement ces clés (mets null si l'info est absente ou illisible) :
 {"titre":string,"auteur":string,"genre":string,"langue":string,"fmc":string,"mmc":string,"tropes":string,
 "note":0-5 (grande rangée d'étoiles : compte les étoiles coloriées/surlignées),
@@ -1638,40 +1683,10 @@ function onFichePicked(inp){
     URL.revokeObjectURL(img.src);
     const b64=c.toDataURL('image/jpeg',0.82).split(',')[1];
     try{
-      /* trouve un modèle disponible pour cette clé */
-      let model='models/gemini-2.5-flash';
-      try{
-        const lr=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',
-          {headers:{'x-goog-api-key':gemKey}});
-        if(!lr.ok){
-          const le=await lr.json().catch(()=>({}));
-          throw new Error('Clé refusée par Google : '+((le.error&&le.error.message)||('HTTP '+lr.status)));
-        }
-        const ld=await lr.json();
-        const ms=(ld.models||[]).filter(m=>
-          (m.supportedGenerationMethods||[]).includes('generateContent')&&
-          /flash/i.test(m.name)&&!/lite|image|tts|live|audio|thinking|8b/i.test(m.name));
-        ms.sort((a,b)=>b.name.localeCompare(a.name));
-        if(ms[0])model=ms[0].name;
-      }catch(le){if(/Clé refusée/.test(le.message))throw le;}
-      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+model+':generateContent',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},
-        body:JSON.stringify({
-          contents:[{parts:[{text:FICHE_PROMPT},{inline_data:{mime_type:'image/jpeg',data:b64}}]}],
-          generationConfig:{response_mime_type:'application/json',temperature:0}
-        })});
-      if(!r.ok){
-        const er=await r.json().catch(()=>({}));
-        throw new Error((er.error&&er.error.message)||('HTTP '+r.status));
-      }
-      const d=await r.json();
-      let txt=(d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts||[])
-        .map(p=>p.text||'').join('');
+      let txt=await gemVision(FICHE_PROMPT,b64,true);
       txt=txt.replace(/^```json\s*/i,'').replace(/```\s*$/,'').trim();
-      if(!txt)throw new Error('réponse vide du modèle');
       applyFiche(JSON.parse(txt));
-      ficheMsgSet('✅ Fiche analysée ('+model.replace('models/','')+') — vérifie et corrige si besoin','ok');
+      ficheMsgSet('✅ Fiche analysée — vérifie et corrige si besoin','ok');
     }catch(e){ficheMsgSet('⚠️ '+(e.message||'Analyse impossible — réessaie avec une photo plus nette'),'err');}
   };
   img.onerror=()=>ficheMsgSet('Image illisible 😕','err');
@@ -2388,16 +2403,7 @@ function onQuotePicked(inp){
     URL.revokeObjectURL(img.src);
     const b64=c.toDataURL('image/jpeg',0.82).split(',')[1];
     try{
-      const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{
-        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},
-        body:JSON.stringify({contents:[{parts:[
-          {text:'Transcris exactement le passage surligné ou principal de cette page de livre, en français, sans rien ajouter. Réponds uniquement avec le texte.'},
-          {inline_data:{mime_type:'image/jpeg',data:b64}}]}],
-          generationConfig:{temperature:0}})});
-      if(!r.ok)throw 0;
-      const d=await r.json();
-      const txt=((d.candidates&&d.candidates[0].content.parts)||[]).map(p=>p.text||'').join('').trim();
-      if(!txt)throw 0;
+      const txt=await gemVision('Transcris exactement le passage surligné ou principal de cette page de livre, sans rien ajouter. Réponds uniquement avec le texte.',b64,false);
       askText('Citation transcrite — corrige si besoin',txt,t=>{
         if(!t)return;
         const b=db.books.find(x=>x.id===quoteBookId);if(!b)return;
