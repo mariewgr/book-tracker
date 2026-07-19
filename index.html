@@ -399,7 +399,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <!-- ÉTAGÈRES -->
   <section id="view-shelf" class="hidden">
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère depuis des collections</button>
+      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère liée à une collection / saga</button>
     </div>
     <div id="shelfList"></div>
   </section>
@@ -628,10 +628,10 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <!-- MODAL ÉTAGÈRE DEPUIS COLLECTIONS -->
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
-    <h2>Étagère depuis des collections</h2>
-    <label>Choisis une ou plusieurs collections</label>
+    <h2>Étagère liée</h2>
+    <label>Choisis une ou plusieurs collections / sagas — l'étagère se mettra à jour automatiquement</label>
     <div class="chipwrap" id="sfcPick"></div>
-    <button class="btn" onclick="createShelfFromCols()">Créer l'étagère</button>
+    <button class="btn" onclick="createShelfFromCols()">Créer l'étagère liée</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
   </div>
 </div>
@@ -642,11 +642,15 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <h2>Modifier l'étagère</h2>
     <label>Nom</label><input id="s_nom" placeholder="Ex : Mes coups de cœur">
     <label>Nombre d'étages</label><input id="s_rows" type="number" inputmode="numeric" min="1" max="8" value="1">
+    <div class="isbnmsg" id="shelfLinkMsg"></div>
+    <button class="btn ghost hidden" id="shelfUnlinkBtn" onclick="shelfUnlink()">🔓 Délier (figer la liste actuelle)</button>
     <label>Livres sur l'étagère (dans l'ordre)</label>
     <div id="shelfItemsEl"></div>
-    <label>Ajouter un livre</label>
-    <input class="search" id="shelfSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderShelfAdd()">
-    <div id="shelfAddEl"></div>
+    <div id="shelfAddWrap">
+      <label>Ajouter un livre</label>
+      <input class="search" id="shelfSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderShelfAdd()">
+      <div id="shelfAddEl"></div>
+    </div>
     <p class="note-io">Mode d'affichage : <b>Tranche</b> = debout · <b>Couv.</b> = couverture de face · <b>Pile</b> = couché (les « Pile » qui se suivent s'empilent ensemble, repère doré). <b>Étage</b> : « Ét.2 » = placé sur l'étage 2 ; « Auto » = les livres se rangent à la suite et passent à l'étage suivant quand il n'y a plus de place.</p>
     <button class="btn" onclick="saveShelf()">Enregistrer</button>
     <button class="btn danger" onclick="deleteShelf()">Supprimer l'étagère</button>
@@ -1176,6 +1180,7 @@ function deleteCollection(id){
   askConfirm('Supprimer la collection « '+c.nom+' » ? Les livres ne seront pas supprimés.',()=>{
     db.collections=db.collections.filter(x=>x.id!==id);
     db.ranking=db.ranking.filter(r=>!(r.type==='col'&&r.id===id));
+    db.shelves.forEach(s=>{if(s.source)s.source=s.source.filter(x=>!(x.type==='col'&&x.id===id));});
     if(colFilter===id)colFilter=null;
     save();renderLib();renderCols();renderRank();
   },'Supprimer');
@@ -2422,7 +2427,7 @@ function pileEl(b){
 }
 function shelfVisual(s){
   const groups=[];let pile=null;
-  s.items.forEach(it=>{
+  shelfEffItems(s).forEach(it=>{
     const b=db.books.find(x=>x.id===it.bookId);if(!b)return;
     if(it.mode==='pile'){
       if(!pile){pile={pile:true,books:[],w:118,row:it.row||null};groups.push(pile);}
@@ -2470,34 +2475,57 @@ function renderShelves(){
     <span style="font-size:.72rem;color:var(--txt2)">automatique</span></div>
     ${shelfVisual(pal)}</div>`;
   html+=db.shelves.map(s=>`<div class="shelfcard">
-    <div class="shelfhead"><h3>${esc(s.nom)}</h3>
+    <div class="shelfhead"><h3>${esc(s.nom)}${s.source&&s.source.length?' <span style="font-size:.68rem;color:var(--accent);font-weight:700">🔗 auto</span>':''}</h3>
     <button class="smallbtn" onclick="openShelfEdit('${s.id}')">${icSvg('pencil')} Modifier</button></div>
     ${shelfVisual(s)}</div>`).join('');
   if(!db.shelves.length)
     html+=`<div class="empty">Crée tes propres étagères avec <b>+</b>, ou depuis tes collections avec le bouton ci-dessus.</div>`;
   el.innerHTML=html;
 }
-/* Étagère à partir de collections */
+/* Étagère liée (collections et/ou sagas, mise à jour automatique) */
+function shelfEffItems(s){
+  if(!s.source||!s.source.length)return s.items||[];
+  const ids=[],seen=new Set();
+  s.source.forEach(src=>{
+    const list=src.type==='saga'
+      ?sagaBooks(src.id).map(b=>b.id)
+      :(((db.collections.find(c=>c.id===src.id)||{}).bookIds)||[]);
+    list.forEach(id=>{
+      if(!seen.has(id)&&db.books.some(b=>b.id===id)){seen.add(id);ids.push(id);}
+    });
+  });
+  const ov=s.overrides||{};
+  return ids.map(id=>({bookId:id,mode:(ov[id]&&ov[id].mode)||'spine',row:(ov[id]&&ov[id].row)||null}));
+}
+function shelfSourceLabel(s){
+  return (s.source||[]).map(x=>x.type==='saga'?x.id:((db.collections.find(c=>c.id===x.id)||{}).nom||'?')).join(' + ');
+}
 let sfcSel=new Set();
 function openShelfFromCols(){
-  if(!db.collections.length){toast('Crée d\'abord une collection 🗂');return;}
+  if(!db.collections.length&&!sagaNames().length){toast('Crée d\'abord une collection ou renseigne des sagas 🗂');return;}
   sfcSel=new Set();
   renderSfc();
   document.getElementById('shelfColsModal').classList.add('open');
 }
+function sfcToggle(k){sfcSel.has(k)?sfcSel.delete(k):sfcSel.add(k);renderSfc();}
 function renderSfc(){
-  document.getElementById('sfcPick').innerHTML=db.collections.map(c=>
-    `<div class="chip ${sfcSel.has(c.id)?'active':''}" onclick="sfcSel.has('${c.id}')?sfcSel.delete('${c.id}'):sfcSel.add('${c.id}');renderSfc()">${esc(c.nom)} (${c.bookIds.length})</div>`).join('');
+  document.getElementById('sfcPick').innerHTML=
+    db.collections.map(c=>{
+      const k='col|'+c.id;
+      return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">🗂 ${esc(c.nom)} (${c.bookIds.length})</div>`;
+    }).join('')+
+    sagaNames().map(n=>{
+      const k='saga|'+n;
+      return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">${esc(n)} (${sagaBooks(n).length} t.)</div>`;
+    }).join('');
 }
 function createShelfFromCols(){
-  const cols=db.collections.filter(c=>sfcSel.has(c.id));
-  if(!cols.length){toast('Choisis au moins une collection');return;}
-  const seen=new Set(),items=[];
-  cols.forEach(c=>c.bookIds.forEach(bid=>{
-    if(seen.has(bid)||!db.books.some(b=>b.id===bid))return;
-    seen.add(bid);items.push({bookId:bid,mode:'spine'});
-  }));
-  const s={id:uid(),nom:cols.map(c=>c.nom).join(' + '),rows:1,items};
+  if(!sfcSel.size){toast('Choisis au moins une collection ou une saga');return;}
+  const source=[...sfcSel].map(k=>{
+    const i=k.indexOf('|');
+    return {type:k.slice(0,i),id:k.slice(i+1)};
+  });
+  const s={id:uid(),nom:shelfSourceLabel({source}),rows:1,items:[],source,overrides:{}};
   db.shelves.push(s);save();
   closeModals();render();
   openShelfEdit(s.id);
@@ -2516,25 +2544,32 @@ function newShelf(){
 function openShelfEdit(id){
   const s=db.shelves.find(x=>x.id===id);if(!s)return;
   shelfId=id;
+  const linked=!!(s.source&&s.source.length);
   document.getElementById('s_nom').value=s.nom;
   document.getElementById('s_rows').value=s.rows||1;
-  shelfItemsW=s.items.map(x=>({...x}));
+  shelfItemsW=shelfEffItems(s).map(x=>({...x}));
   document.getElementById('shelfSearch').value='';
+  document.getElementById('shelfLinkMsg').textContent=linked
+    ?'🔗 Liée à : '+shelfSourceLabel(s)+' — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
+  document.getElementById('shelfUnlinkBtn').classList.toggle('hidden',!linked);
+  document.getElementById('shelfAddWrap').classList.toggle('hidden',linked);
   renderShelfItems();renderShelfAdd();
   document.getElementById('shelfModal').classList.add('open');
 }
 function renderShelfItems(){
   const el=document.getElementById('shelfItemsEl');
   if(!shelfItemsW.length){el.innerHTML='<div class="isbnmsg">Aucun livre pour l\'instant.</div>';return;}
+  const s=db.shelves.find(x=>x.id===shelfId);
+  const linked=!!(s&&s.source&&s.source.length);
   el.innerHTML=shelfItemsW.map((it,i)=>{
     const b=db.books.find(x=>x.id===it.bookId);
-    return `<div class="sitem" data-i="${i}"${it.mode==='pile'?' style="border-left:3px solid var(--gold)"':''}><span class="drag">⠿</span>${coverEl(b&&b.couverture,'sm')}
+    return `<div class="sitem" data-i="${i}"${it.mode==='pile'?' style="border-left:3px solid var(--gold)"':''}>${linked?'':'<span class="drag">⠿</span>'}${coverEl(b&&b.couverture,'sm')}
       <span class="nm">${esc(b?b.titre:'?')}</span>
       <button class="mode" onclick="shelfCycle(${i})">${SHELF_MODES[it.mode]}</button>
       <button onclick="shelfCycleRow(${i})" title="Étage">${it.row?'Ét.'+it.row:'Auto'}</button>
-      <button onclick="shelfMove(${i},-1)">↑</button>
+      ${linked?'':`<button onclick="shelfMove(${i},-1)">↑</button>
       <button onclick="shelfMove(${i},1)">↓</button>
-      <button style="color:var(--red)" onclick="shelfRemove(${i})">✕</button></div>`;
+      <button style="color:var(--red)" onclick="shelfRemove(${i})">✕</button>`}</div>`;
   }).join('');
   makeSortable(el,order=>{
     shelfItemsW=order.map(i=>shelfItemsW[i]).filter(Boolean);
@@ -2573,8 +2608,23 @@ function saveShelf(){
   const nom=document.getElementById('s_nom').value.trim();
   if(nom)s.nom=nom;
   s.rows=Math.max(1,Math.min(8,+document.getElementById('s_rows').value||1));
-  s.items=shelfItemsW;
+  if(s.source&&s.source.length){
+    s.overrides={};
+    shelfItemsW.forEach(it=>{
+      if(it.mode!=='spine'||it.row)s.overrides[it.bookId]={mode:it.mode,row:it.row||null};
+    });
+  }else{
+    s.items=shelfItemsW;
+  }
   save();closeModals();render();
+}
+function shelfUnlink(){
+  const s=db.shelves.find(x=>x.id===shelfId);if(!s)return;
+  s.items=shelfEffItems(s);
+  delete s.source;delete s.overrides;
+  save();
+  toast('Étagère déliée — la liste est figée et modifiable librement');
+  openShelfEdit(s.id);
 }
 function deleteShelf(){
   const s=db.shelves.find(x=>x.id===shelfId);if(!s)return;
