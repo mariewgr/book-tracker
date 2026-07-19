@@ -767,7 +767,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <p class="note-io">Permet de remplir un livre en photographiant ta fiche de lecture manuscrite. Clé gratuite : <b>aistudio.google.com</b> → « Get API key ». Elle reste uniquement sur cet appareil.</p>
     <h2 style="margin-top:24px">Données</h2>
     <button class="btn ghost" style="margin-top:0" id="bfBtn" onclick="backfillSynopsis()">📖 Récupérer les résumés manquants</button>
-    <p class="note-io">Cherche en ligne (Google Books) le résumé éditeur de chaque livre qui n'en a pas encore — via l'ISBN, sinon par titre + auteur.</p>
+    <p class="note-io">Cherche en ligne le résumé de chaque livre qui n'en a pas — en français d'abord : Google Books (FR), puis <b>Booknode</b>, puis Google Books toutes langues et Open Library en dernier recours.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
@@ -2856,16 +2856,55 @@ function renderCal(){
 /* ---------- Réglages / sauvegarde ---------- */
 /* Récupère les résumés éditeur manquants pour toute la bibliothèque */
 let gbFail=0;
-async function gbDesc(q){
-  for(const lang of ['&langRestrict=fr','']){
+async function gbDescLang(q,lang){
+  try{
+    const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=5'+lang);
+    if(!r.ok){gbFail++;return null;}
+    const d=await r.json();
+    const it=(d.items||[]).find(x=>x.volumeInfo&&x.volumeInfo.description);
+    return it?it.volumeInfo.description:null;
+  }catch(e){gbFail++;return null;}
+}
+const gbDescFr=q=>gbDescLang(q,'&langRestrict=fr');
+const gbDescAny=q=>gbDescLang(q,'');
+async function gbDesc(q){return (await gbDescFr(q))||(await gbDescAny(q));}
+/* Booknode (résumés en français) via proxy CORS */
+const unHtml=s=>{const t=document.createElement('textarea');t.innerHTML=s;return t.value;};
+async function viaProxy(url){
+  for(const p of ['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url=']){
     try{
-      const r=await fetch('https://www.googleapis.com/books/v1/volumes?q='+encodeURIComponent(q)+'&country=FR&maxResults=5'+lang);
-      if(!r.ok){gbFail++;continue;}
-      const d=await r.json();
-      const it=(d.items||[]).find(x=>x.volumeInfo&&x.volumeInfo.description);
-      if(it)return it.volumeInfo.description;
-    }catch(e){gbFail++;}
+      const r=await fetch(p+encodeURIComponent(url));
+      if(r.ok){const t=await r.text();if(t&&t.length>300)return t;}
+    }catch(e){}
   }
+  return null;
+}
+async function bnDesc(titre,auteur){
+  try{
+    const sh=await viaProxy('https://booknode.com/recherche?q='+encodeURIComponent(titre+' '+(auteur||'')));
+    if(!sh)return null;
+    const m=sh.match(/href="(https:\/\/booknode\.com\/[a-z0-9_]+_0?\d{4,})"/i)
+      ||sh.match(/href="(\/[a-z0-9_]+_0?\d{4,})"/i);
+    if(!m)return null;
+    let u=m[1];if(u.startsWith('/'))u='https://booknode.com'+u;
+    const ph=await viaProxy(u);
+    if(!ph)return null;
+    /* 1. données structurées JSON-LD */
+    const lds=ph.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/gi)||[];
+    for(const s of lds){
+      try{
+        const j=JSON.parse(s.replace(/<script[^>]*>|<\/script>/gi,''));
+        const o=Array.isArray(j)?j[0]:j;
+        if(o&&o.description&&o.description.length>80)return unHtml(o.description);
+      }catch(e){}
+    }
+    /* 2. og:description */
+    const og=ph.match(/property=["']og:description["'] content=["']([^"']{80,})["']/i);
+    if(og)return unHtml(og[1]);
+    /* 3. bloc « Résumé » de la page */
+    const rs=ph.match(/R[ée]sum[ée][\s\S]{0,500}?<p[^>]*>([\s\S]{100,3000}?)<\/p>/i);
+    if(rs)return unHtml(rs[1].replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim());
+  }catch(e){}
   return null;
 }
 /* Secours : Open Library (édition → œuvre → description) */
@@ -2898,9 +2937,12 @@ async function backfillSynopsis(){
     i++;
     btn.textContent='⏳ '+i+'/'+missing.length+' — '+b.titre.slice(0,22)+'…';
     let d=null;
-    if(b.isbn)d=await gbDesc('isbn:'+b.isbn);
-    if(!d)d=await gbDesc('intitle:"'+b.titre+'" '+(b.auteur||''));
-    if(!d)d=await gbDesc(b.titre+' '+(b.auteur||''));
+    /* priorité au français */
+    if(b.isbn)d=await gbDescFr('isbn:'+b.isbn);
+    if(!d)d=await gbDescFr('intitle:"'+b.titre+'" '+(b.auteur||''));
+    if(!d)d=await bnDesc(b.titre,b.auteur);
+    if(!d&&b.isbn)d=await gbDescAny('isbn:'+b.isbn);
+    if(!d)d=await gbDescAny(b.titre+' '+(b.auteur||''));
     if(!d)d=await olDesc(b.isbn,b.titre,b.auteur);
     if(d){b.synopsis=d;ok++;save();}
     await new Promise(r=>setTimeout(r,250));
