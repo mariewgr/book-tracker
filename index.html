@@ -91,14 +91,20 @@ nav button.active{color:var(--accent)}
 /* Filtres genre/saga en pilules */
 .filterrow{display:flex;gap:8px;margin-bottom:10px}
 .filterrow select{
+  --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a89bc0' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   flex:1;min-width:0;appearance:none;-webkit-appearance:none;
-  background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a89bc0' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center/12px;
+  background-color:var(--card);
   border:1px solid var(--line2);border-radius:20px;color:var(--txt2);
-  padding:9px 32px 9px 14px;font-size:.82rem;font-weight:600;
+  padding:9px 30px 9px 36px;font-size:.82rem;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  background-repeat:no-repeat;
 }
-.filterrow select.on{background-color:var(--accent2);color:#fff;border-color:var(--accent2);
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")}
+#genreFilter{background-image:var(--chev),url('book_types.png');background-position:right 11px center,left 10px center;background-size:12px,18px}
+#sagaFilter{background-image:var(--chev),url('saga.png');background-position:right 11px center,left 10px center;background-size:12px,18px}
+.filterrow select.on{
+  --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-color:var(--accent2);color:#fff;border-color:var(--accent2);
+}
 
 /* Chips / filters */
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
@@ -340,6 +346,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><path d="M7 7h.01"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+  <symbol id="i-saga" viewBox="0 0 24 24"><rect x="4" y="15" width="16" height="4" rx="1"/><rect x="5" y="10" width="14" height="4" rx="1"/><rect x="6" y="5" width="12" height="4" rx="1"/></symbol>
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
 </svg>
 
@@ -441,7 +448,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <div class="sheet">
     <h2>Plus</h2>
     <button class="btn ghost menub" onclick="closeModals();switchTab('cols')"><span data-spr="collection" data-spr-size="20"><svg class="icn"><use href="#i-folder"/></svg></span> Collections</button>
-    <button class="btn ghost menub" onclick="closeModals();switchTab('saga')"><span data-spr="tag" data-spr-size="20"><svg class="icn"><use href="#i-tag"/></svg></span> Sagas</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('saga')"><span data-spr="saga" data-spr-size="20"><svg class="icn"><use href="#i-saga"/></svg></span> Sagas</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('rank')"><span data-spr="trophy" data-spr-size="20"><svg class="icn"><use href="#i-trophy"/></svg></span> Top — mon classement</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
@@ -1000,7 +1007,7 @@ const IC_FILES={
   chart:'stats.png',calendar:'calendar.png',refresh:'refresh.png',gear:'settings.png',
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
-  pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png'
+  pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -1013,7 +1020,7 @@ const SPR_FILES={
   pile:'book_pile.png',chart:'stats.png',calendar:'calendar.png',
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
-  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png'
+  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png'
 };
 document.querySelectorAll('[data-spr]').forEach(el=>{
   const f=SPR_FILES[el.dataset.spr];if(!f)return;
@@ -1179,7 +1186,7 @@ function renderSagas(){
   let names=sagaNames();
   if(q)names=names.filter(n=>sagaMatch(n,q));
   if(!names.length){
-    el.innerHTML=`<div class="empty"><span class="big">${icSvg('tag')}</span>${sagaNames().length?'Aucune saga ne correspond.':'Aucune saga.<br>Renseigne le champ « Saga » dans la fiche de tes livres !'}</div>`;
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('saga')}</span>${sagaNames().length?'Aucune saga ne correspond.':'Aucune saga.<br>Renseigne le champ « Saga » dans la fiche de tes livres !'}</div>`;
     return;
   }
   el.innerHTML=names.map(n=>{
@@ -1290,14 +1297,14 @@ function renderGenreFilter(){
   const sel=document.getElementById('genreFilter');
   const cur=sel.value;
   const genres=[...new Set(db.books.map(b=>b.genre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  sel.innerHTML='<option value="">🏷 Genre : tous</option>'+
+  sel.innerHTML='<option value="">Genre : tous</option>'+
     genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
   if(genres.includes(cur))sel.value=cur;
   sel.classList.toggle('on',!!sel.value);
   const ss=document.getElementById('sagaFilter');
   const sc=ss.value;
   const sagas=sagaNames();
-  ss.innerHTML='<option value="">📚 Saga : toutes</option>'+
+  ss.innerHTML='<option value="">Saga : toutes</option>'+
     sagas.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
   if(sagas.includes(sc))ss.value=sc;
   ss.classList.toggle('on',!!ss.value);
@@ -1332,7 +1339,7 @@ function renderLib(){
       <div class="meta">
         <span>${icSvg(FMT_IC[fmt(b)])} ${FMT[fmt(b)]}</span>
         ${b.genre?`<span>${icSvg('tag')} ${esc(b.genre)}</span>`:''}
-        ${b.saga?`<span>${icSvg('pile')} ${esc(b.saga)}${b.tome?' T'+b.tome:''}</span>`:''}
+        ${b.saga?`<span>${icSvg('saga')} ${esc(b.saga)}${b.tome?' T'+b.tome:''}</span>`:''}
         ${b.pages?`<span>${b.pages} p.</span>`:''}
         ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
         ${b.statut==='reading'?`<span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span>`:''}
