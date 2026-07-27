@@ -226,6 +226,24 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .isbnmsg.ok{color:var(--green)}
 .isbnmsg.err{color:var(--red)}
 
+/* Écran de connexion */
+.authwrap{
+  position:fixed;inset:0;z-index:80;background:var(--bg);color:var(--txt);
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.authwrap.hidden{display:none}
+#appRoot.hidden{display:none}
+.authcard{width:100%;max-width:360px;display:flex;flex-direction:column;gap:4px}
+.authlogo{
+  width:52px;height:52px;border-radius:16px;background:var(--accent2);color:#fff;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 10px;
+}
+.authlogo .icn{width:26px;height:26px}
+.authcard h1{text-align:center;font-size:1.4rem;font-weight:800;margin-bottom:6px}
+.authcard h1 span{color:var(--accent)}
+.authsub{text-align:center;color:var(--txt2);font-size:.85rem;margin-bottom:10px}
+.authlink{background:none;border:none;color:var(--accent);font-size:.82rem;font-weight:600;cursor:pointer;padding:8px;text-align:center;width:100%}
+
 /* Challenge */
 .challenge-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--line);text-align:center}
 .stackwrap{display:flex;align-items:flex-end;justify-content:center;gap:26px;margin:16px 0 6px;min-height:180px}
@@ -351,6 +369,20 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
 </svg>
 
+<div class="authwrap" id="authScreen">
+  <div class="authcard">
+    <div class="authlogo"><svg class="icn"><use href="#i-book"/></svg></div>
+    <h1>Ma <span>Bibli</span></h1>
+    <p class="authsub" id="authSub">Connecte-toi pour retrouver ta bibliothèque, sur tous tes appareils.</p>
+    <input type="email" class="search" id="authEmail" placeholder="Email" autocomplete="email">
+    <input type="password" class="search" id="authPassword" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" style="margin-top:8px" onkeydown="if(event.key==='Enter'){event.preventDefault();handleAuthSubmit();}">
+    <button class="btn" id="authSubmitBtn" style="margin-top:14px" onclick="handleAuthSubmit()">Se connecter</button>
+    <button class="authlink" id="authToggleBtn" onclick="toggleAuthMode()">Pas de compte ? Crée-en un</button>
+    <p class="isbnmsg err" id="authError" style="text-align:center"></p>
+  </div>
+</div>
+
+<div id="appRoot" class="hidden">
 <header>
   <h1><span data-spr="book" data-spr-size="22"><svg class="icn" style="width:22px;height:22px;color:var(--accent)"><use href="#i-book"/></svg></span> Ma <span>Bibli</span></h1>
   <div style="display:flex;gap:8px">
@@ -772,20 +804,13 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <button type="button" data-val="clair" onclick="segPick(this)">Clair</button>
     </div>
     <button class="btn" onclick="saveSettings()">Enregistrer</button>
-    <h2 style="margin-top:24px">Sync cloud (BDD Supabase)</h2>
-    <label>URL du projet</label>
-    <input id="sb_url" placeholder="https://xxxx.supabase.co" autocapitalize="none">
-    <label>Clé « anon public »</label>
-    <input id="sb_key" type="password" placeholder="eyJ…" autocapitalize="none">
-    <label>E-mail</label>
-    <input id="sb_email" type="email" placeholder="ton@email.fr" autocapitalize="none">
-    <label>Mot de passe</label>
-    <input id="sb_pass" type="password">
-    <button class="btn" onclick="sbLogin(false)">🔗 Se connecter</button>
-    <button class="btn ghost" onclick="sbLogin(true)">Créer mon compte</button>
-    <button class="btn ghost" onclick="sbLogout()">Se déconnecter</button>
+    <h2 style="margin-top:24px">Compte</h2>
+    <div class="isbnrow" style="align-items:center">
+      <div style="flex:1"><div style="font-weight:700">Connecté(e)</div><small id="accountEmail" style="color:var(--txt2)"></small></div>
+      <button class="smallbtn" style="color:var(--red);flex:none;width:auto;padding:9px 14px" onclick="sbLogout()">Se déconnecter</button>
+    </div>
     <div class="isbnmsg" id="syncStatus" style="margin-top:8px"></div>
-    <p class="note-io">URL et clé sont déjà préremplies pour ton projet — il ne te reste qu'à entrer e-mail + mot de passe (« Créer mon compte » la première fois). Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
+    <p class="note-io">Tes données sont sauvegardées dans ta base Postgres à chaque modification et synchronisées <b>en temps réel</b> entre tous tes appareils connectés au même compte.</p>
     <h2 style="margin-top:24px">IA — analyse de fiches de lecture</h2>
     <label>Clé API Google Gemini (gratuite)</label>
     <input id="g_key" type="password" placeholder="AIza…" autocapitalize="none">
@@ -801,6 +826,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
+</div><!-- /#appRoot -->
 
 <script>
 /* ---------- Données ---------- */
@@ -864,34 +890,78 @@ async function sbClient(){
   sb=window.supabase.createClient(sbCfg.url,sbCfg.key);
   return sb;
 }
-async function sbInit(){
-  try{
-    const c=await sbClient();if(!c)return;
-    const {data:{session}}=await c.auth.getSession();
-    if(session){sbUser=session.user;startCloud();}
-  }catch(e){}
+/* ---------- Écran de connexion (page dédiée, plein écran) ---------- */
+let authMode='signin';
+function renderAuthMode(){
+  document.getElementById('authSubmitBtn').textContent=authMode==='signin'?'Se connecter':'Créer le compte';
+  document.getElementById('authToggleBtn').textContent=authMode==='signin'?'Pas de compte ? Crée-en un':'Déjà un compte ? Se connecter';
 }
-async function sbLogin(create){
-  sbCfg.url=(document.getElementById('sb_url').value||'').trim().replace(/\/$/,'');
-  sbCfg.key=(document.getElementById('sb_key').value||'').trim();
-  localStorage.setItem(SBKEY,JSON.stringify(sbCfg));
-  const email=(document.getElementById('sb_email').value||'').trim();
-  const pass=document.getElementById('sb_pass').value;
-  if(!sbCfg.url||!sbCfg.key||!email||!pass){setSyncStatus('Remplis URL, clé, e-mail et mot de passe');return;}
-  setSyncStatus('⏳ Connexion…');
+function toggleAuthMode(){
+  authMode=authMode==='signin'?'signup':'signin';
+  document.getElementById('authError').textContent='';
+  renderAuthMode();
+}
+function translateAuthError(msg){
+  if(/invalid login credentials/i.test(msg))return 'Email ou mot de passe incorrect.';
+  if(/already registered/i.test(msg))return 'Un compte existe déjà avec cet email.';
+  if(/password should be at least/i.test(msg))return 'Mot de passe trop court (6 caractères minimum).';
+  if(/email not confirmed/i.test(msg))return 'Confirme ton email avant de te connecter (vérifie ta boîte mail).';
+  return msg;
+}
+async function handleAuthSubmit(){
+  const email=(document.getElementById('authEmail').value||'').trim();
+  const password=document.getElementById('authPassword').value;
+  const errEl=document.getElementById('authError');
+  errEl.className='isbnmsg err';errEl.textContent='';
+  if(!email||!password){errEl.textContent='Renseigne un email et un mot de passe.';return;}
+  const c=await sbClient();
+  if(!c){errEl.textContent="Supabase n'est pas configuré (voir sbCfg dans le code).";return;}
+  const btn=document.getElementById('authSubmitBtn');
+  btn.disabled=true;
   try{
-    sb=null;const c=await sbClient();
-    const r=create
-      ?await c.auth.signUp({email,password:pass})
-      :await c.auth.signInWithPassword({email,password:pass});
-    if(r.error){setSyncStatus('⚠️ '+r.error.message);return;}
-    if(create&&!r.data.session){
-      setSyncStatus('Compte créé — confirme ton e-mail puis « Se connecter » (ou désactive « Confirm email » dans Supabase)');
-      return;
+    if(authMode==='signup'){
+      const {error}=await c.auth.signUp({email,password});
+      if(error)throw error;
+      errEl.className='isbnmsg ok';
+      errEl.textContent='Compte créé ! Si une confirmation par email est demandée, clique sur le lien reçu puis connecte-toi.';
+      authMode='signin';renderAuthMode();
+    }else{
+      const {error}=await c.auth.signInWithPassword({email,password});
+      if(error)throw error;
     }
-    sbUser=r.data.user;
+  }catch(e){
+    errEl.className='isbnmsg err';
+    errEl.textContent=translateAuthError(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+}
+async function handleSession(session){
+  if(session&&session.user){
+    sbUser=session.user;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('appRoot').classList.remove('hidden');
+    document.getElementById('authError').textContent='';
+    await loadLocalData();
+    render();
     startCloud();
-  }catch(e){setSyncStatus("⚠️ Connexion impossible — vérifie l'URL et la clé");}
+  }else{
+    sbUser=null;
+    document.getElementById('appRoot').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+  }
+}
+async function initAuth(){
+  renderAuthMode();
+  const c=await sbClient();
+  if(!c){
+    document.getElementById('authSub').textContent="Configuration Supabase manquante — vérifie sbCfg dans le code (index.html).";
+    document.getElementById('authSubmitBtn').disabled=true;
+    return;
+  }
+  c.auth.onAuthStateChange((_event,session)=>handleSession(session));
+  const {data}=await c.auth.getSession();
+  handleSession(data.session);
 }
 async function pullCloud(notify){
   const c=await sbClient();if(!c||!sbUser)return 'none';
@@ -950,8 +1020,9 @@ async function sbLogout(){
     const c=await sbClient();
     if(c){if(sbChannel)c.removeChannel(sbChannel);await c.auth.signOut();}
   }catch(e){}
-  sbUser=null;sbChannel=null;
-  setSyncStatus('Déconnectée — les données restent sur cet appareil');
+  sbChannel=null;
+  closeModals();
+  /* onAuthStateChange déclenche handleSession(null) : réaffiche l'écran de connexion */
 }
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -3146,9 +3217,8 @@ function openSettings(){
   segSet('segTheme',db.settings.theme||'sombre');
   segSet('segBois',db.settings.bois||'sombre');
   document.getElementById('g_key').value=gemKey||'';
-  document.getElementById('sb_url').value=sbCfg.url||'';
-  document.getElementById('sb_key').value=sbCfg.key||'';
-  setSyncStatus(sbUser?'✅ Connectée ('+(sbUser.email||'')+')':'Non connectée');
+  document.getElementById('accountEmail').textContent=(sbUser&&sbUser.email)||'';
+  setSyncStatus(sbUser?'✅ Sync temps réel active':'Non connectée');
   document.getElementById('settingsModal').classList.add('open');
 }
 function saveSettings(){
@@ -3277,7 +3347,7 @@ function render(){
     rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc};
   (map[tab]||renderHome)();
 }
-(async function initStore(){
+async function loadLocalData(){
   try{
     let d=await idbGet('db');
     if(!d){
@@ -3290,11 +3360,9 @@ function render(){
     }
     if(d&&d.books)db=normalizeDb(d);
   }catch(e){}
-  render();
-  sbInit();
-})();
+}
 document.getElementById('fab').innerHTML=icSvg('book')+'<span class="plus">+</span>';
-render();
+initAuth();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
