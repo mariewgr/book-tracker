@@ -400,7 +400,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <!-- ÉTAGÈRES -->
   <section id="view-shelf" class="hidden">
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère liée à une collection / saga</button>
+      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère liée à une collection / saga / parutions à venir</button>
     </div>
     <div id="shelfList"></div>
   </section>
@@ -645,7 +645,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2>Étagère liée</h2>
-    <label>Choisis une ou plusieurs collections / sagas — l'étagère se mettra à jour automatiquement</label>
+    <label>Choisis une ou plusieurs collections / sagas / parutions à venir — l'étagère se mettra à jour automatiquement</label>
     <div class="chipwrap" id="sfcPick"></div>
     <button class="btn" onclick="createShelfFromCols()">Créer l'étagère liée</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
@@ -1161,12 +1161,12 @@ function renderHome(){
 
 /* ---------- Bibliothèque ---------- */
 let filter='all';
-const FILTERS=[['all','Tous'],['reading','En cours'],['tbr','À lire'],['done','Terminés'],['dnf','DNF']];
+const FILTERS=[['all','Tous'],['reading','En cours'],['tbr','À lire'],['done','Terminés'],['dnf','DNF'],['upcoming','🔜 À paraître']];
 const STATUT={tbr:['À lire','b-tbr'],reading:['En cours','b-reading'],done:['Terminé','b-done'],dnf:['DNF','b-dnf']};
 
 function renderChips(){
   document.getElementById('filterChips').innerHTML=FILTERS.map(([v,l])=>{
-    const n=v==='all'?db.books.length:db.books.filter(b=>b.statut===v).length;
+    const n=v==='all'?db.books.length:(v==='upcoming'?db.books.filter(isUpcoming).length:db.books.filter(b=>b.statut===v).length);
     return `<div class="chip ${filter===v?'active':''}" onclick="filter='${v}';renderLib()">${l} (${n})</div>`;
   }).join('');
 }
@@ -1226,7 +1226,10 @@ function filtersActive(statusId,genreId,sagaId){
   return false;
 }
 function pickerMatch(b,statusId,genreId,sagaId){
-  if(statusId){const el=document.getElementById(statusId);if(el&&el.value&&el.value!=='all'&&b.statut!==el.value)return false;}
+  if(statusId){const el=document.getElementById(statusId);if(el&&el.value&&el.value!=='all'){
+    if(el.value==='upcoming'){if(!isUpcoming(b))return false;}
+    else if(b.statut!==el.value)return false;
+  }}
   if(genreId){const el=document.getElementById(genreId);if(el&&el.value&&b.genre!==el.value)return false;}
   if(sagaId){const el=document.getElementById(sagaId);if(el&&el.value){
     if(el.value==='__none__'){if(b.saga)return false;}
@@ -1405,7 +1408,7 @@ function renderGenreFilter(){
 function renderLib(){
   renderChips();renderColChips();renderGenreFilter();
   const q=document.getElementById('search').value.toLowerCase().trim();
-  let list=db.books.filter(b=>filter==='all'||b.statut===filter);
+  let list=filter==='upcoming'?db.books.filter(isUpcoming):db.books.filter(b=>filter==='all'||b.statut===filter);
   if(colFilter==='__none__'){
     const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
     list=list.filter(b=>!inCol.has(b.id));
@@ -2602,12 +2605,17 @@ function renderShelves(){
   el.innerHTML=html;
 }
 /* Étagère liée (collections et/ou sagas, mise à jour automatique) */
+function upcomingBooks(){
+  return db.books.filter(isUpcoming).sort((a,b)=>a.dateParution<b.dateParution?-1:1);
+}
 function shelfEffItems(s){
   if(!s.source||!s.source.length)return s.items||[];
   const ids=[],seen=new Set();
   s.source.forEach(src=>{
     const list=src.type==='saga'
       ?sagaBooks(src.id).map(b=>b.id)
+      :src.type==='upcoming'
+      ?upcomingBooks().map(b=>b.id)
       :(((db.collections.find(c=>c.id===src.id)||{}).bookIds)||[]);
     list.forEach(id=>{
       if(!seen.has(id)&&db.books.some(b=>b.id===id)){seen.add(id);ids.push(id);}
@@ -2617,18 +2625,20 @@ function shelfEffItems(s){
   return ids.map(id=>({bookId:id,mode:(ov[id]&&ov[id].mode)||'spine',row:(ov[id]&&ov[id].row)||null}));
 }
 function shelfSourceLabel(s){
-  return (s.source||[]).map(x=>x.type==='saga'?x.id:((db.collections.find(c=>c.id===x.id)||{}).nom||'?')).join(' + ');
+  return (s.source||[]).map(x=>x.type==='saga'?x.id:(x.type==='upcoming'?'À paraître':((db.collections.find(c=>c.id===x.id)||{}).nom||'?'))).join(' + ');
 }
 let sfcSel=new Set();
 function openShelfFromCols(){
-  if(!db.collections.length&&!sagaNames().length){toast('Crée d\'abord une collection ou renseigne des sagas 🗂');return;}
+  if(!db.collections.length&&!sagaNames().length&&!upcomingBooks().length){toast('Crée d\'abord une collection, renseigne des sagas, ou ajoute une date de parution à un livre 🗂');return;}
   sfcSel=new Set();
   renderSfc();
   document.getElementById('shelfColsModal').classList.add('open');
 }
 function sfcToggle(k){sfcSel.has(k)?sfcSel.delete(k):sfcSel.add(k);renderSfc();}
 function renderSfc(){
+  const up=upcomingBooks();
   document.getElementById('sfcPick').innerHTML=
+    (up.length?`<div class="chip ${sfcSel.has('upcoming|upcoming')?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="upcoming|upcoming">🔜 Livres à paraître (${up.length})</div>`:'')+
     db.collections.map(c=>{
       const k='col|'+c.id;
       return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">🗂 ${esc(c.nom)} (${c.bookIds.length})</div>`;
