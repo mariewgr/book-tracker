@@ -88,19 +88,20 @@ nav button{
 nav button .ic{font-size:1.25rem;line-height:1}
 nav button.active{color:var(--accent)}
 
-/* Filtres genre/saga en pilules */
-.filterrow{display:flex;gap:8px;margin-bottom:10px}
+/* Filtres statut/genre/saga en pilules (réutilisés dans plusieurs onglets) */
+.filterrow{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
 .filterrow select{
   --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a89bc0' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  flex:1;min-width:0;appearance:none;-webkit-appearance:none;
+  flex:1;min-width:90px;appearance:none;-webkit-appearance:none;
   background-color:var(--card);
   border:1px solid var(--line2);border-radius:20px;color:var(--txt2);
-  padding:9px 30px 9px 36px;font-size:.82rem;font-weight:600;
+  padding:9px 30px 9px 14px;font-size:.82rem;font-weight:600;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   background-repeat:no-repeat;
+  background-image:var(--chev);background-position:right 11px center;background-size:12px;
 }
-#genreFilter{background-image:var(--chev),url('book_types.png');background-position:right 11px center,left 10px center;background-size:12px,18px}
-#sagaFilter{background-image:var(--chev),url('saga.png');background-position:right 11px center,left 10px center;background-size:12px,18px}
+.filterrow select.gfSel{background-image:var(--chev),url('book_types.png');background-position:right 11px center,left 10px center;background-size:12px,18px;padding-left:36px}
+.filterrow select.sfSel{background-image:var(--chev),url('saga.png');background-position:right 11px center,left 10px center;background-size:12px,18px;padding-left:36px}
 .filterrow select.on{
   --chev:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-color:var(--accent2);color:#fff;border-color:var(--accent2);
@@ -368,8 +369,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <section id="view-lib" class="hidden">
     <input class="search" id="search" placeholder="🔍 Rechercher un titre, un auteur, une saga…" oninput="renderLib()">
     <div class="filterrow">
-      <select id="genreFilter" onchange="renderLib()"></select>
-      <select id="sagaFilter" onchange="renderLib()"></select>
+      <select id="genreFilter" class="gfSel" onchange="renderLib()"></select>
+      <select id="sagaFilter" class="sfSel" onchange="renderLib()"></select>
     </div>
     <div class="chips" id="filterChips"></div>
     <div class="chips" id="colChips"></div>
@@ -407,12 +408,21 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <!-- COLLECTIONS -->
   <section id="view-cols" class="hidden">
     <input class="search" id="colsSearch" placeholder="🔍 Chercher une collection, un titre, un auteur…" oninput="renderCols()">
+    <div class="filterrow">
+      <select id="colsStatus" class="stSel" onchange="renderCols()"></select>
+      <select id="colsGenre" class="gfSel" onchange="renderCols()"></select>
+      <select id="colsSaga" class="sfSel" onchange="renderCols()"></select>
+    </div>
     <div id="colsList"></div>
   </section>
 
   <!-- SAGAS -->
   <section id="view-saga" class="hidden">
     <input class="search" id="sagaSearch" placeholder="🔍 Chercher une saga…" oninput="renderSagas()">
+    <div class="filterrow">
+      <select id="sagaListStatus" class="stSel" onchange="renderSagas()"></select>
+      <select id="sagaListGenre" class="gfSel" onchange="renderSagas()"></select>
+    </div>
     <div id="sagaList"></div>
   </section>
 
@@ -508,6 +518,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <div><label>Genre</label><input id="f_genre" placeholder="Roman, SF, Polar…" list="genreList"><datalist id="genreList"></datalist></div>
       <div><label>Langue</label><input id="f_langue" placeholder="Français" list="langList"><datalist id="langList"></datalist></div>
     </div>
+    <label>Date de parution (optionnel — pour un livre pas encore sorti)</label>
+    <input id="f_dateParution" type="date" oninput="updateParutionMsg()">
+    <div class="isbnmsg" id="parutionMsg"></div>
     <div class="row">
       <div><label>Saga (optionnel)</label><input id="f_saga" placeholder="Ex : ACOTAR" list="sagaList" oninput="sagaSuggest()" onfocus="sagaSuggest()"><datalist id="sagaList"></datalist></div>
       <div><label>Tome</label><input id="f_tome" type="number" inputmode="numeric" placeholder="1"></div>
@@ -515,10 +528,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <div class="chipwrap" id="sagaSug"></div>
     <label>Résumé du livre (éditeur — rempli automatiquement)</label>
     <textarea id="f_synopsis" placeholder="La 4e de couverture…"></textarea>
-    <div class="row">
-      <div><label>Pages</label><input id="f_pages" type="number" inputmode="numeric" placeholder="250"></div>
-      <div><label>Épaisseur (cm, optionnel)</label><input id="f_epaisseur" type="number" step="0.1" inputmode="decimal" placeholder="auto"></div>
-    </div>
+    <label>Pages (l'épaisseur sur les étagères et dans le défi en découle automatiquement)</label>
+    <input id="f_pages" type="number" inputmode="numeric" placeholder="250">
     <label>Format</label>
     <div class="seg" id="segFormat">
       <button type="button" data-val="papier" class="on" onclick="segPick(this);toggleStatutFields()"><span data-spr="paper" data-spr-size="16"><svg class="icn"><use href="#i-book"/></svg></span> Papier</button>
@@ -618,6 +629,11 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <div id="colItemsEl"></div>
     <label>Ajouter un livre</label>
     <input class="search" id="colSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderColAdd()">
+    <div class="filterrow">
+      <select id="colAddStatus" class="stSel" onchange="renderColAdd()"></select>
+      <select id="colAddGenre" class="gfSel" onchange="renderColAdd()"></select>
+      <select id="colAddSaga" class="sfSel" onchange="renderColAdd()"></select>
+    </div>
     <div id="colAddEl"></div>
     <button class="btn" onclick="saveColEdit()">Enregistrer</button>
     <button class="btn danger" onclick="deleteCollection(colEditId)">Supprimer la collection</button>
@@ -649,6 +665,11 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <div id="shelfAddWrap">
       <label>Ajouter un livre</label>
       <input class="search" id="shelfSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderShelfAdd()">
+      <div class="filterrow">
+        <select id="shelfAddStatus" class="stSel" onchange="renderShelfAdd()"></select>
+        <select id="shelfAddGenre" class="gfSel" onchange="renderShelfAdd()"></select>
+        <select id="shelfAddSaga" class="sfSel" onchange="renderShelfAdd()"></select>
+      </div>
       <div id="shelfAddEl"></div>
     </div>
     <p class="note-io">Mode d'affichage : <b>Tranche</b> = debout · <b>Couv.</b> = couverture de face · <b>Pile</b> = couché (les « Pile » qui se suivent s'empilent ensemble, repère doré). <b>Étage</b> : « Ét.2 » = placé sur l'étage 2 ; « Auto » = les livres se rangent à la suite et passent à l'étage suivant quand il n'y a plus de place.</p>
@@ -1055,9 +1076,8 @@ function coverEl(url,cls,icon){
     onerror="imgFallback(this,'${c} ph','${icon||'book'}')">`;
 }
 
-/* Épaisseur estimée si non fournie : ~0,006 cm/page + couverture */
+/* Épaisseur toujours automatique : ~0,006 cm/page + couverture */
 function thickness(b){
-  if(b.epaisseur>0)return b.epaisseur;
   if(b.pages>0)return +(b.pages*0.006+0.5).toFixed(1);
   return 2;
 }
@@ -1123,6 +1143,18 @@ function renderHome(){
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
     </div>`;
   });
+  const upcoming=db.books.filter(b=>isUpcoming(b)).sort((a,b)=>a.dateParution<b.dateParution?-1:1);
+  if(upcoming.length){
+    out+=`<h2>📅 Parutions à venir</h2>`;
+    upcoming.forEach(b=>{
+      out+=`<div class="book" onclick="openInfo('${b.id}')">
+        <div class="top">${coverEl(b.couverture,'')}
+          <div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div></div>
+          <span style="color:var(--accent2);font-weight:700;white-space:nowrap">🔜 ${fmtDateFr(b.dateParution)}</span>
+        </div>
+      </div>`;
+    });
+  }
   out+=`<h2>Défi de la pile</h2>${defiCardHTML()}`;
   el.innerHTML=out;
 }
@@ -1149,6 +1181,58 @@ function colMatch(c,q){
     const b=db.books.find(x=>x.id===bid);
     return b&&(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q);
   });
+}
+
+/* Filtres statut/genre/saga réutilisables : peuple des <select> (par id) et teste un livre */
+function fillFilterSelects(statusId,genreId,sagaId){
+  if(statusId){
+    const sel=document.getElementById(statusId);
+    if(sel){
+      const cur=sel.value;
+      sel.innerHTML=FILTERS.map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+      sel.value=FILTERS.some(f=>f[0]===cur)?cur:'all';
+      sel.classList.toggle('on',sel.value!=='all');
+    }
+  }
+  if(genreId){
+    const sel=document.getElementById(genreId);
+    if(sel){
+      const cur=sel.value;
+      const genres=[...new Set(db.books.map(b=>b.genre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
+      sel.innerHTML='<option value="">Genre : tous</option>'+
+        genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
+      if(genres.includes(cur))sel.value=cur;
+      sel.classList.toggle('on',!!sel.value);
+    }
+  }
+  if(sagaId){
+    const sel=document.getElementById(sagaId);
+    if(sel){
+      const cur=sel.value;
+      const sagas=sagaNames();
+      const nbSansSaga=db.books.filter(b=>!b.saga).length;
+      sel.innerHTML='<option value="">Saga : toutes</option>'+
+        (nbSansSaga?`<option value="__none__">Sans saga (${nbSansSaga})</option>`:'')+
+        sagas.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+      if(sagas.includes(cur)||cur==='__none__')sel.value=cur;
+      sel.classList.toggle('on',!!sel.value);
+    }
+  }
+}
+function filtersActive(statusId,genreId,sagaId){
+  if(statusId){const el=document.getElementById(statusId);if(el&&el.value&&el.value!=='all')return true;}
+  if(genreId){const el=document.getElementById(genreId);if(el&&el.value)return true;}
+  if(sagaId){const el=document.getElementById(sagaId);if(el&&el.value)return true;}
+  return false;
+}
+function pickerMatch(b,statusId,genreId,sagaId){
+  if(statusId){const el=document.getElementById(statusId);if(el&&el.value&&el.value!=='all'&&b.statut!==el.value)return false;}
+  if(genreId){const el=document.getElementById(genreId);if(el&&el.value&&b.genre!==el.value)return false;}
+  if(sagaId){const el=document.getElementById(sagaId);if(el&&el.value){
+    if(el.value==='__none__'){if(b.saga)return false;}
+    else if(b.saga!==el.value)return false;
+  }}
+  return true;
 }
 
 /* Collections */
@@ -1193,8 +1277,11 @@ function sagaMatch(n,q){
 }
 function renderSagas(){
   const el=document.getElementById('sagaList');if(!el)return;
+  fillFilterSelects('sagaListStatus','sagaListGenre',null);
+  const active=filtersActive('sagaListStatus','sagaListGenre',null);
   const q=(document.getElementById('sagaSearch').value||'').toLowerCase().trim();
   let names=sagaNames();
+  if(active)names=names.filter(n=>sagaBooks(n).some(b=>pickerMatch(b,'sagaListStatus','sagaListGenre',null)));
   if(q)names=names.filter(n=>sagaMatch(n,q));
   if(!names.length){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('saga')}</span>${sagaNames().length?'Aucune saga ne correspond.':'Aucune saga.<br>Renseigne le champ « Saga » dans la fiche de tes livres !'}</div>`;
@@ -1223,8 +1310,14 @@ function renderCols(){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('folder')}</span>Aucune collection.<br>Appuie sur <b>+</b> pour en créer une !</div>`;
     return;
   }
+  fillFilterSelects('colsStatus','colsGenre','colsSaga');
+  const active=filtersActive('colsStatus','colsGenre','colsSaga');
   const q=(document.getElementById('colsSearch').value||'').toLowerCase().trim();
-  const list=q?db.collections.filter(c=>colMatch(c,q)):db.collections;
+  let list=db.collections.filter(c=>!active||c.bookIds.some(bid=>{
+    const b=db.books.find(x=>x.id===bid);
+    return b&&pickerMatch(b,'colsStatus','colsGenre','colsSaga');
+  }));
+  if(q)list=list.filter(c=>colMatch(c,q));
   if(!list.length){el.innerHTML='<div class="empty">Aucune collection ne correspond.</div>';return;}
   el.innerHTML=list.map(c=>{
     const i=db.collections.indexOf(c);
@@ -1263,6 +1356,7 @@ function openColEdit(id){
   document.getElementById('c_img').value=(c.image&&!c.image.startsWith('data:'))?c.image:'';
   document.getElementById('c_img').placeholder=(c.image&&c.image.startsWith('data:'))?'(photo enregistrée)':'…ou URL d\'image';
   document.getElementById('colSearch').value='';
+  ['colAddStatus','colAddGenre','colAddSaga'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   renderColImg();renderColItems();renderColAdd();
   document.getElementById('colModal').classList.add('open');
 }
@@ -1279,9 +1373,10 @@ function renderColItems(){
 }
 function renderColAdd(){
   const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
+  fillFilterSelects('colAddStatus','colAddGenre','colAddSaga');
   const q=document.getElementById('colSearch').value.toLowerCase().trim();
   const used=new Set(c.bookIds);
-  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))).slice(0,12);
+  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))&&pickerMatch(b,'colAddStatus','colAddGenre','colAddSaga')).slice(0,12);
   document.getElementById('colAddEl').innerHTML=list.map(b=>
     `<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}</span>
      <button style="color:var(--green)" onclick="colAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
@@ -1305,25 +1400,11 @@ function renderColPick(){
 function toggleColSel(id){colSel.has(id)?colSel.delete(id):colSel.add(id);renderColPick();}
 
 function renderGenreFilter(){
-  const sel=document.getElementById('genreFilter');
-  const cur=sel.value;
-  const genres=[...new Set(db.books.map(b=>b.genre).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
-  sel.innerHTML='<option value="">Genre : tous</option>'+
-    genres.map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join('');
-  if(genres.includes(cur))sel.value=cur;
-  sel.classList.toggle('on',!!sel.value);
-  const ss=document.getElementById('sagaFilter');
-  const sc=ss.value;
-  const sagas=sagaNames();
-  ss.innerHTML='<option value="">Saga : toutes</option>'+
-    sagas.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
-  if(sagas.includes(sc))ss.value=sc;
-  ss.classList.toggle('on',!!ss.value);
+  fillFilterSelects(null,'genreFilter','sagaFilter');
 }
 function renderLib(){
   renderChips();renderColChips();renderGenreFilter();
   const q=document.getElementById('search').value.toLowerCase().trim();
-  const gf=document.getElementById('genreFilter').value;
   let list=db.books.filter(b=>filter==='all'||b.statut===filter);
   if(colFilter==='__none__'){
     const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
@@ -1332,9 +1413,7 @@ function renderLib(){
     const col=db.collections.find(x=>x.id===colFilter);
     if(col)list=list.filter(b=>col.bookIds.includes(b.id));
   }
-  if(gf)list=list.filter(b=>b.genre===gf);
-  const sf=document.getElementById('sagaFilter').value;
-  if(sf)list=list.filter(b=>b.saga===sf);
+  list=list.filter(b=>pickerMatch(b,null,'genreFilter','sagaFilter'));
   if(q)list=list.filter(b=>bookMatch(b,q));
   list.sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const el=document.getElementById('bookList');
@@ -1352,6 +1431,7 @@ function renderLib(){
         ${b.genre?`<span>${icSvg('tag')} ${esc(b.genre)}</span>`:''}
         ${b.saga?`<span>${icSvg('saga')} ${esc(b.saga)}${b.tome?' T'+b.tome:''}</span>`:''}
         ${b.pages?`<span>${b.pages} p.</span>`:''}
+        ${isUpcoming(b)?`<span style="color:var(--accent2);font-weight:700">🔜 Sortie le ${fmtDateFr(b.dateParution)}</span>`:''}
         ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
         ${b.statut==='reading'?`<span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span>`:''}
         ${b.statut==='dnf'&&b.progression?`<span style="color:var(--red);font-weight:700">arrêté à ${b.progression} %</span>`:''}
@@ -1398,6 +1478,19 @@ function renderSmut(){
     `<span class="pep ${smutVal>=i?'on':''}" onclick="setSmut(${i})">🌶</span>`).join('');
 }
 function setSmut(i){smutVal=smutVal===i?0:i;renderSmut();}
+/* Date de parution : livre pas encore sorti */
+function isUpcoming(b){return !!(b.dateParution&&b.dateParution>new Date().toISOString().slice(0,10));}
+function fmtDateFr(iso){
+  if(!iso)return'';
+  const[y,m,d]=iso.split('-');return d+'/'+m+'/'+y;
+}
+function updateParutionMsg(){
+  const el=document.getElementById('parutionMsg');if(!el)return;
+  const v=document.getElementById('f_dateParution').value;
+  if(!v){el.textContent='';return;}
+  const today=new Date().toISOString().slice(0,10);
+  el.textContent=v>today?'🔜 Pas encore sorti — sortie prévue le '+fmtDateFr(v):'';
+}
 function sagaSuggest(){
   const v=document.getElementById('f_saga').value.toLowerCase().trim();
   const names=sagaNames().filter(n=>n.toLowerCase()!==v&&(!v||n.toLowerCase().includes(v))).slice(0,8);
@@ -1423,8 +1516,8 @@ function openAdd(){
   ['f_fmc','f_mmc','f_tropes','f_resume','f_finNote'].forEach(i=>document.getElementById(i).value='');
   segSet('segRec','');renderSubRatings();renderSmut();
   document.getElementById('bookModalTitle').textContent='Ajouter un livre';
-  ['f_titre','f_auteur','f_genre','f_pages','f_epaisseur','f_avis','f_isbn','f_couverture','f_spine','f_saga','f_tome','f_synopsis'].forEach(i=>document.getElementById(i).value='');
-  isbnMsg('');
+  ['f_titre','f_auteur','f_genre','f_pages','f_avis','f_isbn','f_couverture','f_spine','f_saga','f_tome','f_synopsis','f_dateParution'].forEach(i=>document.getElementById(i).value='');
+  isbnMsg('');updateParutionMsg();
   document.getElementById('f_langue').value='Français';
   document.getElementById('f_dateFin').value=new Date().toISOString().slice(0,10);
   document.getElementById('f_noDate').checked=false;
@@ -1464,7 +1557,7 @@ function openEdit(id){
   document.getElementById('f_tome').value=b.tome||'';
   document.getElementById('f_synopsis').value=b.synopsis||'';
   document.getElementById('f_pages').value=b.pages||'';
-  document.getElementById('f_epaisseur').value=b.epaisseur||'';
+  document.getElementById('f_dateParution').value=b.dateParution||'';updateParutionMsg();
   document.getElementById('f_avis').value=b.avis||'';
   document.getElementById('f_dateFin').value=b.dateFin||new Date().toISOString().slice(0,10);
   const noD=b.statut==='done'&&!b.dateFin;
@@ -1511,8 +1604,8 @@ function saveBook(){
     auteur:document.getElementById('f_auteur').value.trim(),
     genre:document.getElementById('f_genre').value.trim(),
     langue:document.getElementById('f_langue').value.trim(),
+    dateParution:document.getElementById('f_dateParution').value||'',
     pages,
-    epaisseur:+document.getElementById('f_epaisseur').value||0,
     fiction:segVal('segFic')==='fiction',
     format,statut,progression,pageActuelle,
     note:(statut==='done'||statut==='dnf')?starVal:0,
@@ -1728,13 +1821,14 @@ async function searchOnline(){
           const isbn=(v.industryIdentifiers||[]).map(x=>x.identifier).find(x=>/^97[89]\d{10}$/.test(x))||'';
           searchRes.push({titre:v.title,auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
             langue:NV_LANG[v.language]||v.language||'',genre:(v.categories||[])[0]||'',isbn,
+            parution:normDate(v.publishedDate),
             couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')});
         });
       }
     }catch(e){}
     if(searchRes.length<3){
       try{
-        const r=await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&fields=title,author_name,number_of_pages_median,cover_i,isbn&limit=6');
+        const r=await fetch('https://openlibrary.org/search.json?q='+encodeURIComponent(q)+'&fields=title,author_name,number_of_pages_median,cover_i,isbn,first_publish_year&limit=6');
         if(r.ok){
           const d=await r.json();
           (d.docs||[]).forEach(v=>{
@@ -1743,6 +1837,7 @@ async function searchOnline(){
             searchRes.push({titre:v.title,auteur:(v.author_name||[]).join(', '),
               pages:v.number_of_pages_median||0,langue:'',genre:'',
               isbn:(v.isbn||[]).find(x=>/^97[89]\d{10}$/.test(x))||'',
+              parution:v.first_publish_year?normDate(String(v.first_publish_year)):'',
               couverture:v.cover_i?('https://covers.openlibrary.org/b/id/'+v.cover_i+'-M.jpg'):''});
           });
         }
@@ -1766,8 +1861,21 @@ function applySearch(i){
   if(v.isbn)document.getElementById('f_isbn').value=v.isbn;
   if(v.couverture)document.getElementById('f_couverture').value=v.couverture;
   if(v.desc)document.getElementById('f_synopsis').value=v.desc;
+  if(v.parution)document.getElementById('f_dateParution').value=v.parution;
+  updateParutionMsg();
   document.getElementById('searchResults').innerHTML='';
   searchMsg('✅ Infos remplies — vérifie et complète si besoin','ok');
+}
+/* Normalise une date de parution (Google Books / Open Library) vers AAAA-MM-JJ */
+function normDate(s){
+  if(!s)return'';
+  s=String(s).trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  if(/^\d{4}-\d{2}$/.test(s))return s+'-01';
+  if(/^\d{4}$/.test(s))return s+'-01-01';
+  const d=new Date(s);
+  if(!isNaN(d)&&d.getFullYear()>1000&&d.getFullYear()<3000)return d.toISOString().slice(0,10);
+  return'';
 }
 function isbn13to10(i){
   if(!/^978\d{10}$/.test(i))return null;
@@ -1806,6 +1914,8 @@ async function lookupISBN(){
     if(info.genre&&!document.getElementById('f_genre').value)document.getElementById('f_genre').value=info.genre;
     document.getElementById('f_couverture').value=info.couverture||('https://covers.openlibrary.org/b/isbn/'+isbn+'-M.jpg?default=false');
     if(info.desc)document.getElementById('f_synopsis').value=info.desc;
+    if(info.parution)document.getElementById('f_dateParution').value=info.parution;
+    updateParutionMsg();
     isbnMsg('✅ Infos trouvées — vérifie et complète si besoin','ok');
   }catch(e){isbnMsg('Erreur réseau — vérifie ta connexion','err');}
 }
@@ -1817,7 +1927,7 @@ async function fetchGoogleBooks(isbn){
   if(!v)return null;
   return {titre:v.title||'',auteur:(v.authors||[]).join(', '),pages:v.pageCount||0,
     langue:NV_LANG[v.language]||v.language||'',genre:(v.categories||[])[0]||'',
-    desc:v.description||'',
+    desc:v.description||'',parution:normDate(v.publishedDate),
     couverture:((v.imageLinks&&(v.imageLinks.thumbnail||v.imageLinks.smallThumbnail))||'').replace('http://','https://')};
 }
 async function fetchOpenLibrary(isbn){
@@ -1827,15 +1937,17 @@ async function fetchOpenLibrary(isbn){
   if(!v)return null;
   return {titre:v.title||'',auteur:(v.authors||[]).map(a=>a.name).join(', '),
     pages:v.number_of_pages||0,langue:'',genre:(v.subjects&&v.subjects[0]&&v.subjects[0].name)||'',
+    parution:normDate(v.publish_date),
     couverture:(v.cover&&(v.cover.medium||v.cover.small))||''};
 }
 async function fetchOpenLibSearch(isbn){
-  const r=await fetch('https://openlibrary.org/search.json?q=isbn:'+isbn+'&fields=title,author_name,number_of_pages_median,cover_i&limit=1');
+  const r=await fetch('https://openlibrary.org/search.json?q=isbn:'+isbn+'&fields=title,author_name,number_of_pages_median,cover_i,first_publish_year&limit=1');
   if(!r.ok)return null;
   const d=await r.json();const v=d.docs&&d.docs[0];
   if(!v||!v.title)return null;
   return {titre:v.title,auteur:(v.author_name||[]).join(', '),
     pages:v.number_of_pages_median||0,langue:'',genre:'',
+    parution:v.first_publish_year?normDate(String(v.first_publish_year)):'',
     couverture:v.cover_i?('https://covers.openlibrary.org/b/id/'+v.cover_i+'-M.jpg'):''};
 }
 /* Scanner : BarcodeDetector natif si dispo, sinon ZXing chargé à la demande */
@@ -2298,6 +2410,7 @@ function openInfo(id){
     ['Genre',b.genre],
     ['Langue',b.langue],
     ['Pages',b.pages?b.pages+' p.':''],
+    ['Date de parution',b.dateParution?fmtDateFr(b.dateParution)+(isUpcoming(b)?' — 🔜 pas encore sorti':''):''],
     ['ISBN',b.isbn],
     ['Collections',cols.join(', ')],
     ['Saga',b.saga?b.saga+(b.tome?' — Tome '+b.tome:''):''],
@@ -2555,6 +2668,7 @@ function openShelfEdit(id){
   document.getElementById('s_rows').value=s.rows||1;
   shelfItemsW=shelfEffItems(s).map(x=>({...x}));
   document.getElementById('shelfSearch').value='';
+  ['shelfAddStatus','shelfAddGenre','shelfAddSaga'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('shelfLinkMsg').textContent=linked
     ?'🔗 Liée à : '+shelfSourceLabel(s)+' — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
   document.getElementById('shelfUnlinkBtn').classList.toggle('hidden',!linked);
@@ -2600,9 +2714,10 @@ function shelfMove(i,d){
 }
 function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfItems();renderShelfAdd();}
 function renderShelfAdd(){
+  fillFilterSelects('shelfAddStatus','shelfAddGenre','shelfAddSaga');
   const q=document.getElementById('shelfSearch').value.toLowerCase().trim();
   const used=new Set(shelfItemsW.map(x=>x.bookId));
-  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))).slice(0,12);
+  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))&&pickerMatch(b,'shelfAddStatus','shelfAddGenre','shelfAddSaga')).slice(0,12);
   document.getElementById('shelfAddEl').innerHTML=list.map(b=>
     `<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}</span>
      <button style="color:var(--green)" onclick="shelfAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
