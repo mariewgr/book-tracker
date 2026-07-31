@@ -9,7 +9,7 @@ Application web de suivi de lecture, pensée pour iPhone (plein écran depuis l'
 - Ajout d'un livre par **recherche en ligne** (titre/auteur), par **ISBN** saisi, par **scan du code-barres** (caméra), ou par **photo d'une fiche de lecture manuscrite** analysée par IA (clé Gemini requise, voir plus bas).
 - Suivi de l'avancement adapté au format : **page actuelle** pour le papier, **%** pour le numérique et l'audio. Bouton de mise à jour rapide sur la fiche, passage automatique en « Terminé » à 100 %.
 - Fiche de lecture complète pour les livres terminés : note globale ★, **9 notes détaillées** (écriture, histoire, personnages, tension, tristesse, romance, drôle, facile à lire, fin), FMC/MMC, tropes, Recommander 👍/👎, Smut 🌶, résumé, la fin (repliée derrière un avertissement spoilers), commentaires, date de fin (ou « lu il y a longtemps » sans date).
-- Recherche par **titre, auteur ou nom de collection**, filtres par statut, genre et collection.
+- Recherche par **titre, auteur ou saga**, filtres par statut, genre et saga.
 - Images de couverture/tranche par URL, **photothèque ou photo** (compressées automatiquement).
 
 ### Étagères virtuelles
@@ -17,12 +17,11 @@ Application web de suivi de lecture, pensée pour iPhone (plein écran depuis l'
 - Étage précis par livre ou placement automatique à la suite (passage à l'étage suivant quand il n'y a plus de place).
 - Toucher un livre ouvre sa fiche complète.
 
-### Collections
-- CRUD complet : nom, **image** (photothèque/photo/URL), livres (ajout/retrait avec recherche), classement de l'ordre, suppression.
-- Assignation aussi depuis la fiche de chaque livre.
+### Sagas
+- Regroupement des tomes d'une même saga (champ Saga + numéro de tome sur la fiche livre), suivi de progression (tomes lus / total).
 
 ### Top (classement)
-- Un classement unique mêlant **livres et collections**, réordonnable.
+- Un classement unique mêlant **livres et sagas**, réordonnable.
 
 ### Défi de la pile
 - Chaque livre terminé ajoute son **épaisseur réelle** (ou estimée d'après les pages) à une pile visuelle comparée à **ta taille**, avec paliers (chat, beagle, panda, autruche, girafe…).
@@ -38,7 +37,7 @@ Application web de suivi de lecture, pensée pour iPhone (plein écran depuis l'
 
 ### Données
 - Stockage local + **sync cloud temps réel** via Supabase (Postgres) : sauvegarde automatique ~1 s après chaque modification, récupération sur n'importe quel appareil connecté au même compte.
-- **Export/Import JSON**, et import direct des sauvegardes **Book Nova** (livres, statuts, notes, sessions de lecture, collections).
+- **Export/Import JSON**, et import direct des sauvegardes **Book Nova** (livres, statuts, notes, sessions de lecture).
 - Icônes personnalisables : dépose des PNG (`book.png`, `shelf.png`, etc.) à côté d'`index.html` — repli automatique sur les icônes SVG intégrées.
 
 ## Déploiement (GitHub Pages)

@@ -120,8 +120,6 @@ nav button.active{color:var(--accent)}
 .seg button .icn{width:14px;height:14px}
 .btn .icn,.quickbtn .icn{width:16px;height:16px}
 .chip.dashed{border-style:dashed;color:var(--accent)}
-.colactions{display:flex;gap:8px;margin:0 2px 10px}
-.colactions:empty{display:none}
 .smallbtn{background:var(--card);border:1px solid var(--line2);color:var(--txt2);padding:7px 12px;border-radius:10px;font-size:.78rem;font-weight:700;cursor:pointer}
 .menub{display:flex;align-items:center;gap:10px;justify-content:flex-start;text-align:left}
 .chipwrap{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
@@ -405,8 +403,6 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
       <select id="sagaFilter" class="sfSel" onchange="renderLib()"></select>
     </div>
     <div class="chips" id="filterChips"></div>
-    <div class="chips" id="colChips"></div>
-    <div class="colactions" id="colActions"></div>
     <div id="bookList"></div>
   </section>
 
@@ -432,20 +428,9 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <!-- ÉTAGÈRES -->
   <section id="view-shelf" class="hidden">
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère liée à une collection / saga / parutions à venir</button>
+      <button class="smallbtn" style="color:var(--accent)" onclick="openShelfFromCols()">＋ Étagère liée à une saga / parutions à venir</button>
     </div>
     <div id="shelfList"></div>
-  </section>
-
-  <!-- COLLECTIONS -->
-  <section id="view-cols" class="hidden">
-    <input class="search" id="colsSearch" placeholder="🔍 Chercher une collection, un titre, un auteur…" oninput="renderCols()">
-    <div class="filterrow">
-      <select id="colsStatus" class="stSel" onchange="renderCols()"></select>
-      <select id="colsGenre" class="gfSel" onchange="renderCols()"></select>
-      <select id="colsSaga" class="sfSel" onchange="renderCols()"></select>
-    </div>
-    <div id="colsList"></div>
   </section>
 
   <!-- SAGAS -->
@@ -489,7 +474,6 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <div class="overlay" id="plusModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2>Plus</h2>
-    <button class="btn ghost menub" onclick="closeModals();switchTab('cols')"><span data-spr="collection" data-spr-size="20"><svg class="icn"><use href="#i-folder"/></svg></span> Collections</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('saga')"><span data-spr="saga" data-spr-size="20"><svg class="icn"><use href="#i-saga"/></svg></span> Sagas</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('rank')"><span data-spr="trophy" data-spr-size="20"><svg class="icn"><use href="#i-trophy"/></svg></span> Top — mon classement</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
@@ -544,8 +528,6 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     </div>
     <div class="isbnmsg" id="spMsg"></div>
     <button type="button" class="smallbtn" style="color:var(--accent);margin-top:6px" onclick="openSpineFind('form')">🔍 Trouver la tranche en ligne</button>
-    <label>Collections</label>
-    <div class="chipwrap" id="colPick"></div>
     <div class="row">
       <div><label>Genre</label><input id="f_genre" placeholder="Roman, SF, Polar…" list="genreList"><datalist id="genreList"></datalist></div>
       <div><label>Langue</label><input id="f_langue" placeholder="Français" list="langList"><datalist id="langList"></datalist></div>
@@ -639,45 +621,11 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <input type="file" id="fichePick" accept="image/*" class="hidden" onchange="onFichePicked(this)">
 <input type="file" id="quotePick" accept="image/*" class="hidden" onchange="onQuotePicked(this)">
 
-<!-- MODAL COLLECTION -->
-<div class="overlay" id="colModal" onclick="if(event.target===this)closeModals()">
-  <div class="sheet">
-    <h2 id="colModalTitle"></h2>
-    <label>Nom</label>
-    <input id="c_nom" placeholder="Nom de la collection">
-    <label>Image</label>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
-      <div id="colImgPreview"></div>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;gap:6px">
-          <button class="smallbtn" onclick="pickImage(colEditId,'image',false,'col')"><span data-spr="image" data-spr-size="15"><svg class="icn"><use href="#i-image"/></svg></span></button>
-          <button class="smallbtn" onclick="pickImage(colEditId,'image',true,'col')"><span data-spr="camera" data-spr-size="15"><svg class="icn"><use href="#i-camera"/></svg></span></button>
-          <button class="smallbtn" style="color:var(--red)" onclick="colClearImg()">✕ Retirer</button>
-        </div>
-        <input id="c_img" placeholder="…ou URL d'image" style="margin-top:8px" autocapitalize="none">
-      </div>
-    </div>
-    <label>Livres dans la collection</label>
-    <div id="colItemsEl"></div>
-    <label>Ajouter un livre</label>
-    <input class="search" id="colSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderColAdd()">
-    <div class="filterrow">
-      <select id="colAddStatus" class="stSel" onchange="renderColAdd()"></select>
-      <select id="colAddGenre" class="gfSel" onchange="renderColAdd()"></select>
-      <select id="colAddSaga" class="sfSel" onchange="renderColAdd()"></select>
-    </div>
-    <div id="colAddEl"></div>
-    <button class="btn" onclick="saveColEdit()">Enregistrer</button>
-    <button class="btn danger" onclick="deleteCollection(colEditId)">Supprimer la collection</button>
-    <button class="btn ghost" onclick="closeModals()">Annuler</button>
-  </div>
-</div>
-
-<!-- MODAL ÉTAGÈRE DEPUIS COLLECTIONS -->
+<!-- MODAL ÉTAGÈRE DEPUIS SAGAS -->
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2>Étagère liée</h2>
-    <label>Choisis une ou plusieurs collections / sagas / parutions à venir — l'étagère se mettra à jour automatiquement</label>
+    <label>Choisis une ou plusieurs sagas / parutions à venir — l'étagère se mettra à jour automatiquement</label>
     <div class="chipwrap" id="sfcPick"></div>
     <button class="btn" onclick="createShelfFromCols()">Créer l'étagère liée</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
@@ -833,7 +781,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 const KEY='mabibli_v1';
 function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
-  d.collections=d.collections||[];d.shelves=d.shelves||[];d.ranking=d.ranking||[];
+  d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
   return d;
@@ -1105,7 +1053,7 @@ function makeSortable(container,onDone){
 }
 /* Icônes : PNG personnalisés si disponibles, sinon SVG intégrés */
 const IC_FILES={
-  book:'book.png',shelf:'shelf.png',folder:'collection.png',trophy:'rank.png',
+  book:'book.png',shelf:'shelf.png',trophy:'rank.png',
   chart:'stats.png',calendar:'calendar.png',refresh:'refresh.png',gear:'settings.png',
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
@@ -1118,7 +1066,7 @@ const icSvg=n=>IC_FILES[n]
    Chaque icône marquée data-spr est remplacée si son fichier existe,
    sinon l'icône SVG d'origine reste affichée. */
 const SPR_FILES={
-  book:'book.png',shelf:'shelf.png',collection:'collection.png',trophy:'rank.png',
+  book:'book.png',shelf:'shelf.png',trophy:'rank.png',
   pile:'book_pile.png',chart:'stats.png',calendar:'calendar.png',
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
@@ -1155,15 +1103,15 @@ function thickness(b){
 
 /* ---------- Navigation ---------- */
 let tab='home';
-const PLUS_TABS=new Set(['cols','saga','rank','defi','stats','disc']);
+const PLUS_TABS=new Set(['saga','rank','defi','stats','disc']);
 function switchTab(t){
   tab=t;
   document.querySelectorAll('nav button').forEach(b=>
     b.classList.toggle('active',b.dataset.v===t||(b.dataset.v==='plus'&&PLUS_TABS.has(t))));
-  ['home','lib','shelf','cols','saga','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
+  ['home','lib','shelf','saga','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
   const fab=document.getElementById('fab');
-  fab.classList.toggle('hidden',t!=='lib'&&t!=='shelf'&&t!=='cols');
-  const FAB_IC={lib:'book',shelf:'shelf',cols:'folder'};
+  fab.classList.toggle('hidden',t!=='lib'&&t!=='shelf');
+  const FAB_IC={lib:'book',shelf:'shelf'};
   if(FAB_IC[t])fab.innerHTML=icSvg(FAB_IC[t])+'<span class="plus">+</span>';
   render();
   window.scrollTo(0,0);
@@ -1241,17 +1189,9 @@ function renderChips(){
     return `<div class="chip ${filter===v?'active':''}" onclick="filter='${v}';renderLib()">${l} (${n})</div>`;
   }).join('');
 }
-/* Recherche unifiée : titre, auteur ou nom de collection */
+/* Recherche unifiée : titre, auteur ou saga */
 function bookMatch(b,q){
-  if((b.titre+' '+(b.auteur||'')+' '+(b.saga||'')).toLowerCase().includes(q))return true;
-  return db.collections.some(c=>c.nom.toLowerCase().includes(q)&&c.bookIds.includes(b.id));
-}
-function colMatch(c,q){
-  if(c.nom.toLowerCase().includes(q))return true;
-  return c.bookIds.some(bid=>{
-    const b=db.books.find(x=>x.id===bid);
-    return b&&(b.titre+' '+(b.auteur||'')).toLowerCase().includes(q);
-  });
+  return (b.titre+' '+(b.auteur||'')+' '+(b.saga||'')).toLowerCase().includes(q);
 }
 
 /* Filtres statut/genre/saga réutilisables : peuple des <select> (par id) et teste un livre */
@@ -1309,40 +1249,6 @@ function pickerMatch(b,statusId,genreId,sagaId){
   return true;
 }
 
-/* Collections */
-let colFilter=null,colSel=new Set();
-function renderColChips(){
-  const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
-  const nbSans=db.books.filter(b=>!inCol.has(b.id)).length;
-  document.getElementById('colChips').innerHTML=
-    `<div class="chip ${colFilter===null?'active':''}" onclick="colFilter=null;renderLib()">${icSvg('book')} Tout</div>`+
-    `<div class="chip ${colFilter==='__none__'?'active':''}" onclick="colFilter='__none__';renderLib()">Sans collection (${nbSans})</div>`+
-    db.collections.map(c=>`<div class="chip ${colFilter===c.id?'active':''}" onclick="colFilter='${c.id}';renderLib()">${esc(c.nom)} (${c.bookIds.length})</div>`).join('')+
-    `<div class="chip dashed" onclick="newCollection(false)">＋ Collection</div>`;
-  const c=db.collections.find(x=>x.id===colFilter);
-  document.getElementById('colActions').innerHTML=c?
-    `<button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">${icSvg('pencil')} Modifier (nom, image, livres)</button>
-     <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">${icSvg('trash')} Supprimer</button>`:'';
-}
-function newCollection(fromPicker){
-  askText('Nom de la collection','',nom=>{
-    if(!nom)return;
-    const c={id:uid(),nom,bookIds:[]};
-    db.collections.push(c);save();
-    if(fromPicker){colSel.add(c.id);renderColPick();}
-    else{colFilter=c.id;renderLib();renderCols();}
-  });
-}
-function deleteCollection(id){
-  const c=db.collections.find(x=>x.id===id);if(!c)return;
-  askConfirm('Supprimer la collection « '+c.nom+' » ? Les livres ne seront pas supprimés.',()=>{
-    db.collections=db.collections.filter(x=>x.id!==id);
-    db.ranking=db.ranking.filter(r=>!(r.type==='col'&&r.id===id));
-    db.shelves.forEach(s=>{if(s.source)s.source=s.source.filter(x=>!(x.type==='col'&&x.id===id));});
-    if(colFilter===id)colFilter=null;
-    save();renderLib();renderCols();renderRank();
-  },'Supprimer');
-}
 /* ---------- Sagas ---------- */
 const sagaNames=()=>[...new Set(db.books.map(b=>b.saga).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));
 const sagaBooks=n=>db.books.filter(b=>b.saga===n).sort((a,b)=>(a.tome||99)-(b.tome||99));
@@ -1377,116 +1283,13 @@ function renderSagas(){
   }).join('');
 }
 
-/* Onglet Collections : classement + gestion */
-function renderCols(){
-  const el=document.getElementById('colsList');
-  if(!db.collections.length){
-    el.innerHTML=`<div class="empty"><span class="big">${icSvg('folder')}</span>Aucune collection.<br>Appuie sur <b>+</b> pour en créer une !</div>`;
-    return;
-  }
-  fillFilterSelects('colsStatus','colsGenre','colsSaga');
-  const active=filtersActive('colsStatus','colsGenre','colsSaga');
-  const q=(document.getElementById('colsSearch').value||'').toLowerCase().trim();
-  let list=db.collections.filter(c=>!active||c.bookIds.some(bid=>{
-    const b=db.books.find(x=>x.id===bid);
-    return b&&pickerMatch(b,'colsStatus','colsGenre','colsSaga');
-  }));
-  if(q)list=list.filter(c=>colMatch(c,q));
-  if(!list.length){el.innerHTML='<div class="empty">Aucune collection ne correspond.</div>';return;}
-  el.innerHTML=list.map(c=>{
-    const i=db.collections.indexOf(c);
-    const covers=c.bookIds.slice(0,8).map(bid=>{
-      const b=db.books.find(x=>x.id===bid);
-      return `<div style="flex:none">${coverEl(b&&b.couverture,'sm')}</div>`;
-    }).join('');
-    return `<div class="book" style="cursor:default">
-      <div class="top">${colImgEl(c,'')}<div class="tinfo"><h3>${esc(c.nom)}</h3>
-        <div class="auth">${c.bookIds.length} livre${c.bookIds.length>1?'s':''}</div></div>
-        <div style="display:flex;gap:6px;flex:none">
-          <button class="smallbtn" style="${i===0?'opacity:.35':''}" onclick="colMove(${i},-1)">↑</button>
-          <button class="smallbtn" style="${i===db.collections.length-1?'opacity:.35':''}" onclick="colMove(${i},1)">↓</button>
-        </div></div>
-      <div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto">${covers||'<span style="color:var(--txt2);font-size:.8rem">Vide pour l\'instant</span>'}</div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="smallbtn" style="color:var(--accent)" onclick="openColEdit('${c.id}')">${icSvg('pencil')} Modifier</button>
-        <button class="smallbtn" onclick="colFilter='${c.id}';switchTab('lib')">${icSvg('eye')} Voir dans la bibli</button>
-        <button class="smallbtn" style="color:var(--red)" onclick="deleteCollection('${c.id}')">${icSvg('trash')}</button>
-      </div></div>`;
-  }).join('');
-}
-function colMove(i,d){
-  const j=i+d;if(j<0||j>=db.collections.length)return;
-  [db.collections[i],db.collections[j]]=[db.collections[j],db.collections[i]];
-  save();renderCols();renderLib();
-}
-
-/* Gestion des livres d'une collection */
-let colEditId=null;
-function openColEdit(id){
-  const c=db.collections.find(x=>x.id===id);if(!c)return;
-  colEditId=id;
-  document.getElementById('colModalTitle').textContent='Modifier la collection';
-  document.getElementById('c_nom').value=c.nom;
-  document.getElementById('c_img').value=(c.image&&!c.image.startsWith('data:'))?c.image:'';
-  document.getElementById('c_img').placeholder=(c.image&&c.image.startsWith('data:'))?'(photo enregistrée)':'…ou URL d\'image';
-  document.getElementById('colSearch').value='';
-  ['colAddStatus','colAddGenre','colAddSaga'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  renderColImg();renderColItems();renderColAdd();
-  document.getElementById('colModal').classList.add('open');
-}
-function renderColItems(){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  const el=document.getElementById('colItemsEl');
-  if(!c.bookIds.length){el.innerHTML='<div class="isbnmsg">Aucun livre pour l\'instant.</div>';return;}
-  el.innerHTML=c.bookIds.map(bid=>{
-    const b=db.books.find(x=>x.id===bid);
-    return `<div class="sitem">${coverEl(b&&b.couverture,'sm')}
-      <span class="nm">${esc(b?b.titre:'?')}</span>
-      <button style="color:var(--red)" onclick="colRemoveBook('${bid}')">✕ Retirer</button></div>`;
-  }).join('');
-}
-function renderColAdd(){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  fillFilterSelects('colAddStatus','colAddGenre','colAddSaga');
-  const q=document.getElementById('colSearch').value.toLowerCase().trim();
-  const used=new Set(c.bookIds);
-  const list=db.books.filter(b=>!used.has(b.id)&&(!q||bookMatch(b,q))&&pickerMatch(b,'colAddStatus','colAddGenre','colAddSaga')).slice(0,12);
-  document.getElementById('colAddEl').innerHTML=list.map(b=>
-    `<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}</span>
-     <button style="color:var(--green)" onclick="colAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
-    ||'<div class="isbnmsg">Aucun résultat.</div>';
-}
-function colAddBook(bid){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  c.bookIds.push(bid);save();
-  renderColItems();renderColAdd();renderLib();renderCols();
-}
-function colRemoveBook(bid){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  c.bookIds=c.bookIds.filter(x=>x!==bid);save();
-  renderColItems();renderColAdd();renderLib();renderCols();
-}
-function renderColPick(){
-  document.getElementById('colPick').innerHTML=
-    db.collections.map(c=>`<div class="chip ${colSel.has(c.id)?'active':''}" onclick="toggleColSel('${c.id}')">${esc(c.nom)}</div>`).join('')+
-    `<div class="chip dashed" onclick="newCollection(true)">＋ Nouvelle</div>`;
-}
-function toggleColSel(id){colSel.has(id)?colSel.delete(id):colSel.add(id);renderColPick();}
-
 function renderGenreFilter(){
   fillFilterSelects(null,'genreFilter','sagaFilter');
 }
 function renderLib(){
-  renderChips();renderColChips();renderGenreFilter();
+  renderChips();renderGenreFilter();
   const q=document.getElementById('search').value.toLowerCase().trim();
   let list=filter==='upcoming'?db.books.filter(isUpcoming):db.books.filter(b=>filter==='all'||b.statut===filter);
-  if(colFilter==='__none__'){
-    const inCol=new Set(db.collections.flatMap(c=>c.bookIds));
-    list=list.filter(b=>!inCol.has(b.id));
-  }else{
-    const col=db.collections.find(x=>x.id===colFilter);
-    if(col)list=list.filter(b=>col.bookIds.includes(b.id));
-  }
   list=list.filter(b=>pickerMatch(b,null,'genreFilter','sagaFilter'));
   if(q)list=list.filter(b=>bookMatch(b,q));
   list.sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
@@ -1585,7 +1388,6 @@ function fillDatalists(){
 }
 function openAdd(){
   if(tab==='shelf'){newShelf();return;}
-  if(tab==='cols'){newCollection(false);return;}
   editId=null;starVal=0;subVals={};smutVal=0;
   ['f_fmc','f_mmc','f_tropes','f_resume','f_finNote'].forEach(i=>document.getElementById(i).value='');
   segSet('segRec','');renderSubRatings();renderSmut();
@@ -1600,12 +1402,11 @@ function openAdd(){
   document.getElementById('f_page').value='';
   segSet('segFic','fiction');segSet('segStatut','tbr');segSet('segFormat','papier');
   document.getElementById('delBookBtn').classList.add('hidden');
-  colSel=new Set();if(colFilter&&colFilter!=='__none__')colSel.add(colFilter);
   resetFormImgs();
   document.getElementById('f_search').value='';
   document.getElementById('searchResults').innerHTML='';searchMsg('');
   document.getElementById('sagaSug').innerHTML='';
-  toggleStatutFields();renderStars();fillDatalists();renderColPick();
+  toggleStatutFields();renderStars();fillDatalists();
   document.getElementById('bookModal').classList.add('open');
 }
 function openEdit(id){
@@ -1643,12 +1444,11 @@ function openEdit(id){
   segSet('segFic',b.fiction===false?'nonfiction':'fiction');
   segSet('segStatut',b.statut);segSet('segFormat',fmt(b));
   document.getElementById('delBookBtn').classList.remove('hidden');
-  colSel=new Set(db.collections.filter(c=>c.bookIds.includes(id)).map(c=>c.id));
   resetFormImgs();
   document.getElementById('f_search').value='';
   document.getElementById('searchResults').innerHTML='';searchMsg('');
   document.getElementById('sagaSug').innerHTML='';
-  toggleStatutFields();renderStars();fillDatalists();renderColPick();
+  toggleStatutFields();renderStars();fillDatalists();
   document.getElementById('bookModal').classList.add('open');
 }
 function saveBook(){
@@ -1707,11 +1507,6 @@ function saveBook(){
   if(delta>0)logSession(b.id,titre,delta,today);
   if(statut==='done'&&(!prev||prev.statut!=='done'))confetti();
   if(editId)db.books=db.books.map(x=>x.id===editId?b:x);else db.books.push(b);
-  db.collections.forEach(c=>{
-    const has=c.bookIds.includes(b.id);
-    if(colSel.has(c.id)&&!has)c.bookIds.push(b.id);
-    if(!colSel.has(c.id)&&has)c.bookIds=c.bookIds.filter(x=>x!==b.id);
-  });
   save();closeModals();render();
 }
 /* ---------- Avancement rapide ---------- */
@@ -1766,7 +1561,6 @@ function logSession(bookId,titre,pages,date){
 function deleteBook(){
   askConfirm('Supprimer ce livre ?',()=>{
     db.books=db.books.filter(x=>x.id!==editId);
-    db.collections.forEach(c=>c.bookIds=c.bookIds.filter(x=>x!==editId));
     db.shelves.forEach(s=>s.items=s.items.filter(it=>it.bookId!==editId));
     db.ranking=db.ranking.filter(r=>!(r.type==='book'&&r.id===editId));
     save();closeModals();render();
@@ -2263,41 +2057,15 @@ function onImgPicked(inp){
       if(m){m.textContent='✅ Image ajoutée — sera utilisée à l\'enregistrement';m.className='isbnmsg ok';}
       return;
     }
-    const obj=imgTarget.kind==='col'
-      ?db.collections.find(x=>x.id===imgTarget.id)
-      :db.books.find(x=>x.id===imgTarget.id);
+    const obj=db.books.find(x=>x.id===imgTarget.id);
     if(!obj)return;
     obj[imgTarget.field]=dataUrl;
     save();render();
-    if(imgTarget.kind==='col')renderColImg();else openInfo(obj.id);
+    openInfo(obj.id);
     toast('Image mise à jour ✅');
   };
   img.onerror=()=>toast('Image illisible 😕');
   img.src=URL.createObjectURL(f);
-}
-/* Image de collection */
-function colImgEl(c,cls){
-  return c.image
-    ?`<img class="cover ${cls}" src="${esc(c.image)}" loading="lazy" onerror="imgFallback(this,'cover ${cls} ph','folder')">`
-    :`<div class="cover ${cls} ph">${icSvg('folder')}</div>`;
-}
-function renderColImg(){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  const el=document.getElementById('colImgPreview');
-  if(el)el.innerHTML=colImgEl(c,'lg');
-}
-function colClearImg(){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  c.image='';save();render();renderColImg();
-  const f=document.getElementById('c_img');if(f){f.value='';f.placeholder='…ou URL d\'image';}
-}
-function saveColEdit(){
-  const c=db.collections.find(x=>x.id===colEditId);if(!c)return;
-  const nom=document.getElementById('c_nom').value.trim();
-  if(nom)c.nom=nom;
-  const url=document.getElementById('c_img').value.trim();
-  if(url)c.image=url;
-  save();closeModals();render();
 }
 
 /* ---------- Recherche de tranches en ligne (Openverse, sans clé) ---------- */
@@ -2478,7 +2246,6 @@ function closeSpineCam(){
 function openInfo(id){
   const b=db.books.find(x=>x.id===id);if(!b)return;
   const[sl,sc]=STATUT[b.statut];
-  const cols=db.collections.filter(c=>c.bookIds.includes(id)).map(c=>c.nom);
   const rows=[
     ['Format',FMT[fmt(b)]],
     ['Genre',b.genre],
@@ -2486,7 +2253,6 @@ function openInfo(id){
     ['Pages',b.pages?b.pages+' p.':''],
     ['Date de parution',b.dateParution?fmtDateFr(b.dateParution)+(isUpcoming(b)?' — 🔜 pas encore sorti':''):''],
     ['ISBN',b.isbn],
-    ['Collections',cols.join(', ')],
     ['Saga',b.saga?b.saga+(b.tome?' — Tome '+b.tome:''):''],
     ['Lu',b.statut==='done'&&b.relectures?(1+b.relectures)+' fois':''],
     ['FMC',b.fmc],
@@ -2672,10 +2438,10 @@ function renderShelves(){
     <button class="smallbtn" onclick="openShelfEdit('${s.id}')">${icSvg('pencil')} Modifier</button></div>
     ${shelfVisual(s)}</div>`).join('');
   if(!db.shelves.length)
-    html+=`<div class="empty">Crée tes propres étagères avec <b>+</b>, ou depuis tes collections avec le bouton ci-dessus.</div>`;
+    html+=`<div class="empty">Crée tes propres étagères avec <b>+</b>, ou depuis tes sagas avec le bouton ci-dessus.</div>`;
   el.innerHTML=html;
 }
-/* Étagère liée (collections et/ou sagas, mise à jour automatique) */
+/* Étagère liée (sagas et/ou parutions à venir, mise à jour automatique) */
 function upcomingBooks(){
   return db.books.filter(isUpcoming).sort((a,b)=>a.dateParution<b.dateParution?-1:1);
 }
@@ -2685,9 +2451,7 @@ function shelfEffItems(s){
   s.source.forEach(src=>{
     const list=src.type==='saga'
       ?sagaBooks(src.id).map(b=>b.id)
-      :src.type==='upcoming'
-      ?upcomingBooks().map(b=>b.id)
-      :(((db.collections.find(c=>c.id===src.id)||{}).bookIds)||[]);
+      :upcomingBooks().map(b=>b.id);
     list.forEach(id=>{
       if(!seen.has(id)&&db.books.some(b=>b.id===id)){seen.add(id);ids.push(id);}
     });
@@ -2696,11 +2460,11 @@ function shelfEffItems(s){
   return ids.map(id=>({bookId:id,mode:(ov[id]&&ov[id].mode)||'spine',row:(ov[id]&&ov[id].row)||null}));
 }
 function shelfSourceLabel(s){
-  return (s.source||[]).map(x=>x.type==='saga'?x.id:(x.type==='upcoming'?'À paraître':((db.collections.find(c=>c.id===x.id)||{}).nom||'?'))).join(' + ');
+  return (s.source||[]).map(x=>x.type==='saga'?x.id:'À paraître').join(' + ');
 }
 let sfcSel=new Set();
 function openShelfFromCols(){
-  if(!db.collections.length&&!sagaNames().length&&!upcomingBooks().length){toast('Crée d\'abord une collection, renseigne des sagas, ou ajoute une date de parution à un livre 🗂');return;}
+  if(!sagaNames().length&&!upcomingBooks().length){toast('Renseigne des sagas, ou ajoute une date de parution à un livre 🗂');return;}
   sfcSel=new Set();
   renderSfc();
   document.getElementById('shelfColsModal').classList.add('open');
@@ -2710,17 +2474,13 @@ function renderSfc(){
   const up=upcomingBooks();
   document.getElementById('sfcPick').innerHTML=
     (up.length?`<div class="chip ${sfcSel.has('upcoming|upcoming')?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="upcoming|upcoming">🔜 Livres à paraître (${up.length})</div>`:'')+
-    db.collections.map(c=>{
-      const k='col|'+c.id;
-      return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">🗂 ${esc(c.nom)} (${c.bookIds.length})</div>`;
-    }).join('')+
     sagaNames().map(n=>{
       const k='saga|'+n;
       return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">${esc(n)} (${sagaBooks(n).length} t.)</div>`;
     }).join('');
 }
 function createShelfFromCols(){
-  if(!sfcSel.size){toast('Choisis au moins une collection ou une saga');return;}
+  if(!sfcSel.size){toast('Choisis au moins une saga');return;}
   const source=[...sfcSel].map(k=>{
     const i=k.indexOf('|');
     return {type:k.slice(0,i),id:k.slice(i+1)};
@@ -2836,7 +2596,7 @@ function deleteShelf(){
   },'Supprimer');
 }
 
-/* ---------- Classement (livres + collections confondus) ---------- */
+/* ---------- Classement (livres + sagas confondus) ---------- */
 function rankItems(){
   return db.ranking.map(r=>{
     if(r.type==='book'){const b=db.books.find(x=>x.id===r.id);return b?{...r,b}:null;}
@@ -3290,10 +3050,7 @@ function fromBookNova(d){
   (d.books||[]).forEach(b=>(b.readingSessions||[]).forEach(s=>{
     if(s.pages>0&&s.timestamp)sessions.push({id:uid(),date:nvDate(s.timestamp),bookId:b.id,titre:b.title||'',pages:s.pages});
   }));
-  const collections=(d.customCollections||[]).map(c=>({
-    id:c.id||uid(),nom:c.name||'Collection',bookIds:(c.bookIds||[]).filter(Boolean)
-  }));
-  return {books,loans,sessions,collections,settings:{...db.settings}};
+  return {books,loans,sessions,settings:{...db.settings}};
 }
 function importData(input){
   const f=input.files[0];if(!f)return;
@@ -3304,7 +3061,7 @@ function importData(input){
       if(!Array.isArray(d.books))throw 0;
       /* Book Nova ou format natif ? */
       const isNative=!d.books.length||d.books[0].titre!==undefined;
-      const inc=isNative?{books:d.books,loans:d.loans||[],sessions:d.sessions||[],collections:d.collections||[],shelves:d.shelves||[],ranking:d.ranking||[],settings:d.settings||db.settings}:fromBookNova(d);
+      const inc=isNative?{books:d.books,loans:d.loans||[],sessions:d.sessions||[],shelves:d.shelves||[],ranking:d.ranking||[],settings:d.settings||db.settings}:fromBookNova(d);
       const apply=merge=>{
         if(merge){
           const ids=new Set(db.books.map(b=>b.id));
@@ -3314,16 +3071,13 @@ function importData(input){
           const skey=s=>s.date+'|'+s.bookId;
           const sids=new Set(db.sessions.map(skey));
           db.sessions.push(...(inc.sessions||[]).filter(s=>!sids.has(skey(s))));
-          const cids=new Set(db.collections.map(c=>c.id));
-          db.collections.push(...(inc.collections||[]).filter(c=>!cids.has(c.id)));
           const shids=new Set(db.shelves.map(s=>s.id));
           db.shelves.push(...(inc.shelves||[]).filter(s=>!shids.has(s.id)));
           const rids=new Set(db.ranking.map(r=>r.type+'|'+r.id));
           db.ranking.push(...(inc.ranking||[]).filter(r=>!rids.has(r.type+'|'+r.id)));
         }else{
-          db=normalizeDb({books:inc.books,loans:inc.loans||[],sessions:inc.sessions||[],collections:inc.collections||[],shelves:inc.shelves||[],ranking:inc.ranking||[],settings:inc.settings||db.settings});
+          db=normalizeDb({books:inc.books,loans:inc.loans||[],sessions:inc.sessions||[],shelves:inc.shelves||[],ranking:inc.ranking||[],settings:inc.settings||db.settings});
         }
-        colFilter=null;
         save();closeModals();render();
         toast('Import réussi ✅ '+inc.books.length+' livres importés ('+db.books.length+' au total)'+(isNative?'':' — Book Nova'));
       };
@@ -3343,7 +3097,7 @@ function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classL
 /* ---------- Rendu global ---------- */
 function render(){
   applyTheme();
-  const map={home:renderHome,lib:renderLib,shelf:renderShelves,cols:renderCols,saga:renderSagas,
+  const map={home:renderHome,lib:renderLib,shelf:renderShelves,saga:renderSagas,
     rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc};
   (map[tab]||renderHome)();
 }
