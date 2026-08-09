@@ -1,9 +1,13 @@
 /* Ma Bibli — service worker : app 100 % hors ligne */
-const CACHE='mabibli-v3';
+const CACHE='mabibli-v4';
 const ASSETS=['./','./index.html','./book.png','./shelf.png','./rank.png',
   './book_pile.png','./stats.png','./calendar.png','./refresh.png','./settings.png','./paper.png',
   './numeric.png','./audio.png','./human.png','./search.png','./modify.png','./photo.png',
-  './image.png','./home.png','./book_types.png'];
+  './image.png','./home.png','./book_types.png',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'];
+/* CDN dont le script est chargé à la demande : mis en cache dès le premier chargement
+   pour rester disponibles hors ligne ensuite (login/sync, scanner) */
+const CDN_HOSTS=['cdn.jsdelivr.net'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE)
     .then(c=>Promise.allSettled(ASSETS.map(a=>c.add(a))))
@@ -27,13 +31,13 @@ self.addEventListener('fetch',e=>{
     );
     return;
   }
-  /* ressources locales : cache d'abord */
-  if(u.origin===location.origin){
+  /* ressources locales + CDN de scripts chargés à la demande : cache d'abord */
+  if(u.origin===location.origin||CDN_HOSTS.includes(u.host)){
     e.respondWith(
       caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{
         const cp=res.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));
         return res;
-      }))
+      }).catch(()=>r))
     );
   }
 });

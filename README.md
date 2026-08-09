@@ -37,6 +37,7 @@ Application web de suivi de lecture, pensée pour iPhone (plein écran depuis l'
 
 ### Données
 - Stockage local + **sync cloud temps réel** via Supabase (Postgres) : sauvegarde automatique ~1 s après chaque modification, récupération sur n'importe quel appareil connecté au même compte.
+- **Fonctionne partiellement hors ligne** : une fois connectée au moins une fois sur un appareil, ta bibliothèque reste consultable et modifiable sans réseau (badge « 📴 Hors ligne » dans l'en-tête) — la synchronisation reprend automatiquement au retour de la connexion. La toute première connexion sur un nouvel appareil nécessite du réseau.
 - **Export/Import JSON**, et import direct des sauvegardes **Book Nova** (livres, statuts, notes, sessions de lecture).
 - Icônes personnalisables : dépose des PNG (`book.png`, `shelf.png`, etc.) à côté d'`index.html` — repli automatique sur les icônes SVG intégrées.
 
