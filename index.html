@@ -379,15 +379,24 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 </svg>
 
 <div class="authwrap" id="authScreen">
-  <div class="authcard">
+  <div class="authcard" id="authCard">
     <div class="authlogo"><svg class="icn"><use href="#i-book"/></svg></div>
     <h1>Ma <span>Bibli</span></h1>
     <p class="authsub" id="authSub">Connecte-toi pour retrouver ta bibliothèque, sur tous tes appareils.</p>
     <input type="email" class="search" id="authEmail" placeholder="Email" autocomplete="email">
     <input type="password" class="search" id="authPassword" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password" style="margin-top:8px" onkeydown="if(event.key==='Enter'){event.preventDefault();handleAuthSubmit();}">
     <button class="btn" id="authSubmitBtn" style="margin-top:14px" onclick="handleAuthSubmit()">Se connecter</button>
+    <button class="authlink" id="authForgotBtn" onclick="handleForgotPassword()">Mot de passe oublié ?</button>
     <button class="authlink" id="authToggleBtn" onclick="toggleAuthMode()">Pas de compte ? Crée-en un</button>
     <p class="isbnmsg err" id="authError" style="text-align:center"></p>
+  </div>
+  <div class="authcard hidden" id="resetCard">
+    <div class="authlogo"><svg class="icn"><use href="#i-book"/></svg></div>
+    <h1>Nouveau <span>mot de passe</span></h1>
+    <p class="authsub">Choisis un nouveau mot de passe pour ton compte.</p>
+    <input type="password" class="search" id="resetPassword" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password" onkeydown="if(event.key==='Enter'){event.preventDefault();handleResetPassword();}">
+    <button class="btn" id="resetSubmitBtn" style="margin-top:14px" onclick="handleResetPassword()">Enregistrer le mot de passe</button>
+    <p class="isbnmsg err" id="resetError" style="text-align:center"></p>
   </div>
 </div>
 
@@ -895,6 +904,7 @@ let authMode='signin';
 function renderAuthMode(){
   document.getElementById('authSubmitBtn').textContent=authMode==='signin'?'Se connecter':'Créer le compte';
   document.getElementById('authToggleBtn').textContent=authMode==='signin'?'Pas de compte ? Crée-en un':'Déjà un compte ? Se connecter';
+  document.getElementById('authForgotBtn').classList.toggle('hidden',authMode!=='signin');
 }
 function toggleAuthMode(){
   authMode=authMode==='signin'?'signup':'signin';
@@ -938,6 +948,58 @@ async function handleAuthSubmit(){
     btn.disabled=false;
   }
 }
+async function handleForgotPassword(){
+  const email=(document.getElementById('authEmail').value||'').trim();
+  const errEl=document.getElementById('authError');
+  errEl.className='isbnmsg err';errEl.textContent='';
+  if(!email){errEl.textContent='Renseigne ton email ci-dessus, puis clique à nouveau sur « Mot de passe oublié ? ».';return;}
+  if(!navigator.onLine){errEl.textContent='Pas de connexion réseau — réessaie une fois en ligne.';return;}
+  let c;
+  try{c=await withTimeout(sbClient(),8000);}catch(e){c=null;}
+  if(!c){errEl.textContent="Impossible de joindre Supabase (réseau ou configuration).";return;}
+  const btn=document.getElementById('authForgotBtn');
+  btn.disabled=true;
+  try{
+    const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    if(error)throw error;
+    errEl.className='isbnmsg ok';
+    errEl.textContent='Email envoyé (si ce compte existe) : clique sur le lien reçu pour choisir un nouveau mot de passe. Vérifie aussi tes spams.';
+  }catch(e){
+    errEl.className='isbnmsg err';
+    errEl.textContent=translateAuthError(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+}
+function showResetScreen(){
+  document.getElementById('authCard').classList.add('hidden');
+  document.getElementById('resetCard').classList.remove('hidden');
+}
+async function handleResetPassword(){
+  const pwd=document.getElementById('resetPassword').value;
+  const errEl=document.getElementById('resetError');
+  errEl.className='isbnmsg err';errEl.textContent='';
+  if(!pwd||pwd.length<6){errEl.textContent='Mot de passe trop court (6 caractères minimum).';return;}
+  let c;
+  try{c=await withTimeout(sbClient(),8000);}catch(e){c=null;}
+  if(!c){errEl.textContent="Impossible de joindre Supabase (réseau ou configuration).";return;}
+  const btn=document.getElementById('resetSubmitBtn');
+  btn.disabled=true;
+  try{
+    const {error}=await c.auth.updateUser({password:pwd});
+    if(error)throw error;
+    toast('Mot de passe mis à jour ✅');
+    document.getElementById('resetCard').classList.add('hidden');
+    document.getElementById('authCard').classList.remove('hidden');
+    const {data}=await c.auth.getSession();
+    handleSession(data.session);
+  }catch(e){
+    errEl.className='isbnmsg err';
+    errEl.textContent=translateAuthError(e.message||String(e));
+  }finally{
+    btn.disabled=false;
+  }
+}
 async function handleSession(session){
   if(session&&session.user){
     sbUser=session.user;
@@ -966,7 +1028,10 @@ async function initAuth(){
     document.getElementById('authSubmitBtn').disabled=true;
     return;
   }
-  c.auth.onAuthStateChange((_event,session)=>handleSession(session));
+  c.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){showResetScreen();return;}
+    handleSession(session);
+  });
   try{
     const {data}=await withTimeout(c.auth.getSession(),8000);
     handleSession(data.session);
