@@ -916,6 +916,7 @@ function translateAuthError(msg){
   if(/already registered/i.test(msg))return 'Un compte existe déjà avec cet email.';
   if(/password should be at least/i.test(msg))return 'Mot de passe trop court (6 caractères minimum).';
   if(/email not confirmed/i.test(msg))return 'Confirme ton email avant de te connecter (vérifie ta boîte mail).';
+  if(/auth session missing/i.test(msg))return "Le lien a expiré ou a déjà été utilisé. Redemande un email via « Mot de passe oublié ? », puis ouvre le lien reçu sur cet appareil, dans le même navigateur.";
   return msg;
 }
 async function handleAuthSubmit(){
@@ -986,6 +987,11 @@ async function handleResetPassword(){
   const btn=document.getElementById('resetSubmitBtn');
   btn.disabled=true;
   try{
+    const {data:sessData}=await c.auth.getSession();
+    if(!sessData.session){
+      errEl.textContent="Le lien a expiré ou a déjà été utilisé. Redemande un email via « Mot de passe oublié ? », puis ouvre le lien reçu sur cet appareil, dans le même navigateur.";
+      return;
+    }
     const {error}=await c.auth.updateUser({password:pwd});
     if(error)throw error;
     toast('Mot de passe mis à jour ✅');
@@ -1028,13 +1034,16 @@ async function initAuth(){
     document.getElementById('authSubmitBtn').disabled=true;
     return;
   }
+  /* Seule source de vérité pour l'état de connexion : onAuthStateChange (dont l'évènement
+     INITIAL_SESSION, émis une fois au démarrage). Un second appel manuel à getSession() ici
+     entrerait en compétition avec PASSWORD_RECOVERY et pouvait écraser l'écran de nouveau
+     mot de passe avant que l'utilisateur ait fini de le remplir. */
   c.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'){showResetScreen();return;}
     handleSession(session);
   });
   try{
-    const {data}=await withTimeout(c.auth.getSession(),8000);
-    handleSession(data.session);
+    await withTimeout(c.auth.getSession(),8000);
   }catch(e){
     await offlineFallback();
   }
