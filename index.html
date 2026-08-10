@@ -320,9 +320,13 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .shelfinner{display:inline-block;min-width:100%}
 .shelfrow{display:flex;align-items:flex-end;gap:5px;min-height:150px;padding:0 6px}
 .board{height:11px;background:linear-gradient(180deg,var(--woodA),var(--woodB));border-radius:3px;margin-top:2px;box-shadow:0 3px 6px rgba(0,0,0,.4)}
-/* Fiche livre plein écran */
-#infoModal{align-items:stretch}
-#infoModal .sheet{max-height:none;height:100%;border-radius:0;padding-top:calc(18px + env(safe-area-inset-top))}
+/* Fiche livre + formulaire d'ajout/modification : vraies pages plein écran (pas une modale
+   par-dessus) — fond plein (pas de calque assombri), sans coins arrondis, scroll unique. */
+#infoModal,#bookModal{align-items:stretch;background:var(--bg)}
+#infoModal .sheet,#bookModal .sheet{max-height:none;height:100%;border-radius:0;box-shadow:none;padding-top:calc(18px + env(safe-area-inset-top))}
+/* Le fond ne doit jamais défiler pendant qu'une modale/page est ouverte par-dessus (évite le
+   bug où le scroll de la fiche « fuit » et fait défiler la page du dessous, surtout sur iOS). */
+body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 .spinebook{height:138px;width:auto;max-width:64px;min-width:12px;border-radius:3px 3px 0 0;object-fit:cover;display:block}
 .spinefake{height:138px;border-radius:3px 3px 0 0;color:#fff;font-size:.6rem;font-weight:700;writing-mode:vertical-rl;padding:8px 0;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .standcover{height:138px;width:auto;border-radius:3px 3px 0 0;display:block}
@@ -3458,6 +3462,27 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
   }
   document.addEventListener('touchend',release);
   document.addEventListener('touchcancel',release);
+})();
+
+/* Bloque le scroll du fond tant qu'une modale/page (.overlay.open) est ouverte, pour empêcher
+   le scroll de fuiter vers la page du dessous (surtout la fiche/l'édition d'un livre, en plein
+   écran). Observe les classes plutôt que de patcher chaque fonction d'ouverture/fermeture. */
+(function(){
+  let savedY=0;
+  function apply(){
+    const open=!!document.querySelector('.overlay.open');
+    const locked=document.body.classList.contains('scrollock');
+    if(open&&!locked){
+      savedY=window.scrollY;
+      document.body.classList.add('scrollock');
+      document.body.style.top='-'+savedY+'px';
+    }else if(!open&&locked){
+      document.body.classList.remove('scrollock');
+      document.body.style.top='';
+      window.scrollTo(0,savedY);
+    }
+  }
+  new MutationObserver(apply).observe(document.body,{attributes:true,attributeFilter:['class'],subtree:true});
 })();
 </script>
 </body>
