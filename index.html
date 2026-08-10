@@ -282,6 +282,12 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px;text-align:center}
 .stat .n{font-size:1.7rem;font-weight:800;color:var(--accent)}
 .stat .l{font-size:.75rem;color:var(--txt2);margin-top:3px;font-weight:600}
+.stat .sub{font-size:.68rem;color:var(--accent);margin-top:2px;font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.stat.cyclable{cursor:pointer;-webkit-tap-highlight-color:transparent;position:relative}
+.stat.cyclable:active{transform:scale(.96)}
+.stat.cyclable .dots{display:flex;gap:4px;justify-content:center;margin-top:8px}
+.stat.cyclable .dots span{width:5px;height:5px;border-radius:50%;background:var(--line)}
+.stat.cyclable .dots span.on{background:var(--accent)}
 .barrow{margin-bottom:10px}
 .barrow .lbl{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px}
 .barrow .lbl b{color:var(--txt)}
@@ -421,13 +427,13 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <section id="view-stats" class="hidden">
     <div class="statgrid" id="statCards"></div>
     <h2>Pages</h2>
-    <div class="statgrid" id="pageStats"></div>
-    <h2>Par genre</h2><div id="genreBars"></div>
-    <h2>Par langue</h2><div id="langBars"></div>
-    <h2>Par format</h2><div id="fmtBars"></div>
-    <h2>Fiction / Non-fiction</h2><div id="ficBars"></div>
-    <h2>Livres terminés par mois</h2><div id="monthBars"></div>
-    <h2>Cumul sur l'année</h2><div id="cumChart" class="book" style="cursor:default"></div>
+    <div class="statgrid" id="pageStats" style="grid-template-columns:1fr 1fr 1fr"></div>
+    <h2>Livres terminés par genre</h2><div id="genreBars"></div>
+    <h2>Livres terminés par langue</h2><div id="langBars"></div>
+    <h2>Livres terminés par format</h2><div id="fmtBars"></div>
+    <h2>Fiction vs non-fiction (terminés)</h2><div id="ficBars"></div>
+    <h2>Livres terminés par mois (historique)</h2><div id="monthBars"></div>
+    <h2>Cumul de livres terminés — année en cours vs précédente</h2><div id="cumChart" class="book" style="cursor:default"></div>
     <button class="btn" style="margin-top:18px" onclick="genRecap()">🎉 Générer mon récap de l'année</button>
   </section>
 
@@ -2011,6 +2017,23 @@ function renderDefi(){
 }
 
 /* ---------- Stats ---------- */
+/* Carte stat "cyclable" : un titre fixe et clair + une variante (période) qui change au clic, pour regrouper
+   plusieurs déclinaisons de la même statistique (jour/mois/année, cette année/toujours...) sans dupliquer les cartes */
+function statCard(title,variants,idx){
+  idx=idx||0;
+  if(variants.length===1)return `<div class="stat"><div class="n">${variants[0].n}</div><div class="l">${esc(title)}</div></div>`;
+  const dots=`<div class="dots">${variants.map((_,i)=>`<span class="${i===idx?'on':''}"></span>`).join('')}</div>`;
+  return `<div class="stat cyclable" data-title="${esc(title)}" data-variants="${esc(JSON.stringify(variants))}" data-idx="${idx}" onclick="cycleStat(this)">
+    <div class="n">${variants[idx].n}</div><div class="l">${esc(title)}</div><div class="sub">${esc(variants[idx].sub)}</div>${dots}</div>`;
+}
+function cycleStat(el){
+  const variants=JSON.parse(el.dataset.variants);
+  const idx=(+el.dataset.idx+1)%variants.length;
+  el.dataset.idx=idx;
+  el.querySelector('.n').textContent=variants[idx].n;
+  el.querySelector('.sub').textContent=variants[idx].sub;
+  el.querySelectorAll('.dots span').forEach((d,i)=>d.classList.toggle('on',i===idx));
+}
 function bars(counts,total){
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(!entries.length)return '<div style="color:var(--txt2);font-size:.85rem;padding:4px 2px">Pas encore de données.</div>';
@@ -2025,10 +2048,10 @@ function renderStats(){
   const avg=noted.length?(noted.reduce((s,b)=>s+b.note,0)/noted.length).toFixed(1):'—';
   const y=new Date().getFullYear();
   document.getElementById('statCards').innerHTML=`
-    <div class="stat"><div class="n">${done.length}</div><div class="l">Livres terminés</div></div>
-    <div class="stat"><div class="n">${pages.toLocaleString('fr-FR')}</div><div class="l">Pages lues</div></div>
+    <div class="stat"><div class="n">${done.length}</div><div class="l">Livres terminés (total)</div></div>
+    <div class="stat"><div class="n">${pages.toLocaleString('fr-FR')}</div><div class="l">Pages des livres terminés</div></div>
     <div class="stat"><div class="n">${db.books.filter(b=>b.statut==='tbr').length}</div><div class="l">À lire (PAL)</div></div>
-    <div class="stat"><div class="n">${avg} ★</div><div class="l">Note moyenne</div></div>`;
+    <div class="stat"><div class="n">${avg} ★</div><div class="l">Note moyenne donnée</div></div>`;
   /* Stats pages : moyennes par livre et par période de lecture */
   const doneYear=done.filter(b=>b.dateFin&&b.dateFin.startsWith(String(y)));
   const avgPagesYear=doneYear.length?Math.round(doneYear.reduce((s,b)=>s+(b.pages||0),0)/doneYear.length):0;
@@ -2041,13 +2064,17 @@ function renderStats(){
   const avgPagesDay=sessDays.size?Math.round(totalSessPages/sessDays.size):0;
   const avgPagesMonth=sessMonths.size?Math.round(totalSessPages/sessMonths.size):0;
   const avgPagesYr=sessYears.size?Math.round(totalSessPages/sessYears.size):0;
-  document.getElementById('pageStats').innerHTML=`
-    <div class="stat"><div class="n">${totalSessPages.toLocaleString('fr-FR')}</div><div class="l">Pages lues (journal)</div></div>
-    <div class="stat"><div class="n">${avgPagesYear||'—'}</div><div class="l">Pages/livre en ${y}</div></div>
-    <div class="stat"><div class="n">${avgPagesAll||'—'}</div><div class="l">Pages/livre (tous)</div></div>
-    <div class="stat"><div class="n">${avgPagesDay||'—'}</div><div class="l">Pages/jour (moy.)</div></div>
-    <div class="stat"><div class="n">${avgPagesMonth||'—'}</div><div class="l">Pages/mois (moy.)</div></div>
-    <div class="stat"><div class="n">${avgPagesYr||'—'}</div><div class="l">Pages/année (moy.)</div></div>`;
+  document.getElementById('pageStats').innerHTML=
+    statCard('Pages loguées dans le journal',[{n:totalSessPages.toLocaleString('fr-FR'),sub:''}])+
+    statCard('Moyenne de pages par livre',[
+      {n:avgPagesYear||'—',sub:'en '+y},
+      {n:avgPagesAll||'—',sub:'toutes années'}
+    ])+
+    statCard('Rythme de lecture (moyenne)',[
+      {n:avgPagesDay||'—',sub:'pages / jour'},
+      {n:avgPagesMonth||'—',sub:'pages / mois'},
+      {n:avgPagesYr||'—',sub:'pages / année'}
+    ]);
   const count=(arr,fn)=>arr.reduce((o,b)=>{const k=fn(b);if(k)o[k]=(o[k]||0)+1;return o;},{});
   document.getElementById('genreBars').innerHTML=bars(count(done,b=>b.genre||'Sans genre'),done.length||1);
   document.getElementById('langBars').innerHTML=bars(count(done,b=>b.langue||'?'),done.length||1);
