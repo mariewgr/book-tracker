@@ -458,11 +458,9 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <div class="statgrid" id="statCards"></div>
     <h2>Pages</h2>
     <div class="statgrid" id="pageStats" style="grid-template-columns:1fr 1fr 1fr"></div>
-    <h2>Livres terminés par genre</h2><div id="genreBars"></div>
     <h2>Livres terminés par langue</h2><div id="langBars"></div>
     <h2>Livres terminés par format</h2><div id="fmtBars"></div>
     <h2>Fiction vs non-fiction (terminés)</h2><div id="ficBars"></div>
-    <h2>Livres terminés par mois (historique)</h2><div id="monthBars"></div>
     <h2>Cumul de livres terminés — année en cours vs précédente</h2><div id="cumChart" class="book" style="cursor:default"></div>
     <button class="btn" style="margin-top:18px" onclick="genRecap()">🎉 Générer mon récap de l'année</button>
   </section>
@@ -905,7 +903,7 @@ async function offlineFallback(){
   if(db.books&&db.books.length){
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('appRoot').classList.remove('hidden');
-    render();
+    bootTab();
   }else{
     document.getElementById('authSub').textContent="Impossible de joindre le serveur (hors ligne ?). Reconnecte-toi au réseau pour te connecter la première fois sur cet appareil.";
   }
@@ -1040,7 +1038,7 @@ async function handleSession(session){
     document.getElementById('appRoot').classList.remove('hidden');
     document.getElementById('authError').textContent='';
     await loadLocalData();
-    render();
+    bootTab();
     startCloud();
   }else{
     sbUser=null;
@@ -1280,18 +1278,28 @@ function thickness(b){
 
 /* ---------- Navigation ---------- */
 let tab='home';
+const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc'];
 const PLUS_TABS=new Set(['saga','rank','defi','stats','disc']);
 function switchTab(t){
   tab=t;
+  try{sessionStorage.setItem('mabibli_tab',t);}catch(e){}
   document.querySelectorAll('nav button').forEach(b=>
     b.classList.toggle('active',b.dataset.v===t||(b.dataset.v==='plus'&&PLUS_TABS.has(t))));
-  ['home','lib','shelf','saga','rank','defi','stats','cal','disc'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
+  TAB_KEYS.forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==t));
   const fab=document.getElementById('fab');
   fab.classList.toggle('hidden',t!=='lib'&&t!=='shelf');
   const FAB_IC={lib:'book',shelf:'shelf'};
   if(FAB_IC[t])fab.innerHTML=icSvg(FAB_IC[t])+'<span class="plus">+</span>';
   render();
   window.scrollTo(0,0);
+}
+/* Restaure l'onglet actif après un rechargement (tirer-pour-rafraîchir, etc.) au lieu de
+   toujours retomber sur Accueil — mémorisé en sessionStorage, donc valable pour la session
+   en cours mais pas pour une toute nouvelle ouverture de l'app. */
+function bootTab(){
+  let t;
+  try{t=sessionStorage.getItem('mabibli_tab');}catch(e){}
+  if(t&&TAB_KEYS.includes(t)&&t!==tab)switchTab(t);else render();
 }
 function openPlus(){document.getElementById('plusModal').classList.add('open');}
 
@@ -2189,14 +2197,9 @@ function renderStats(){
       {n:avgPagesYr||'—',sub:'pages / année'}
     ]);
   const count=(arr,fn)=>arr.reduce((o,b)=>{const k=fn(b);if(k)o[k]=(o[k]||0)+1;return o;},{});
-  document.getElementById('genreBars').innerHTML=bars(count(done,b=>b.genre||'Sans genre'),done.length||1);
   document.getElementById('langBars').innerHTML=bars(count(done,b=>b.langue||'?'),done.length||1);
   document.getElementById('fmtBars').innerHTML=bars(count(done,b=>FMT[fmt(b)]||'Papier'),done.length||1);
   document.getElementById('ficBars').innerHTML=bars(count(done,b=>b.fiction===false?'Non-fiction':'Fiction'),done.length||1);
-  const mois=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
-  document.getElementById('monthBars').innerHTML=bars(count(done.filter(b=>b.dateFin),b=>{
-    const d=new Date(b.dateFin);return mois[d.getMonth()]+' '+d.getFullYear();
-  }),done.length||1);
   /* rythme + graphique cumulé année vs année précédente */
   const cut=new Date(Date.now()-30*864e5).toISOString().slice(0,10);
   const p30=db.sessions.filter(s=>s.date>=cut).reduce((t,s)=>t+s.pages,0);
