@@ -1,9 +1,9 @@
 /* Ma Bibli — service worker : app 100 % hors ligne */
-const CACHE='mabibli-v4';
+const CACHE='mabibli-v5';
 const ASSETS=['./','./index.html','./book.png','./shelf.png','./rank.png',
   './book_pile.png','./stats.png','./calendar.png','./refresh.png','./settings.png','./paper.png',
   './numeric.png','./audio.png','./human.png','./search.png','./modify.png','./photo.png',
-  './image.png','./home.png','./book_types.png',
+  './image.png','./home.png','./book_types.png','./icon-512.png','./apple-touch-icon.png',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js'];
 /* CDN dont le script est chargé à la demande : mis en cache dès le premier chargement
    pour rester disponibles hors ligne ensuite (login/sync, scanner) */

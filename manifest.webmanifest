@@ -7,6 +7,7 @@
   "background_color": "#141019",
   "theme_color": "#1a1523",
   "icons": [
-    {"src": "book.png", "sizes": "any", "type": "image/png", "purpose": "any"}
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
   ]
 }
