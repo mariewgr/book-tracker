@@ -662,6 +662,12 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
     <label>Nombre d'étages</label><input id="s_rows" type="number" inputmode="numeric" min="1" max="8" value="1">
     <div class="isbnmsg" id="shelfLinkMsg"></div>
     <button class="btn ghost hidden" id="shelfUnlinkBtn" onclick="shelfUnlink()">🔓 Délier (figer la liste actuelle)</button>
+    <div id="shelfSourcesWrap" class="hidden">
+      <label>Sagas liées (dans l'ordre)</label>
+      <div id="shelfSourcesEl"></div>
+      <label>Ajouter une saga</label>
+      <div class="chipwrap" id="shelfSourceAddEl"></div>
+    </div>
     <label>Livres sur l'étagère (dans l'ordre)</label>
     <div id="shelfItemsEl"></div>
     <div id="shelfAddWrap">
@@ -2712,7 +2718,7 @@ function createShelfFromCols(){
   openShelfEdit(s.id);
 }
 /* Éditeur */
-let shelfId=null,shelfItemsW=[];
+let shelfId=null,shelfItemsW=[],shelfSourcesW=[];
 const SHELF_MODES={spine:'Tranche',cover:'Couv.',pile:'Pile'};
 function newShelf(){
   askText("Nom de l'étagère",'',nom=>{
@@ -2728,15 +2734,72 @@ function openShelfEdit(id){
   const linked=!!(s.source&&s.source.length);
   document.getElementById('s_nom').value=s.nom;
   document.getElementById('s_rows').value=s.rows||1;
+  shelfSourcesW=linked?s.source.map(x=>({...x})):[];
   shelfItemsW=shelfEffItems(s).map(x=>({...x}));
   document.getElementById('shelfSearch').value='';
   ['shelfAddStatus','shelfAddGenre','shelfAddSaga'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('shelfLinkMsg').textContent=linked
-    ?'🔗 Liée à : '+shelfSourceLabel(s)+' — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
+    ?'🔗 Liée à des sagas — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
   document.getElementById('shelfUnlinkBtn').classList.toggle('hidden',!linked);
+  document.getElementById('shelfSourcesWrap').classList.toggle('hidden',!linked);
   document.getElementById('shelfAddWrap').classList.toggle('hidden',linked);
+  if(linked)renderShelfSources();
   renderShelfItems();renderShelfAdd();
   document.getElementById('shelfModal').classList.add('open');
+}
+function shelfSourceLabel2(src){
+  return src.type==='saga'?src.id+' ('+sagaBooks(src.id).length+' t.)':'🔜 Livres à paraître ('+upcomingBooks().length+')';
+}
+function shelfSourcesEffItems(sources){
+  const ids=[],seen=new Set();
+  sources.forEach(src=>{
+    const list=src.type==='saga'?sagaBooks(src.id).map(b=>b.id):upcomingBooks().map(b=>b.id);
+    list.forEach(id=>{if(!seen.has(id)&&db.books.some(b=>b.id===id)){seen.add(id);ids.push(id);}});
+  });
+  return ids;
+}
+function refreshLinkedShelfItems(){
+  const ids=shelfSourcesEffItems(shelfSourcesW);
+  const prev={};shelfItemsW.forEach(it=>{prev[it.bookId]={mode:it.mode,row:it.row};});
+  shelfItemsW=ids.map(id=>({bookId:id,mode:(prev[id]&&prev[id].mode)||'spine',row:(prev[id]&&prev[id].row)||null}));
+  renderShelfItems();
+}
+function renderShelfSources(){
+  const wrap=document.getElementById('shelfSourcesEl');
+  wrap.innerHTML=shelfSourcesW.map((src,i)=>
+    `<div class="sitem" data-i="${i}"><span class="drag">⠿</span>
+      <span class="nm">${esc(shelfSourceLabel2(src))}</span>
+      <button style="color:var(--red)" onclick="shelfSourceRemove(${i})">✕</button></div>`
+  ).join('')||'<div class="isbnmsg">Aucune saga liée.</div>';
+  makeSortable(wrap,order=>{
+    shelfSourcesW=order.map(i=>shelfSourcesW[i]).filter(Boolean);
+    renderShelfSources();refreshLinkedShelfItems();
+  });
+  renderShelfSourceAdd();
+}
+function renderShelfSourceAdd(){
+  const wrap=document.getElementById('shelfSourceAddEl');
+  const usedKeys=new Set(shelfSourcesW.map(s=>s.type+'|'+s.id));
+  const up=upcomingBooks();
+  const options=[];
+  if(up.length&&!usedKeys.has('upcoming|upcoming'))options.push({k:'upcoming|upcoming',label:'🔜 Livres à paraître ('+up.length+')'});
+  sagaNames().forEach(n=>{
+    const k='saga|'+n;
+    if(!usedKeys.has(k))options.push({k,label:n+' ('+sagaBooks(n).length+' t.)'});
+  });
+  wrap.innerHTML=options.length?options.map(o=>
+    `<div class="chip" onclick="shelfSourceAdd(this.dataset.k)" data-k="${esc(o.k)}">${esc(o.label)}</div>`
+  ).join(''):'<div class="isbnmsg">Toutes les sagas disponibles sont déjà liées.</div>';
+}
+function shelfSourceAdd(k){
+  const i=k.indexOf('|');
+  shelfSourcesW.push({type:k.slice(0,i),id:k.slice(i+1)});
+  renderShelfSources();refreshLinkedShelfItems();
+}
+function shelfSourceRemove(i){
+  if(shelfSourcesW.length<=1){toast('Il faut garder au moins une saga liée — utilise « Délier » pour détacher complètement.');return;}
+  shelfSourcesW.splice(i,1);
+  renderShelfSources();refreshLinkedShelfItems();
 }
 function renderShelfItems(){
   const el=document.getElementById('shelfItemsEl');
@@ -2792,6 +2855,7 @@ function saveShelf(){
   if(nom)s.nom=nom;
   s.rows=Math.max(1,Math.min(8,+document.getElementById('s_rows').value||1));
   if(s.source&&s.source.length){
+    s.source=shelfSourcesW;
     s.overrides={};
     shelfItemsW.forEach(it=>{
       if(it.mode!=='spine'||it.row)s.overrides[it.bookId]={mode:it.mode,row:it.row||null};
