@@ -1038,8 +1038,20 @@ async function initAuth(){
      INITIAL_SESSION, émis une fois au démarrage). Un second appel manuel à getSession() ici
      entrerait en compétition avec PASSWORD_RECOVERY et pouvait écraser l'écran de nouveau
      mot de passe avant que l'utilisateur ait fini de le remplir. */
+  /* Si l'URL contient un lien de récupération, on ignore les évènements de session "normaux"
+     (ex : INITIAL_SESSION avec une session déjà ouverte sur cet appareil) le temps que
+     PASSWORD_RECOVERY arrive — sinon un compte déjà connecté ouvrait directement l'app au lieu
+     de proposer le nouveau mot de passe. Filet de sécurité : si ça ne arrive jamais (lien expiré/
+     déjà utilisé), on abandonne après quelques secondes pour ne pas bloquer la connexion normale. */
+  let recoveryPending=/type=recovery/.test(location.hash)||/type=recovery/.test(location.search);
+  if(recoveryPending)setTimeout(()=>{
+    if(!recoveryPending)return;
+    recoveryPending=false;
+    c.auth.getSession().then(({data})=>handleSession(data.session));
+  },5000);
   c.auth.onAuthStateChange((event,session)=>{
-    if(event==='PASSWORD_RECOVERY'){showResetScreen();return;}
+    if(event==='PASSWORD_RECOVERY'){recoveryPending=false;showResetScreen();return;}
+    if(recoveryPending)return;
     handleSession(session);
   });
   try{
