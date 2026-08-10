@@ -62,6 +62,21 @@ header h1 span{color:var(--accent)}
 .iconbtn{background:var(--card);border:none;color:var(--txt);font-size:1.1rem;
   width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 main{padding:14px 16px calc(110px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+
+/* Tirer pour rafraîchir (remplace le bouton de rafraîchissement manuel) */
+#ptrIndicator{
+  position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;
+  width:36px;height:36px;margin-left:-18px;z-index:25;
+  background:var(--card);border:1px solid var(--line);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--txt2);
+  opacity:0;transform:translateY(-10px);pointer-events:none;
+}
+#ptrIndicator.show{opacity:1;transition:opacity .1s}
+#ptrIndicator.ready{color:var(--accent);border-color:var(--accent)}
+#ptrIndicator.snap{transition:transform .2s ease}
+#ptrIndicator .icn{width:18px;height:18px}
+#ptrIndicator.loading .icn{animation:ptrspin .7s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
 h2{font-size:1.05rem;margin:18px 2px 10px;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px;font-size:.8rem}
 
 /* Tabs */
@@ -378,6 +393,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
 </svg>
 
+<div id="ptrIndicator"><svg class="icn"><use href="#i-refresh"/></svg></div>
+
 <div class="authwrap" id="authScreen">
   <div class="authcard" id="authCard">
     <div class="authlogo"><svg class="icn"><use href="#i-book"/></svg></div>
@@ -404,7 +421,6 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 <header>
   <h1><span data-spr="book" data-spr-size="22"><svg class="icn" style="width:22px;height:22px;color:var(--accent)"><use href="#i-book"/></svg></span> Ma <span>Bibli</span><span class="offlinebadge hidden" id="offlineBadge" title="Hors ligne — tes données locales sont affichées">📴 Hors ligne</span></h1>
   <div style="display:flex;gap:8px">
-    <button class="iconbtn" onclick="location.reload()" title="Rafraîchir"><span data-spr="refresh" data-spr-size="20"><svg class="icn"><use href="#i-refresh"/></svg></span></button>
     <button class="iconbtn" onclick="openSettings()" title="Réglages"><span data-spr="gear" data-spr-size="20"><svg class="icn"><use href="#i-gear"/></svg></span></button>
   </div>
 </header>
@@ -3403,6 +3419,46 @@ async function loadLocalData(){
 document.getElementById('fab').innerHTML=icSvg('book')+'<span class="plus">+</span>';
 initAuth();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* Tirer pour rafraîchir : remplace l'ancien bouton — actif sur tout écran (tabs, connexion…),
+   sauf si une modale est ouverte (pour ne pas recharger et perdre une saisie en cours). */
+(function(){
+  const el=document.getElementById('ptrIndicator');
+  const THRESHOLD=68;
+  let startY=0,dist=0,pulling=false,armed=false;
+  const topScroll=()=>(document.scrollingElement||document.documentElement).scrollTop;
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1||document.querySelector('.overlay.open')||topScroll()>0){pulling=false;return;}
+    startY=e.touches[0].clientY;dist=0;pulling=true;armed=false;
+    el.classList.remove('snap');
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+    dist=e.touches[0].clientY-startY;
+    if(dist<=0||topScroll()>0){pulling=false;el.classList.remove('show','ready');el.style.transform='';return;}
+    e.preventDefault();
+    const d=Math.min(dist*0.45,100);
+    armed=d>=THRESHOLD;
+    el.classList.add('show');
+    el.classList.toggle('ready',armed);
+    el.style.transform='translateY('+d+'px) rotate('+(d*2.4)+'deg)';
+  },{passive:false});
+  function release(){
+    if(!pulling)return;
+    pulling=false;
+    el.classList.add('snap');
+    if(armed){
+      el.classList.add('loading');
+      el.style.transform='translateY('+THRESHOLD+'px)';
+      location.reload();
+    }else{
+      el.classList.remove('show','ready');
+      el.style.transform='';
+    }
+  }
+  document.addEventListener('touchend',release);
+  document.addEventListener('touchcancel',release);
+})();
 </script>
 </body>
 </html>
