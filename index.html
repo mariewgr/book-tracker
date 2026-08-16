@@ -2326,11 +2326,20 @@ async function uploadImage(dataUrl,name){
    Books...) est souvent lente à recharger à chaque affichage. On la télécharge une seule fois,
    juste après l'enregistrement, et on la stocke comme une photo prise depuis le téléphone —
    les affichages suivants utilisent alors notre copie, rapide. Échec silencieux (réseau, CORS…) :
-   l'URL externe reste utilisée en secours. */
+   l'URL externe reste utilisée en secours.
+   Même chose pour une couverture encore en base64 (data:...) — cas d'un ajout fait hors ligne,
+   ou d'une sauvegarde importée : tant qu'elle reste en base64, elle est embarquée en entier dans
+   le JSON synchronisé à CHAQUE modification, ce qui peut largement dépasser la taille de requête
+   acceptée par Supabase et faire échouer silencieusement la sync (livres "qui ne remontent pas"). */
+function needsCaching(url){
+  if(!url)return false;
+  if(url.includes('/storage/v1/object/public/bibli/'))return false;
+  return /^https?:\/\//.test(url)||/^data:image\//.test(url);
+}
 async function cacheExternalCover(bookId){
   const b=db.books.find(x=>x.id===bookId);if(!b)return;
   const url=b.couverture;
-  if(!url||!/^https?:\/\//.test(url)||url.includes('/storage/v1/object/public/bibli/'))return;
+  if(!needsCaching(url))return;
   try{
     const res=await fetch(url);
     if(!res.ok)return;
@@ -3367,9 +3376,14 @@ async function backfillSynopsis(){
   if(!ok&&gbFail>0)toast('⚠️ Google Books semble inaccessible depuis ton réseau ('+gbFail+' échecs) — Open Library n\'a rien trouvé non plus');
   else toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
 }
+/* Variante silencieuse (pas de bouton à mettre à jour) : lancée en arrière-plan après un import,
+   pour ne pas laisser une sauvegarde pleine de couvertures en base64 dans l'état à synchroniser. */
+async function cacheAllCoversQuiet(){
+  for(const b of db.books.filter(b=>needsCaching(b.couverture)))await cacheExternalCover(b.id);
+}
 async function cacheAllCovers(){
   const btn=document.getElementById('cacheAllBtn');
-  const targets=db.books.filter(b=>b.couverture&&/^https?:\/\//.test(b.couverture)&&!b.couverture.includes('/storage/v1/object/public/bibli/'));
+  const targets=db.books.filter(b=>needsCaching(b.couverture));
   if(!targets.length){toast('Toutes les couvertures sont déjà en cache ✅');return;}
   btn.disabled=true;
   let ok=0,i=0;
@@ -3477,9 +3491,12 @@ function importData(input){
       const isNative=!d.books.length||d.books[0].titre!==undefined;
       const inc=isNative?{books:d.books,loans:d.loans||[],sessions:d.sessions||[],shelves:d.shelves||[],ranking:d.ranking||[],settings:d.settings||db.settings}:fromBookNova(d);
       const apply=merge=>{
+        let addedCount=inc.books.length;
         if(merge){
           const ids=new Set(db.books.map(b=>b.id));
-          db.books.push(...inc.books.filter(b=>!ids.has(b.id)));
+          const newBooks=inc.books.filter(b=>!ids.has(b.id));
+          addedCount=newBooks.length;
+          db.books.push(...newBooks);
           const lids=new Set(db.loans.map(l=>l.id));
           db.loans.push(...(inc.loans||[]).filter(l=>!lids.has(l.id)));
           const skey=s=>s.date+'|'+s.bookId;
@@ -3493,7 +3510,13 @@ function importData(input){
           db=normalizeDb({books:inc.books,loans:inc.loans||[],sessions:inc.sessions||[],shelves:inc.shelves||[],ranking:inc.ranking||[],settings:inc.settings||db.settings});
         }
         save();closeModals();render();
-        toast('Import réussi ✅ '+inc.books.length+' livres importés ('+db.books.length+' au total)'+(isNative?'':' — Book Nova'));
+        /* Convertit en arrière-plan toute couverture encore en base64 (import hors ligne, vieille
+           sauvegarde…) vers notre storage — sinon la sync peut échouer silencieusement si le total
+           dépasse la taille de requête acceptée par Supabase (gros fichiers d'import notamment). */
+        cacheAllCoversQuiet();
+        toast(merge
+          ?'Import réussi ✅ '+addedCount+' nouveau'+(addedCount>1?'x':'')+' livre'+(addedCount>1?'s':'')+' ajouté'+(addedCount>1?'s':'')+' ('+db.books.length+' au total)'+(isNative?'':' — Book Nova')
+          :'Import réussi ✅ '+addedCount+' livre'+(addedCount>1?'s':'')+' ('+db.books.length+' au total)'+(isNative?'':' — Book Nova'));
       };
       if(db.books.length)
         openDlg('Ta bibliothèque contient déjà '+db.books.length+' livres. Que faire de l\'import ('+inc.books.length+' livres) ?',null,[
