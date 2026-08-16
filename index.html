@@ -826,6 +826,8 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <h2 style="margin-top:24px">Données</h2>
     <button class="btn ghost" style="margin-top:0" id="bfBtn" onclick="backfillSynopsis()">📖 Récupérer les résumés manquants</button>
     <p class="note-io">Cherche en ligne le résumé de chaque livre qui n'en a pas — en français d'abord : Google Books (FR), puis <b>Booknode</b>, puis Google Books toutes langues et Open Library en dernier recours.</p>
+    <button class="btn ghost" style="margin-top:10px" id="cacheAllBtn" onclick="cacheAllCovers()">🖼 Mettre en cache toutes les couvertures</button>
+    <p class="note-io">Télécharge une bonne fois pour toutes les couvertures encore pointées vers un site externe (recherche en ligne, ISBN, import…) et les enregistre comme une photo prise depuis le téléphone — l'affichage sera ensuite plus rapide.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
@@ -3350,6 +3352,24 @@ async function backfillSynopsis(){
   btn.textContent='📖 Récupérer les résumés manquants';
   if(!ok&&gbFail>0)toast('⚠️ Google Books semble inaccessible depuis ton réseau ('+gbFail+' échecs) — Open Library n\'a rien trouvé non plus');
   else toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
+}
+async function cacheAllCovers(){
+  const btn=document.getElementById('cacheAllBtn');
+  const targets=db.books.filter(b=>b.couverture&&/^https?:\/\//.test(b.couverture)&&!b.couverture.includes('/storage/v1/object/public/bibli/'));
+  if(!targets.length){toast('Toutes les couvertures sont déjà en cache ✅');return;}
+  btn.disabled=true;
+  let ok=0,i=0;
+  for(const b of targets){
+    i++;
+    btn.textContent='⏳ '+i+'/'+targets.length+' — '+b.titre.slice(0,22)+'…';
+    const before=b.couverture;
+    await cacheExternalCover(b.id);
+    const cur=db.books.find(x=>x.id===b.id);
+    if(cur&&cur.couverture!==before)ok++;
+  }
+  btn.disabled=false;
+  btn.textContent='🖼 Mettre en cache toutes les couvertures';
+  toast(ok+' couverture'+(ok>1?'s':'')+' mise'+(ok>1?'s':'')+' en cache sur '+targets.length+' ✅');
 }
 function openSettings(){
   document.getElementById('s_taille').value=db.settings.taille||'';
