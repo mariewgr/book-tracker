@@ -480,6 +480,18 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
       <select id="sagaListStatus" class="stSel" onchange="renderSagas()"></select>
       <select id="sagaListGenre" class="gfSel" onchange="renderSagas()"></select>
     </div>
+    <div class="filterrow">
+      <select id="sagaCompletion" onchange="renderSagas()">
+        <option value="all">Toutes les sagas</option>
+        <option value="done">Terminées (100 %)</option>
+        <option value="progress">Non terminées</option>
+      </select>
+      <select id="sagaSort" onchange="renderSagas()">
+        <option value="name">Trier : Nom (A→Z)</option>
+        <option value="pctDesc">Trier : % lu (décroissant)</option>
+        <option value="pctAsc">Trier : % lu (croissant)</option>
+      </select>
+    </div>
     <div id="sagaList"></div>
   </section>
 
@@ -1068,13 +1080,22 @@ async function initAuth(){
      de proposer le nouveau mot de passe. Filet de sécurité : si ça ne arrive jamais (lien expiré/
      déjà utilisé), on abandonne après quelques secondes pour ne pas bloquer la connexion normale. */
   let recoveryPending=/type=recovery/.test(location.hash)||/type=recovery/.test(location.search);
-  if(recoveryPending)setTimeout(()=>{
+  /* Une fois le lien traité (avec succès ou non), on nettoie l'URL : sinon le marqueur
+     "type=recovery" reste dans la barre d'adresse et refait déclencher ce blocage à CHAQUE
+     rechargement suivant (tirer-pour-rafraîchir compris) — avec un lien à usage unique déjà
+     consommé, ce qui pouvait empêcher la vraie session de se réafficher. */
+  function clearRecoveryMarker(){
     if(!recoveryPending)return;
     recoveryPending=false;
+    try{history.replaceState(null,'',location.pathname);}catch(e){}
+  }
+  if(recoveryPending)setTimeout(()=>{
+    if(!recoveryPending)return;
+    clearRecoveryMarker();
     c.auth.getSession().then(({data})=>handleSession(data.session));
   },5000);
   c.auth.onAuthStateChange((event,session)=>{
-    if(event==='PASSWORD_RECOVERY'){recoveryPending=false;showResetScreen();return;}
+    if(event==='PASSWORD_RECOVERY'){clearRecoveryMarker();showResetScreen();return;}
     if(recoveryPending)return;
     handleSession(session);
   });
@@ -1092,6 +1113,10 @@ async function pullCloud(notify){
   const rT=(remote&&remote.meta&&remote.meta.updatedAt)||0;
   const lT=(db.meta&&db.meta.updatedAt)||0;
   if(remote&&remote.books&&rT>lT){
+    /* Garde-fou symétrique à sbPush() : le cloud est "plus récent" mais vide alors qu'on a des
+       livres en local — plutôt qu'adopter (et donc effacer localement), on traite ça comme
+       localNewer, ce qui redéclenche un push et répare le cloud depuis cet appareil. */
+    if(!remote.books.length&&db.books.length)return 'localNewer';
     db=normalizeDb(remote);
     saveLocal();
     render();
@@ -1117,6 +1142,14 @@ async function startCloud(){
 }
 async function sbPush(){
   const c=await sbClient();if(!c||!sbUser)return;
+  /* Garde-fou : si l'état local est vide (bug, chargement raté, etc.) alors que le cloud
+     contient déjà des livres, on refuse d'écraser — mieux vaut une sync ratée qu'une
+     bibliothèque effacée pour de bon. */
+  if(!db.books.length){
+    const {data:row}=await c.from('bibli').select('data').eq('user_id',sbUser.id).maybeSingle();
+    if(row&&row.data&&row.data.books&&row.data.books.length)
+      throw new Error('Push refusé : la base locale est vide alors que le cloud contient des livres.');
+  }
   const {error}=await c.from('bibli').upsert({user_id:sbUser.id,data:db,updated_at:new Date().toISOString()});
   if(error)throw error;
 }
@@ -1456,17 +1489,26 @@ function renderSagas(){
   fillFilterSelects('sagaListStatus','sagaListGenre',null);
   const active=filtersActive('sagaListStatus','sagaListGenre',null);
   const q=(document.getElementById('sagaSearch').value||'').toLowerCase().trim();
+  const completion=document.getElementById('sagaCompletion').value;
+  const sort=document.getElementById('sagaSort').value;
   let names=sagaNames();
   if(active)names=names.filter(n=>sagaBooks(n).some(b=>pickerMatch(b,'sagaListStatus','sagaListGenre',null)));
   if(q)names=names.filter(n=>sagaMatch(n,q));
-  if(!names.length){
-    el.innerHTML=`<div class="empty"><span class="big">${icSvg('saga')}</span>${sagaNames().length?'Aucune saga ne correspond.':'Aucune saga.<br>Renseigne le champ « Saga » dans la fiche de tes livres !'}</div>`;
-    return;
-  }
-  el.innerHTML=names.map(n=>{
+  let sagas=names.map(n=>{
     const bs=sagaBooks(n);
     const lus=bs.filter(b=>b.statut==='done').length;
     const pct=bs.length?Math.round(lus/bs.length*100):0;
+    return{n,bs,lus,pct};
+  });
+  if(completion==='done')sagas=sagas.filter(s=>s.pct===100);
+  else if(completion==='progress')sagas=sagas.filter(s=>s.pct<100);
+  if(sort==='pctDesc')sagas.sort((a,b)=>b.pct-a.pct||a.n.localeCompare(b.n,'fr'));
+  else if(sort==='pctAsc')sagas.sort((a,b)=>a.pct-b.pct||a.n.localeCompare(b.n,'fr'));
+  if(!sagas.length){
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('saga')}</span>${sagaNames().length?'Aucune saga ne correspond.':'Aucune saga.<br>Renseigne le champ « Saga » dans la fiche de tes livres !'}</div>`;
+    return;
+  }
+  el.innerHTML=sagas.map(({n,bs,lus,pct})=>{
     const covers=bs.map(b=>
       `<div style="flex:none;cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}</div>`).join('');
     return `<div class="book" style="cursor:default">
