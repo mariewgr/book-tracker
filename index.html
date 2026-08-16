@@ -1746,6 +1746,7 @@ function saveBook(){
   if(statut==='done'&&(!prev||prev.statut!=='done'))confetti();
   if(editId)db.books=db.books.map(x=>x.id===editId?b:x);else db.books.push(b);
   save();closeModals();render();
+  cacheExternalCover(b.id);
 }
 /* ---------- Avancement rapide ---------- */
 let quickId=null;
@@ -2314,6 +2315,35 @@ async function uploadImage(dataUrl,name){
     const {data}=c.storage.from('bibli').getPublicUrl(path);
     return (data&&data.publicUrl)||dataUrl;
   }catch(e){return dataUrl;}
+}
+/* Couvertures récupérées en ligne (recherche, ISBN...) : l'URL externe (Open Library, Google
+   Books...) est souvent lente à recharger à chaque affichage. On la télécharge une seule fois,
+   juste après l'enregistrement, et on la stocke comme une photo prise depuis le téléphone —
+   les affichages suivants utilisent alors notre copie, rapide. Échec silencieux (réseau, CORS…) :
+   l'URL externe reste utilisée en secours. */
+async function cacheExternalCover(bookId){
+  const b=db.books.find(x=>x.id===bookId);if(!b)return;
+  const url=b.couverture;
+  if(!url||!/^https?:\/\//.test(url)||url.includes('/storage/v1/object/public/bibli/'))return;
+  try{
+    const res=await fetch(url);
+    if(!res.ok)return;
+    const blob=await res.blob();
+    const objUrl=URL.createObjectURL(blob);
+    const img=new Image();
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=objUrl;});
+    const maxH=520,scale=Math.min(1,maxH/img.height);
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(objUrl);
+    const stored=await uploadImage(c.toDataURL('image/jpeg',0.72),'book-couverture');
+    const cur=db.books.find(x=>x.id===bookId);
+    if(cur&&cur.couverture===url){
+      cur.couverture=stored;
+      saveLocal();scheduleSync();render();
+    }
+  }catch(e){}
 }
 let imgTarget=null,formImgs={couverture:'',spine:''};
 function resetFormImgs(){
