@@ -841,11 +841,14 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 <script>
 /* ---------- Données ---------- */
 const KEY='mabibli_v1';
+const LANG_FIX={FR:'Français',fr:'Français',EN:'Anglais',en:'Anglais'};
 function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
   d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
+  /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
+  d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
   return d;
 }
 let db=normalizeDb({});
@@ -1119,8 +1122,9 @@ async function pullCloud(notify){
        livres en local — plutôt qu'adopter (et donc effacer localement), on traite ça comme
        localNewer, ce qui redéclenche un push et répare le cloud depuis cet appareil. */
     if(!remote.books.length&&db.books.length)return 'localNewer';
+    const needsLangFix=remote.books.some(b=>LANG_FIX[b.langue]);
     db=normalizeDb(remote);
-    saveLocal();
+    if(needsLangFix)save();else saveLocal();
     render();
     if(notify)toast('Données mises à jour depuis le cloud ✅ ('+db.books.length+' livres)');
     return 'adopted';
@@ -3522,7 +3526,11 @@ async function loadLocalData(){
         try{localStorage.removeItem(KEY);}catch(e){}
       }
     }
-    if(d&&d.books)db=normalizeDb(d);
+    if(d&&d.books){
+      const needsLangFix=d.books.some(b=>LANG_FIX[b.langue]);
+      db=normalizeDb(d);
+      if(needsLangFix)save();
+    }
   }catch(e){}
 }
 document.getElementById('fab').innerHTML=icSvg('book')+'<span class="plus">+</span>';
