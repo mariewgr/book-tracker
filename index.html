@@ -3526,11 +3526,16 @@ async function loadLocalData(){
         try{localStorage.removeItem(KEY);}catch(e){}
       }
     }
-    if(d&&d.books){
-      const needsLangFix=d.books.some(b=>LANG_FIX[b.langue]);
-      db=normalizeDb(d);
-      if(needsLangFix)save();
-    }
+    /* IMPORTANT : ne jamais appeler save() ici. Cette fonction charge ce qu'il y a en local,
+       qui peut être arbitrairement périmé (cet appareil pas ouvert depuis des jours pendant que
+       d'autres synchronisaient des changements plus récents). Appeler save() tamponnerait
+       l'heure actuelle sur un contenu périmé, ce qui le ferait paraître "plus récent" que le
+       cloud lors de la comparaison dans pullCloud() — et écraserait de vraies données plus
+       récentes avec cette version périmée. La correction FR/EN reste appliquée en mémoire via
+       normalizeDb() (donc affichée correctement) et ne sera persistée que lors d'une vraie
+       sauvegarde (édition, ou adoption d'une version cloud plus récente).
+       (Bug réel rencontré : voir commit "Normalize FR/EN..." puis son correctif.) */
+    if(d&&d.books)db=normalizeDb(d);
   }catch(e){}
 }
 document.getElementById('fab').innerHTML=icSvg('book')+'<span class="plus">+</span>';
