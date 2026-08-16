@@ -3248,9 +3248,19 @@ function renderCal(){
   fin.forEach(b=>out+=`<div class="mile" style="cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
   ses.forEach(s=>{
     const bk=db.books.find(b=>b.id===s.bookId);
-    out+=`<div class="mile"${bk?` style="cursor:pointer" onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','book-open')}<span class="name">${esc(s.titre)}</span><span class="h">+${s.pages} p.</span></div>`;
+    out+=`<div class="mile">
+      <div style="display:flex;align-items:center;gap:12px;min-width:0${bk?';cursor:pointer':''}"${bk?` onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','book-open')}<span class="name">${esc(s.titre)}</span></div>
+      <span class="h">+${s.pages} p.</span>
+      <button style="color:var(--red);margin-left:10px" onclick="deleteSession('${s.id}')" title="Supprimer cette entrée">✕</button>
+    </div>`;
   });
   det.innerHTML=out;
+}
+function deleteSession(id){
+  askConfirm('Supprimer cette entrée du journal ? Les pages lues ce jour-là seront retirées.',()=>{
+    db.sessions=db.sessions.filter(s=>s.id!==id);
+    save();renderCal();
+  });
 }
 
 /* ---------- Réglages / sauvegarde ---------- */
