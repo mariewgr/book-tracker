@@ -4007,8 +4007,7 @@ function openProfileVisitor(){
   const p=db.profile,name=(document.getElementById('pf_nom').value||'').trim()||'Sans nom';
   const photo=pfPhotoData||p.photo;
   let out=`<div style="text-align:center;margin-bottom:20px">
-    ${photo?`<img src="${esc(photo)}" style="width:96px;height:96px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 10px">`
-      :`<div style="width:96px;height:96px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icn" style="width:40px;height:40px;color:var(--txt2)"><use href="#i-user"/></svg></div>`}
+    <div style="display:flex;justify-content:center;margin-bottom:10px">${avatarHTML(photo,96)}</div>
     <h2 style="margin:0">${esc(name)}</h2>
     <div style="color:var(--txt2);font-size:.8rem;margin-top:4px">👀 Aperçu — ce que verrait un·e visiteur·se</div>
   </div>`;
@@ -4057,7 +4056,8 @@ function copyFriendCode(){
 function avatarHTML(photo,size,uid){
   const s=size||32,cur=uid?'cursor:pointer;':'',oc=uid?` onclick="openFriendProfile('${uid}')"`:'';
   if(photo)return `<img src="${esc(photo)}" loading="lazy" style="width:${s}px;height:${s}px;object-fit:cover;border-radius:50%;flex:none;${cur}" onerror="this.outerHTML='<div style=&quot;width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);flex:none;${cur}&quot;></div>'"${oc}>`;
-  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;${cur}"${oc}><svg class="icn" style="width:${Math.round(s*.55)}px;height:${Math.round(s*.55)}px;color:var(--txt2)"><use href="#i-user"/></svg></div>`;
+  const isz=Math.round(s*.55);
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;${cur}"${oc}><img src="profile.png" alt="" style="width:${isz}px;height:${isz}px;object-fit:contain" onerror="this.outerHTML='<svg class=&quot;icn&quot; style=&quot;width:${isz}px;height:${isz}px;color:var(--txt2)&quot;><use href=&quot;#i-user&quot;/></svg>'"></div>`;
 }
 async function openFriendProfile(uid){
   document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg">Chargement…</div>';
