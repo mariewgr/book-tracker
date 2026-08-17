@@ -343,6 +343,14 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 .pilebook{width:112px;height:24px;position:relative;overflow:hidden;border-radius:3px;flex:none}
 .pilebook img{position:absolute;left:50%;top:50%;width:24px;height:112px;transform:translate(-50%,-50%) rotate(90deg);object-fit:cover}
 .pilefake{width:112px;height:24px;border-radius:3px;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 6px;white-space:nowrap}
+/* Éditeur visuel d'étagère : livres tapables (mode) et glissables (position) */
+.shelfSlot{position:relative;touch-action:none}
+.shelfSlot.dragging{opacity:.35}
+.shelfSlot.dropBefore{box-shadow:-3px 0 0 var(--accent) inset}
+.shelfSlot.dropAfter{box-shadow:3px 0 0 var(--accent) inset}
+.slotDel{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--red);
+  color:#fff;border:2px solid var(--bg2);font-size:.7rem;line-height:1;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;padding:0;z-index:2}
 .sitem{display:flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line2);border-radius:11px;padding:7px 8px;margin-bottom:6px}
 .sitem .nm{flex:1;font-size:.83rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sitem button{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:8px;padding:6px 8px;font-size:.72rem;cursor:pointer;flex:none}
@@ -731,7 +739,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
   <div class="sheet">
     <h2>Modifier l'étagère</h2>
     <label>Nom</label><input id="s_nom" placeholder="Ex : Mes coups de cœur">
-    <label>Nombre d'étages</label><input id="s_rows" type="number" inputmode="numeric" min="1" max="8" value="1">
+    <label>Nombre d'étages</label><input id="s_rows" type="number" inputmode="numeric" min="1" max="8" value="1" onchange="renderShelfEditViz()">
     <div class="isbnmsg" id="shelfLinkMsg"></div>
     <button class="btn ghost hidden" id="shelfUnlinkBtn" onclick="shelfUnlink()">🔓 Délier (figer la liste actuelle)</button>
     <div id="shelfSourcesWrap" class="hidden">
@@ -740,8 +748,8 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
       <label>Ajouter une saga</label>
       <div class="chipwrap" id="shelfSourceAddEl"></div>
     </div>
-    <label>Livres sur l'étagère (dans l'ordre)</label>
-    <div id="shelfItemsEl"></div>
+    <label>Disposition — tape un livre pour changer tranche / couverture / pile, glisse-le pour le repositionner</label>
+    <div id="shelfEditViz"></div>
     <div id="shelfAddWrap">
       <label>Ajouter un livre</label>
       <input class="search" id="shelfSearch" placeholder="🔍 Chercher dans ta bibli…" oninput="renderShelfAdd()">
@@ -752,7 +760,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
       </div>
       <div id="shelfAddEl"></div>
     </div>
-    <p class="note-io">Mode d'affichage : <b>Tranche</b> = debout · <b>Couv.</b> = couverture de face · <b>Pile</b> = couché (les « Pile » qui se suivent s'empilent ensemble, repère doré). <b>Étage</b> : « Ét.2 » = placé sur l'étage 2 ; « Auto » = les livres se rangent à la suite et passent à l'étage suivant quand il n'y a plus de place.</p>
+    <p class="note-io">Mode d'affichage : <b>Tranche</b> = debout · <b>Couv.</b> = couverture de face · <b>Pile</b> = couché (les « Pile » qui se suivent s'empilent ensemble, repère doré). Glisser un livre vers une autre rangée le fixe sur cet étage.</p>
     <button class="btn" onclick="saveShelf()">Enregistrer</button>
     <button class="btn danger" onclick="deleteShelf()">Supprimer l'étagère</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
@@ -3035,7 +3043,6 @@ function createShelfFromCols(){
 }
 /* Éditeur */
 let shelfId=null,shelfItemsW=[],shelfSourcesW=[];
-const SHELF_MODES={spine:'Tranche',cover:'Couv.',pile:'Pile'};
 function newShelf(){
   askText("Nom de l'étagère",'',nom=>{
     if(!nom)return;
@@ -3060,8 +3067,10 @@ function openShelfEdit(id){
   document.getElementById('shelfSourcesWrap').classList.toggle('hidden',!linked);
   document.getElementById('shelfAddWrap').classList.toggle('hidden',linked);
   if(linked)renderShelfSources();
-  renderShelfItems();renderShelfAdd();
+  /* Le modal doit être ouvert (donc mis en page) AVANT renderShelfEditViz(), qui mesure
+     clientWidth pour la largeur disponible — sinon la mesure vaut 0 (display:none). */
   document.getElementById('shelfModal').classList.add('open');
+  renderShelfEditViz();renderShelfAdd();
 }
 function shelfSourceLabel2(src){
   return src.type==='saga'?src.id+' ('+sagaBooks(src.id).length+' t.)':'🔜 Livres à paraître ('+upcomingBooks().length+')';
@@ -3078,7 +3087,7 @@ function refreshLinkedShelfItems(){
   const ids=shelfSourcesEffItems(shelfSourcesW);
   const prev={};shelfItemsW.forEach(it=>{prev[it.bookId]={mode:it.mode,row:it.row};});
   shelfItemsW=ids.map(id=>({bookId:id,mode:(prev[id]&&prev[id].mode)||'spine',row:(prev[id]&&prev[id].row)||null}));
-  renderShelfItems();
+  renderShelfEditViz();
 }
 function renderShelfSources(){
   const wrap=document.getElementById('shelfSourcesEl');
@@ -3117,43 +3126,153 @@ function shelfSourceRemove(i){
   shelfSourcesW.splice(i,1);
   renderShelfSources();refreshLinkedShelfItems();
 }
-function renderShelfItems(){
-  const el=document.getElementById('shelfItemsEl');
-  if(!shelfItemsW.length){el.innerHTML='<div class="isbnmsg">Aucun livre pour l\'instant.</div>';return;}
+/* Éditeur visuel : mêmes rendus (tranche/couverture/pile) que l'étagère affichée, mais chaque
+   livre est tapable (change de mode) et glissable (change de position / étage) au lieu d'ouvrir
+   sa fiche. Regroupe les items 'pile' consécutifs en pile, comme shelfVisual(). */
+function shelfEditGroups(){
+  const groups=[];let pile=null;
+  shelfItemsW.forEach((it,i)=>{
+    const b=db.books.find(x=>x.id===it.bookId);if(!b)return;
+    if(it.mode==='pile'){
+      if(!pile){pile={pile:true,entries:[],w:118,row:it.row||null};groups.push(pile);}
+      pile.entries.push({b,i});
+    }else{
+      pile=null;
+      groups.push({pile:false,b,i,mode:it.mode,w:(it.mode==='cover'?96:spineW(b)+5),row:it.row||null});
+    }
+  });
+  return groups;
+}
+function layoutShelfRows(groups,nRows,cap){
+  const rows=Array.from({length:nRows},()=>({w:0,els:[]}));
+  groups.forEach(g=>{
+    if(g.row){const r=rows[Math.min(nRows,Math.max(1,g.row))-1];r.els.push(g);r.w+=g.w;}
+  });
+  let cur=0;
+  groups.forEach(g=>{
+    if(g.row)return;
+    while(cur<nRows-1&&rows[cur].w+g.w>cap)cur++;
+    rows[cur].els.push(g);rows[cur].w+=g.w;
+  });
+  return rows;
+}
+function renderShelfEditViz(){
+  const wrap=document.getElementById('shelfEditViz');
+  if(!wrap)return;
   const s=db.shelves.find(x=>x.id===shelfId);
   const linked=!!(s&&s.source&&s.source.length);
-  el.innerHTML=shelfItemsW.map((it,i)=>{
-    const b=db.books.find(x=>x.id===it.bookId);
-    return `<div class="sitem" data-i="${i}"${it.mode==='pile'?' style="border-left:3px solid var(--gold)"':''}>${linked?'':'<span class="drag">⠿</span>'}${coverEl(b&&b.couverture,'sm')}
-      <span class="nm">${esc(b?b.titre:'?')}</span>
-      <button class="mode" onclick="shelfCycle(${i})">${SHELF_MODES[it.mode]}</button>
-      <button onclick="shelfCycleRow(${i})" title="Étage">${it.row?'Ét.'+it.row:'Auto'}</button>
-      ${linked?'':`<button onclick="shelfMove(${i},-1)">↑</button>
-      <button onclick="shelfMove(${i},1)">↓</button>
-      <button style="color:var(--red)" onclick="shelfRemove(${i})">✕</button>`}</div>`;
+  const groups=shelfEditGroups();
+  if(!groups.length){
+    wrap.innerHTML='<div class="shelfviz"><div class="shelfinner"><div class="shelfrow"><div style="color:var(--txt2);font-size:.85rem;align-self:center;padding:0 10px">Aucun livre pour l\'instant — ajoute-en un ci-dessous.</div></div><div class="board"></div></div></div>';
+    return;
+  }
+  const nRows=Math.max(1,Math.min(8,+document.getElementById('s_rows').value||1));
+  const cap=Math.max(240,(wrap.clientWidth||window.innerWidth-32)-44);
+  const rows=layoutShelfRows(groups,nRows,cap);
+  const delBadge=i=>linked?'':`<button class="slotDel" onclick="event.stopPropagation();shelfRemove(${i})">✕</button>`;
+  const slot=(i,html)=>`<div class="shelfSlot" data-i="${i}" onclick="shelfSlotTap(${i})">${html}${delBadge(i)}</div>`;
+  const rowsHtml=rows.map((row,rIdx)=>{
+    const inner=row.els.map(g=>g.pile
+      ?`<div class="pilestack">${g.entries.map(e=>slot(e.i,pileEl(e.b))).join('')}</div>`
+      :slot(g.i,standEl(g.b,g.mode))).join('');
+    return `<div class="shelfrow" data-row="${rIdx+1}">${inner}</div><div class="board"></div>`;
   }).join('');
-  makeSortable(el,order=>{
-    shelfItemsW=order.map(i=>shelfItemsW[i]).filter(Boolean);
-    renderShelfItems();
-  });
+  wrap.innerHTML=`<div class="shelfviz"><div class="shelfinner">${rowsHtml}</div></div>`;
 }
-function shelfCycle(i){
+function shelfSlotTap(i){
   const modes=['spine','cover','pile'];
   shelfItemsW[i].mode=modes[(modes.indexOf(shelfItemsW[i].mode)+1)%3];
-  renderShelfItems();
+  renderShelfEditViz();
 }
-function shelfCycleRow(i){
-  const n=Math.max(1,Math.min(8,+document.getElementById('s_rows').value||1));
-  const next=(shelfItemsW[i].row||0)+1;
-  shelfItemsW[i].row=next>n?null:next;
-  renderShelfItems();
+function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelfAdd();}
+/* Glisser un livre : repositionne dans shelfItemsW et fixe l'étage sur lequel il est lâché.
+   Lâché hors de la zone d'étagère → annulé (pas de suppression accidentelle, on garde ça pour
+   le bouton ✕ explicite). Un simple tap (peu de mouvement) reste géré par le onclick du slot. */
+(function(){
+  let dragging=null,movedFar=false;
+  const THRESH=8;
+  function wrap(){return document.getElementById('shelfEditViz');}
+  document.addEventListener('pointerdown',e=>{
+    const w=wrap();if(!w||!w.contains(e.target))return;
+    const slot=e.target.closest('.shelfSlot');
+    if(!slot||e.target.closest('.slotDel'))return;
+    dragging={fromIndex:+slot.dataset.i,startX:e.clientX,startY:e.clientY,el:slot,dropIndex:null,dropBefore:false,dropRow:null};
+    movedFar=false;
+  });
+  document.addEventListener('pointermove',e=>{
+    if(!dragging)return;
+    const dx=e.clientX-dragging.startX,dy=e.clientY-dragging.startY;
+    if(!movedFar){
+      if(Math.hypot(dx,dy)<THRESH)return;
+      movedFar=true;
+      dragging.el.classList.add('dragging');
+    }
+    e.preventDefault();
+    document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
+    const overEl=document.elementFromPoint(e.clientX,e.clientY);
+    const overSlot=overEl&&overEl.closest('.shelfSlot');
+    if(overSlot&&overSlot!==dragging.el){
+      const r=overSlot.getBoundingClientRect();
+      const before=e.clientX<r.left+r.width/2;
+      overSlot.classList.add(before?'dropBefore':'dropAfter');
+      dragging.dropIndex=+overSlot.dataset.i;
+      dragging.dropBefore=before;
+      const rowEl=overSlot.closest('.shelfrow');
+      dragging.dropRow=rowEl?+rowEl.dataset.row:null;
+    }else{
+      const rowEl=overEl&&overEl.closest&&overEl.closest('.shelfrow');
+      dragging.dropIndex=null;
+      dragging.dropRow=rowEl?+rowEl.dataset.row:null;
+    }
+  });
+  function finish(e){
+    if(!dragging)return;
+    document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
+    if(movedFar){
+      const w=wrap();
+      const r=w&&w.getBoundingClientRect();
+      const inside=r&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
+      if(inside)applyShelfDrag(dragging);
+      else renderShelfEditViz(); /* lâché hors zone : annule, on ré-affiche l'état inchangé */
+    }
+    dragging=null;movedFar=false;
+  }
+  document.addEventListener('pointerup',finish);
+  document.addEventListener('pointercancel',finish);
+})();
+function applyShelfDrag(d){
+  const item=shelfItemsW[d.fromIndex];
+  shelfItemsW.splice(d.fromIndex,1);
+  let insertAt;
+  if(d.dropIndex!=null){
+    let idx=d.dropIndex;
+    if(idx>d.fromIndex)idx--;
+    insertAt=d.dropBefore?idx:idx+1;
+  }else{
+    insertAt=shelfItemsW.length;
+  }
+  const targetRow=d.dropRow||null;
+  item.row=targetRow;
+  shelfItemsW.splice(insertAt,0,item);
+  /* Un livre à étage fixé se place toujours avant les livres à "Auto" dans sa rangée (voir
+     layoutShelfRows) : sans ça, déposer un livre "après" un autre dans une rangée encore en
+     mode auto le ferait sauter en tête de rangée au lieu de rester où on l'a lâché. On fixe
+     donc explicitement l'étage de TOUS les livres de la rangée cible, d'après l'agencement
+     actuel — l'ordre visuel affiché pendant le glisser devient alors permanent. */
+  if(targetRow){
+    const wrap=document.getElementById('shelfEditViz');
+    const nRows=Math.max(1,Math.min(8,+document.getElementById('s_rows').value||1));
+    const cap=Math.max(240,((wrap&&wrap.clientWidth)||window.innerWidth-32)-44);
+    const rows=layoutShelfRows(shelfEditGroups(),nRows,cap);
+    const rowOfIndex=new Map();
+    rows.forEach((row,rIdx)=>row.els.forEach(g=>{
+      if(g.pile)g.entries.forEach(e=>rowOfIndex.set(e.i,rIdx+1));
+      else rowOfIndex.set(g.i,rIdx+1);
+    }));
+    shelfItemsW.forEach((it,i)=>{if(rowOfIndex.has(i))it.row=rowOfIndex.get(i);});
+  }
+  renderShelfEditViz();
 }
-function shelfMove(i,d){
-  const j=i+d;if(j<0||j>=shelfItemsW.length)return;
-  [shelfItemsW[i],shelfItemsW[j]]=[shelfItemsW[j],shelfItemsW[i]];
-  renderShelfItems();
-}
-function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfItems();renderShelfAdd();}
 function renderShelfAdd(){
   fillFilterSelects('shelfAddStatus','shelfAddGenre','shelfAddSaga');
   const q=document.getElementById('shelfSearch').value.toLowerCase().trim();
@@ -3164,7 +3283,7 @@ function renderShelfAdd(){
      <button style="color:var(--green)" onclick="shelfAddBook('${b.id}')">＋ Ajouter</button></div>`).join('')
     ||'<div class="isbnmsg">Aucun résultat.</div>';
 }
-function shelfAddBook(id){shelfItemsW.push({bookId:id,mode:'spine'});renderShelfItems();renderShelfAdd();}
+function shelfAddBook(id){shelfItemsW.push({bookId:id,mode:'spine'});renderShelfEditViz();renderShelfAdd();}
 function saveShelf(){
   const s=db.shelves.find(x=>x.id===shelfId);if(!s)return;
   const nom=document.getElementById('s_nom').value.trim();
