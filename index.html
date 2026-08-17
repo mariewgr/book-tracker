@@ -508,6 +508,17 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <div id="discWrap"></div>
   </section>
 
+  <!-- REMARQUE / BUG -->
+  <section id="view-feedback" class="hidden">
+    <p class="note-io">Une remarque, une idée, un bug rencontré ? Décris-le ci-dessous, ajoute une photo si besoin — ton appli mail s'ouvrira avec le message prêt à envoyer à <b>marie.wagnerwagner@gmail.com</b>.</p>
+    <label>Ton message</label>
+    <textarea id="fbText" placeholder="Décris le problème ou ta remarque…" rows="7"></textarea>
+    <div id="fbPhotoPreview"></div>
+    <button class="smallbtn" style="margin-top:8px" onclick="pickFeedbackPhoto()">📷 Ajouter une photo</button>
+    <input type="file" id="fbPhotoPick" accept="image/*" class="hidden" onchange="onFeedbackPhotoPicked(this)">
+    <button class="btn" id="fbSendBtn" style="margin-top:18px" onclick="sendFeedback()">📧 Envoyer par mail</button>
+  </section>
+
   <!-- JOURNAL -->
   <section id="view-cal" class="hidden">
     <div class="calhead">
@@ -531,6 +542,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('disc')"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span> Découvrir des livres</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('feedback')">💬 Remarque / signaler un bug</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
@@ -1315,8 +1327,8 @@ function thickness(b){
 
 /* ---------- Navigation ---------- */
 let tab='home';
-const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc'];
-const PLUS_TABS=new Set(['saga','rank','defi','stats','disc']);
+const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc','feedback'];
+const PLUS_TABS=new Set(['saga','rank','defi','stats','disc','feedback']);
 function switchTab(t){
   tab=t;
   try{sessionStorage.setItem('mabibli_tab',t);}catch(e){}
@@ -2397,6 +2409,58 @@ function onImgPicked(inp){
   };
   img.onerror=()=>toast('Image illisible 😕');
   img.src=URL.createObjectURL(f);
+}
+
+/* ---------- Remarque / signaler un bug (envoi par mail) ---------- */
+const FEEDBACK_EMAIL='marie.wagnerwagner@gmail.com';
+let fbPhotoData='';
+function pickFeedbackPhoto(){document.getElementById('fbPhotoPick').click();}
+function onFeedbackPhotoPicked(inp){
+  const f=inp.files[0];inp.value='';
+  if(!f)return;
+  const img=new Image();
+  img.onload=()=>{
+    const maxH=520,scale=Math.min(1,maxH/img.height);
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(img.src);
+    fbPhotoData=c.toDataURL('image/jpeg',0.72);
+    renderFeedbackPreview();
+  };
+  img.onerror=()=>toast('Image illisible 😕');
+  img.src=URL.createObjectURL(f);
+}
+function removeFeedbackPhoto(){fbPhotoData='';renderFeedbackPreview();}
+function renderFeedbackPreview(){
+  document.getElementById('fbPhotoPreview').innerHTML=fbPhotoData
+    ?`<div style="position:relative;display:inline-block;margin-top:8px">
+        <img src="${fbPhotoData}" style="max-width:160px;border-radius:10px;display:block">
+        <button onclick="removeFeedbackPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(10,7,15,.75);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer">✕</button>
+      </div>`:'';
+}
+/* mailto: n'accepte pas de pièce jointe — la photo est mise en ligne (comme une couverture)
+   et son lien est inclus dans le corps du message. Sans connexion/compte, on prévient plutôt
+   que d'essayer de glisser un base64 énorme dans une URL mailto (ça casserait le lien). */
+async function sendFeedback(){
+  const text=document.getElementById('fbText').value.trim();
+  if(!text&&!fbPhotoData){toast('Écris un message ou ajoute une photo 🙂');return;}
+  const btn=document.getElementById('fbSendBtn');
+  btn.disabled=true;btn.textContent='⏳ Préparation…';
+  let photoNote='';
+  if(fbPhotoData){
+    const uploaded=await uploadImage(fbPhotoData,'feedback');
+    photoNote=/^https?:\/\//.test(uploaded)
+      ?'\n\nPhoto : '+uploaded
+      :'\n\n(Photo non jointe — connecte-toi pour pouvoir l\'envoyer)';
+  }
+  btn.disabled=false;btn.textContent='📧 Envoyer par mail';
+  const body=(text||'(pas de description)')+photoNote+'\n\n— Envoyé depuis Ma Bibli';
+  const mailto='mailto:'+FEEDBACK_EMAIL+'?subject='+encodeURIComponent('Ma Bibli — Remarque / bug')+'&body='+encodeURIComponent(body);
+  window.location.href=mailto;
+  toast('Ton appli mail va s\'ouvrir avec le message prêt 📧');
+  document.getElementById('fbText').value='';
+  fbPhotoData='';renderFeedbackPreview();
 }
 
 /* ---------- Recherche de tranches en ligne (Openverse, sans clé) ---------- */
@@ -3515,7 +3579,7 @@ function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classL
 function render(){
   applyTheme();
   const map={home:renderHome,lib:renderLib,shelf:renderShelves,saga:renderSagas,
-    rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc};
+    rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc,feedback:()=>{}};
   (map[tab]||renderHome)();
 }
 async function loadLocalData(){
