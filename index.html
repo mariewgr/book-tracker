@@ -986,7 +986,9 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
   <div class="sheet">
     <h2>Nouveau post</h2>
     <label>Livre (optionnel)</label>
-    <select id="pc_book"><option value="">Aucun livre</option></select>
+    <div id="pc_bookChip"></div>
+    <input class="search" id="pc_bookSearch" placeholder="🔍 Chercher un livre par titre ou auteur…" oninput="renderPcBookResults()">
+    <div id="pc_bookResults"></div>
     <label>Texte</label>
     <textarea id="pc_texte" rows="4" placeholder="Quoi de neuf ?"></textarea>
     <label>Photos (optionnel)</label>
@@ -4849,18 +4851,42 @@ function deletePost(id){
   },'Supprimer');
 }
 let pcPhotos=[];
+let pcBookId='';
 function openPostCompose(){
   const c1=document.getElementById('postComposeModal');
   if(!sbUser){toast('Connecte-toi (compte cloud, voir ⚙️) pour publier');return;}
-  pcPhotos=[];
+  pcPhotos=[];pcBookId='';
   document.getElementById('pc_texte').value='';
   document.getElementById('pc_photos').innerHTML='';
   const msg=document.getElementById('pc_msg');msg.textContent='';msg.className='isbnmsg';
-  const sel=document.getElementById('pc_book');
-  sel.innerHTML='<option value="">Aucun livre</option>'+db.books.map(b=>`<option value="${b.id}">${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</option>`).join('');
+  document.getElementById('pc_bookSearch').value='';
+  document.getElementById('pc_bookResults').innerHTML='';
+  renderPcBookChip();
   c1.classList.add('open');
 }
 function closePostCompose(){document.getElementById('postComposeModal').classList.remove('open');}
+function renderPcBookChip(){
+  const el=document.getElementById('pc_bookChip');
+  const b=pcBookId&&db.books.find(x=>x.id===pcBookId);
+  if(!b){pcBookId='';el.innerHTML='';return;}
+  el.innerHTML=`<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</span>
+    <button type="button" onclick="pcBookId='';renderPcBookChip()">✕</button></div>`;
+}
+function pcPickBook(id){
+  pcBookId=id;
+  document.getElementById('pc_bookSearch').value='';
+  document.getElementById('pc_bookResults').innerHTML='';
+  renderPcBookChip();
+}
+function renderPcBookResults(){
+  const q=document.getElementById('pc_bookSearch').value.toLowerCase().trim();
+  const el=document.getElementById('pc_bookResults');
+  if(!q){el.innerHTML='';return;}
+  const list=db.books.filter(b=>bookMatch(b,q)).slice(0,8);
+  el.innerHTML=list.length?list.map(b=>
+    `<div class="sitem" style="cursor:pointer" onclick="pcPickBook('${b.id}')">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</span></div>`
+  ).join(''):'<div class="isbnmsg">Aucun résultat.</div>';
+}
 function pickPostPhoto(camera){
   imgTarget={id:null,field:'postphoto',kind:'postcompose'};
   const inp=document.getElementById('imgPick');
@@ -4875,7 +4901,7 @@ function renderPcPhotos(){
 }
 async function submitPost(){
   const texte=document.getElementById('pc_texte').value.trim();
-  const bookId=document.getElementById('pc_book').value;
+  const bookId=pcBookId;
   const msg=document.getElementById('pc_msg');
   if(!texte&&!pcPhotos.length&&!bookId){msg.className='isbnmsg err';msg.textContent='Ajoute au moins un texte, une photo ou un livre.';return;}
   const c=await sbClient();
