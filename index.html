@@ -788,7 +788,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <label>Nom</label><input id="s_nom" placeholder="Ex : Mes coups de cœur">
     <label>Nombre d'étages</label><input id="s_rows" type="number" inputmode="numeric" min="1" max="8" value="1" onchange="renderShelfEditViz()">
     <div class="isbnmsg" id="shelfLinkMsg"></div>
-    <button class="btn ghost hidden" id="shelfUnlinkBtn" onclick="shelfUnlink()">🔓 Délier (figer la liste actuelle)</button>
+    <button class="btn ghost hidden" id="shelfUnlinkBtn" onclick="shelfUnlink()"><span data-spr="unlock" data-spr-size="16"><svg class="icn"><use href="#i-unlock"/></svg></span> Délier (figer la liste actuelle)</button>
     <div id="shelfSourcesWrap" class="hidden">
       <label>Sagas liées (dans l'ordre)</label>
       <div id="shelfSourcesEl"></div>
@@ -1446,7 +1446,7 @@ const IC_FILES={
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
   pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png',
-  user:'profile.png'
+  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -3147,7 +3147,7 @@ function renderShelves(){
     <span style="font-size:.72rem;color:var(--txt2)">automatique</span></div>
     ${shelfVisual(pal)}</div>`;
   html+=db.shelves.map((s,i)=>`<div class="shelfcard" data-i="${i}">
-    <div class="shelfhead"><div style="display:flex;align-items:center;gap:4px;min-width:0"><span class="drag">⠿</span><h3 style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.nom)}${s.source&&s.source.length?' <span style="font-size:.68rem;color:var(--accent);font-weight:700">🔗 auto</span>':''}</h3></div>
+    <div class="shelfhead"><div style="display:flex;align-items:center;gap:4px;min-width:0"><span class="drag">⠿</span><h3 style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.nom)} <span style="font-size:.68rem;color:${s.source&&s.source.length?'var(--accent)':'var(--txt2)'};font-weight:700;display:inline-flex;align-items:center;gap:2px">${s.source&&s.source.length?icSvg('lock')+' auto':icSvg('unlock')+' libre'}</span></h3></div>
     <button class="smallbtn" style="flex:none" onclick="openShelfEdit('${s.id}')">${icSvg('pencil')} Modifier</button></div>
     ${shelfVisual(s)}</div>`).join('');
   if(!db.shelves.length)
@@ -3227,8 +3227,8 @@ function openShelfEdit(id){
   shelfItemsW=shelfEffItems(s).map(x=>({...x}));
   document.getElementById('shelfSearch').value='';
   ['shelfAddStatus','shelfAddGenre','shelfAddSaga'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('shelfLinkMsg').textContent=linked
-    ?'🔗 Liée à des sagas — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
+  document.getElementById('shelfLinkMsg').innerHTML=linked
+    ?icSvg('lock')+' Liée à des sagas — les livres se mettent à jour automatiquement (mode et étage restent réglables)':'';
   document.getElementById('shelfUnlinkBtn').classList.toggle('hidden',!linked);
   document.getElementById('shelfSourcesWrap').classList.toggle('hidden',!linked);
   document.getElementById('shelfAddWrap').classList.toggle('hidden',linked);
