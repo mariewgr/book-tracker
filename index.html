@@ -646,7 +646,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
       <button type="button" onclick="pickImage(null,'spine',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="spMsg"></div>
-    <button type="button" class="smallbtn" style="color:var(--accent);margin-top:6px" onclick="openSpineFind('form')">🔍 Trouver la tranche en ligne</button>
+    <button type="button" class="smallbtn" style="color:var(--accent);margin-top:6px" onclick="openSpineFind('form')">🔍 Trouver une tranche</button>
     <div class="row">
       <div><label>Genre</label><input id="f_genre" placeholder="Roman, SF, Polar…" list="genreList"><datalist id="genreList"></datalist></div>
       <div><label>Langue</label><input id="f_langue" placeholder="Français" list="langList"><datalist id="langList"></datalist></div>
@@ -827,10 +827,18 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
   </div>
 </div>
 
-<!-- MODAL RECHERCHE DE TRANCHES EN LIGNE -->
+<!-- MODAL RECHERCHE DE TRANCHES -->
 <div class="overlay" id="spineFindModal" style="z-index:60" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="sheet">
-    <h2>Tranches trouvées en ligne</h2>
+    <h2>Trouver une tranche</h2>
+    <h3 style="margin:4px 2px 6px;font-size:.85rem;color:var(--accent)">👥 Communauté Ma Bibli</h3>
+    <div class="isbnrow">
+      <input id="sfCommQ" placeholder="Titre ou auteur" onkeydown="if(event.key==='Enter'){event.preventDefault();searchCommunitySpines();}">
+      <button type="button" class="btn" style="width:auto;margin-top:0;flex:none;padding:0 18px" onclick="searchCommunitySpines()">🔍</button>
+    </div>
+    <div class="isbnmsg" id="sfCommMsg"></div>
+    <div id="sfCommGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px"></div>
+    <h3 style="margin:18px 2px 6px;font-size:.85rem;color:var(--txt2)">🌐 Recherche en ligne</h3>
     <div class="isbnmsg" id="sfMsg"></div>
     <div id="sfGrid" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px"></div>
     <a id="sfGoogle" class="btn ghost" target="_blank" rel="noopener" style="display:block;text-decoration:none">🌐 Chercher sur Google Images</a>
@@ -957,6 +965,7 @@ function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
   d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
+  d.settings.lang=d.settings.lang||'fr';
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
   d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false,friendCode:''};
   d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','shelves','badges'];
@@ -2514,6 +2523,7 @@ function onImgPicked(inp){
     URL.revokeObjectURL(objUrl);
     if(!cropped)return; /* rognage annulé */
     const dataUrl=await uploadImage(await resizeDataUrl(cropped,520),(target.kind||'x')+'-'+(target.field||'img'));
+    if(target.field==='spine'){const m=currentBookMeta(target.kind,target.id);contributeSpine(m.titre,m.auteur,m.isbn,dataUrl);}
     if(target.kind==='form'){
       formImgs[target.field]=dataUrl;
       const m=document.getElementById(target.field==='couverture'?'covMsg':'spMsg');
@@ -2668,6 +2678,10 @@ async function openSpineFind(kind,id){
     titre=b.titre;auteur=b.auteur||'';
   }
   if(!titre){sfMsgSet('Renseigne d\'abord le titre du livre','err');return;}
+  document.getElementById('sfCommQ').value=titre;
+  document.getElementById('sfCommGrid').innerHTML='';
+  document.getElementById('sfCommMsg').textContent='';document.getElementById('sfCommMsg').className='isbnmsg';
+  searchCommunitySpines();
   document.getElementById('sfGoogle').href=
     'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(titre+' '+auteur+' tranche livre book spine');
   sfMsgSet('Recherche des tranches de « '+titre+' »…');
@@ -2713,6 +2727,51 @@ function chooseSpine(url){
   }
   document.getElementById('spineFindModal').classList.remove('open');
   toast('Tranche enregistrée ✅');
+}
+/* ---------- Tranches communautaires (Supabase : bibli_spines) ---------- */
+function currentBookMeta(kind,id){
+  if(kind==='form')return{
+    titre:document.getElementById('f_titre').value.trim(),
+    auteur:document.getElementById('f_auteur').value.trim(),
+    isbn:isbnClean(document.getElementById('f_isbn').value)
+  };
+  const b=db.books.find(x=>x.id===id)||{};
+  return{titre:b.titre||'',auteur:b.auteur||'',isbn:b.isbn||''};
+}
+async function contributeSpine(titre,auteur,isbn,url){
+  if(!titre||!/^https?:\/\//.test(url))return;
+  try{
+    const c=await sbClient();
+    if(!c||!sbUser)return;
+    await c.from('bibli_spines').insert({user_id:sbUser.id,titre,auteur:auteur||'',isbn:isbn||'',url});
+  }catch(e){}
+}
+async function searchCommunitySpines(){
+  const q=document.getElementById('sfCommQ').value.trim();
+  const grid=document.getElementById('sfCommGrid'),msg=document.getElementById('sfCommMsg');
+  grid.innerHTML='';
+  if(!q){msg.textContent='Tape un titre ou un auteur';msg.className='isbnmsg err';return;}
+  const c=await sbClient();
+  if(!c||!sbUser){msg.textContent='Connecte-toi (compte cloud, voir ⚙️) pour chercher dans la communauté';msg.className='isbnmsg err';return;}
+  msg.textContent='Recherche dans la communauté…';msg.className='isbnmsg';
+  try{
+    const like='%'+q.replace(/[%_]/g,'\\$&')+'%';
+    const[r1,r2]=await Promise.all([
+      c.from('bibli_spines').select('*').ilike('titre',like).order('created_at',{ascending:false}).limit(24),
+      c.from('bibli_spines').select('*').ilike('auteur',like).order('created_at',{ascending:false}).limit(24)
+    ]);
+    if(r1.error)throw r1.error;if(r2.error)throw r2.error;
+    const seen=new Set();
+    const items=[...(r1.data||[]),...(r2.data||[])].filter(it=>!seen.has(it.id)&&seen.add(it.id));
+    if(!items.length){msg.textContent='Aucune tranche communautaire pour « '+q+' » 😕';msg.className='isbnmsg';return;}
+    msg.textContent=items.length+' tranche(s) de la communauté — touche celle qui correspond';msg.className='isbnmsg ok';
+    grid.innerHTML=items.map(it=>`<img src="${esc(it.url)}" data-u="${esc(it.url)}" loading="lazy"
+      style="height:150px;width:auto;border-radius:6px;border:2px solid var(--accent);cursor:pointer"
+      title="${esc(it.titre)}${it.auteur?' — '+esc(it.auteur):''}" onclick="chooseSpine(this.dataset.u)" onerror="this.remove()">`).join('');
+  }catch(e){
+    msg.textContent="⚠️ Impossible de charger la communauté — la table bibli_spines existe-t-elle ? (voir le script SQL fourni)";
+    msg.className='isbnmsg err';
+  }
 }
 
 /* ---------- Caméra tranche : détection + surlignage + recadrage auto ---------- */
@@ -2808,6 +2867,7 @@ function spineRetake(){
 async function spineUse(){
   if(!scDataUrl||!scSpineTarget)return;
   scDataUrl=await uploadImage(scDataUrl,'spine');
+  {const m=currentBookMeta(scSpineTarget.kind,scSpineTarget.id);contributeSpine(m.titre,m.auteur,m.isbn,scDataUrl);}
   if(scSpineTarget.kind==='form'){
     formImgs.spine=scDataUrl;
     const m=document.getElementById('spMsg');

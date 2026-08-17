@@ -132,6 +132,30 @@ create policy "ecrire mon fil" on public.bibli_feed for all to authenticated
 
 Ensuite, dans l'app : ouvre **👥 Mes amis** (menu ➕), partage ton code à 6 caractères, et clique sur **🔄 Synchroniser mes livres terminés** dans le **📰 Fil d'actualité** pour envoyer tes livres déjà terminés.
 
+### d) Activer les tranches communautaires (optionnel)
+
+Pour que le bouton **🔍 Trouver une tranche** (dans la fiche d'un livre) propose aussi les photos de tranches ajoutées par d'autres utilisateurs de l'app, exécute ce script en plus :
+
+```sql
+create table public.bibli_spines (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  titre text not null,
+  auteur text default '',
+  isbn text default '',
+  url text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.bibli_spines enable row level security;
+create policy "lecture publique" on public.bibli_spines for select using (true);
+create policy "ajout perso" on public.bibli_spines for insert to authenticated
+  with check (auth.uid() = user_id);
+create policy "suppression perso" on public.bibli_spines for delete to authenticated
+  using (auth.uid() = user_id);
+```
+
+Dès qu'une photo de tranche que tu prends toi-même est enregistrée sur un livre, elle est automatiquement partagée dans cette base commune (titre/auteur pour la retrouver). Les tranches trouvées en ligne (recherche Google/Openverse) ne sont, elles, jamais partagées.
+
 ## 4. À savoir
 
 - **Tes données restent sur ton téléphone** (rien n'est envoyé en ligne). Personne d'autre ne voit tes livres, même si l'URL est publique.
