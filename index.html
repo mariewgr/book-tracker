@@ -955,6 +955,14 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost" onclick="closeProfileVisitor()">Fermer le mode visiteur</button>
   </div>
 </div>
+
+<!-- PROFIL D'UN·E AMI·E -->
+<div class="overlay" id="friendProfileModal" style="z-index:62" onclick="if(event.target===this)closeFriendProfile()">
+  <div class="sheet">
+    <div id="friendProfileBody"></div>
+    <button class="btn ghost" onclick="closeFriendProfile()">Fermer</button>
+  </div>
+</div>
 </div><!-- /#appRoot -->
 
 <script>
@@ -4046,6 +4054,44 @@ function copyFriendCode(){
   if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>toast('Code copié ✅')).catch(()=>toast('Ton code : '+code));
   else toast('Ton code : '+code);
 }
+function avatarHTML(photo,size,uid){
+  const s=size||32,cur=uid?'cursor:pointer;':'',oc=uid?` onclick="openFriendProfile('${uid}')"`:'';
+  if(photo)return `<img src="${esc(photo)}" loading="lazy" style="width:${s}px;height:${s}px;object-fit:cover;border-radius:50%;flex:none;${cur}" onerror="this.outerHTML='<div style=&quot;width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);flex:none;${cur}&quot;></div>'"${oc}>`;
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;${cur}"${oc}><svg class="icn" style="width:${Math.round(s*.55)}px;height:${Math.round(s*.55)}px;color:var(--txt2)"><use href="#i-user"/></svg></div>`;
+}
+async function openFriendProfile(uid){
+  document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg">Chargement…</div>';
+  document.getElementById('friendProfileModal').classList.add('open');
+  const c=await sbClient();
+  if(!c){document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">Connecte-toi pour voir les profils.</div>';return;}
+  try{
+    const[{data:prof},{data:books}]=await Promise.all([
+      c.from('bibli_public_profiles').select('nom,photo').eq('user_id',uid).maybeSingle(),
+      c.from('bibli_feed').select('*').eq('user_id',uid).order('date_fin',{ascending:false,nullsFirst:false}).order('updated_at',{ascending:false})
+    ]);
+    const nom=(prof&&prof.nom)||'Sans nom',photo=prof&&prof.photo;
+    let out=`<div style="text-align:center;margin-bottom:16px">
+      <div style="display:flex;justify-content:center">${avatarHTML(photo,88)}</div>
+      <h2 style="margin:10px 0 0">${esc(nom)}</h2>
+    </div>`;
+    if(books&&books.length){
+      out+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">📚 Livres terminés (${books.length})</h3>`;
+      out+=books.map(r=>`<div class="book" style="cursor:default">
+        <div class="top">${coverEl(r.couverture,'')}
+          <div class="tinfo"><h3>${esc(r.titre)}</h3><div class="auth">${esc(r.auteur)||'—'}</div>
+          ${r.note?`<div class="meta"><span class="stars">${'★'.repeat(r.note)}</span></div>`:''}</div>
+        </div>
+        ${r.date_fin?`<div style="font-size:.75rem;color:var(--txt2);margin-top:4px">Terminé le ${fmtDateFr(r.date_fin)}</div>`:''}
+      </div>`).join('');
+    }else{
+      out+='<div class="empty">Aucun livre partagé pour l\'instant 🌙</div>';
+    }
+    document.getElementById('friendProfileBody').innerHTML=out;
+  }catch(e){
+    document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger ce profil.</div>';
+  }
+}
+function closeFriendProfile(){document.getElementById('friendProfileModal').classList.remove('open');}
 async function renderFriends(){
   const el=document.getElementById('friendCodeDisplay');
   const msg=document.getElementById('friendsSyncMsg');
@@ -4071,21 +4117,22 @@ async function renderFriends(){
       (profs||[]).forEach(p=>profiles[p.user_id]=p);
     }
     const nameOf=uid=>(profiles[uid]&&profiles[uid].nom)||'Sans nom';
+    const photoOf=uid=>profiles[uid]&&profiles[uid].photo;
     const incoming=rows.filter(r=>r.friend_id===sbUser.id&&r.status==='pending');
     const outgoing=rows.filter(r=>r.user_id===sbUser.id&&r.status==='pending');
     const accepted=rows.filter(r=>r.status==='accepted');
     document.getElementById('friendRequestsIn').innerHTML=incoming.length?('<h2>Demandes reçues</h2>'+incoming.map(r=>
-      `<div class="sitem"><span class="nm">${esc(nameOf(r.user_id))}</span>
+      `<div class="sitem">${avatarHTML(photoOf(r.user_id),32,r.user_id)}<span class="nm" style="cursor:pointer" onclick="openFriendProfile('${r.user_id}')">${esc(nameOf(r.user_id))}</span>
         <button style="color:var(--green)" onclick="acceptFriendRequest('${r.id}')">✓ Accepter</button>
         <button style="color:var(--red)" onclick="declineFriendRequest('${r.id}')">✕</button></div>`
     ).join('')):'';
     document.getElementById('friendRequestsOut').innerHTML=outgoing.length?('<h2>Demandes envoyées</h2>'+outgoing.map(r=>
-      `<div class="sitem"><span class="nm">${esc(nameOf(r.friend_id))}</span><span class="h">En attente…</span>
+      `<div class="sitem">${avatarHTML(photoOf(r.friend_id),32,r.friend_id)}<span class="nm" style="cursor:pointer" onclick="openFriendProfile('${r.friend_id}')">${esc(nameOf(r.friend_id))}</span><span class="h">En attente…</span>
         <button style="color:var(--red)" onclick="cancelFriendRequest('${r.id}')">✕</button></div>`
     ).join('')):'';
     document.getElementById('friendsListEl').innerHTML=accepted.length?accepted.map(r=>{
       const otherId=r.user_id===sbUser.id?r.friend_id:r.user_id;
-      return `<div class="sitem"><span class="nm">${esc(nameOf(otherId))}</span>
+      return `<div class="sitem">${avatarHTML(photoOf(otherId),32,otherId)}<span class="nm" style="cursor:pointer" onclick="openFriendProfile('${otherId}')">${esc(nameOf(otherId))}</span>
         <button style="color:var(--red)" onclick="removeFriend('${r.id}')">✕</button></div>`;
     }).join(''):'<div class="isbnmsg">Aucun·e ami·e pour l\'instant — partage ton code ci-dessus !</div>';
   }catch(e){
