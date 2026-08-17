@@ -395,6 +395,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
   <symbol id="i-saga" viewBox="0 0 24 24"><rect x="4" y="15" width="16" height="4" rx="1"/><rect x="5" y="10" width="14" height="4" rx="1"/><rect x="6" y="5" width="12" height="4" rx="1"/></symbol>
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
 </svg>
 
 <div id="ptrIndicator"><svg class="icn"><use href="#i-refresh"/></svg></div>
@@ -425,6 +426,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 <header>
   <h1><span data-spr="book" data-spr-size="22"><svg class="icn" style="width:22px;height:22px;color:var(--accent)"><use href="#i-book"/></svg></span> Ma <span>Bibli</span><span class="offlinebadge hidden" id="offlineBadge" title="Hors ligne — tes données locales sont affichées">📴 Hors ligne</span></h1>
   <div style="display:flex;gap:8px">
+    <button class="iconbtn" onclick="openProfile()" title="Profil"><svg class="icn"><use href="#i-user"/></svg></button>
     <button class="iconbtn" onclick="openSettings()" title="Réglages"><span data-spr="gear" data-spr-size="20"><svg class="icn"><use href="#i-gear"/></svg></span></button>
   </div>
 </header>
@@ -846,6 +848,39 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
+
+<!-- PROFIL -->
+<div class="overlay" id="profileModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2>Profil</h2>
+    <label>Photo</label>
+    <div id="pfPhotoPreview"></div>
+    <button class="smallbtn" style="margin-top:8px" onclick="pickProfilePhoto()">📷 Choisir une photo</button>
+    <input type="file" id="pfPhotoPick" accept="image/*" class="hidden" onchange="onProfilePhotoPicked(this)">
+    <label style="margin-top:16px">Nom</label>
+    <input id="pf_nom" placeholder="Ton nom ou pseudo">
+    <h2 style="margin-top:24px">Visible publiquement</h2>
+    <p class="note-io">Pour l'instant, ces réglages n'ont pas encore d'effet — le partage public arrive bientôt.</p>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
+      <input type="checkbox" id="pf_pubReading" style="width:auto">
+      Livres en cours de lecture et leur avancement
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
+      <input type="checkbox" id="pf_pubStats" style="width:auto">
+      Statistiques
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
+      <input type="checkbox" id="pf_pubShelves" style="width:auto">
+      Étagères
+    </label>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
+      <input type="checkbox" id="pf_pubBadges" style="width:auto">
+      Badges
+    </label>
+    <button class="btn" style="margin-top:24px" onclick="saveProfile()">Enregistrer</button>
+    <button class="btn ghost" onclick="closeModals()">Fermer</button>
+  </div>
+</div>
 </div><!-- /#appRoot -->
 
 <script>
@@ -857,6 +892,7 @@ function normalizeDb(d){
   d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
+  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false};
   /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
   d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
   return d;
@@ -3461,6 +3497,50 @@ function saveSettings(){
   gemKey=document.getElementById('g_key').value.trim();
   localStorage.setItem(GKEY,gemKey);
   save();closeModals();render();
+}
+let pfPhotoData='';
+function renderProfilePreview(){
+  const url=pfPhotoData||db.profile.photo;
+  document.getElementById('pfPhotoPreview').innerHTML=url
+    ?`<img src="${url}" style="width:88px;height:88px;object-fit:cover;border-radius:50%;display:block;margin-top:6px">`
+    :'<div class="isbnmsg" style="margin-top:6px">Aucune photo pour l\'instant.</div>';
+}
+function openProfile(){
+  document.getElementById('pf_nom').value=db.profile.nom||'';
+  document.getElementById('pf_pubReading').checked=!!db.profile.publicReading;
+  document.getElementById('pf_pubStats').checked=!!db.profile.publicStats;
+  document.getElementById('pf_pubShelves').checked=!!db.profile.publicShelves;
+  document.getElementById('pf_pubBadges').checked=!!db.profile.publicBadges;
+  pfPhotoData='';
+  renderProfilePreview();
+  document.getElementById('profileModal').classList.add('open');
+}
+function pickProfilePhoto(){document.getElementById('pfPhotoPick').click();}
+function onProfilePhotoPicked(inp){
+  const f=inp.files[0];inp.value='';
+  if(!f)return;
+  const img=new Image();
+  img.onload=()=>{
+    const maxH=400,scale=Math.min(1,maxH/img.height);
+    const c=document.createElement('canvas');
+    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    URL.revokeObjectURL(img.src);
+    pfPhotoData=c.toDataURL('image/jpeg',0.8);
+    renderProfilePreview();
+  };
+  img.onerror=()=>toast('Image illisible 😕');
+  img.src=URL.createObjectURL(f);
+}
+async function saveProfile(){
+  db.profile.nom=document.getElementById('pf_nom').value.trim();
+  db.profile.publicReading=document.getElementById('pf_pubReading').checked;
+  db.profile.publicStats=document.getElementById('pf_pubStats').checked;
+  db.profile.publicShelves=document.getElementById('pf_pubShelves').checked;
+  db.profile.publicBadges=document.getElementById('pf_pubBadges').checked;
+  if(pfPhotoData)db.profile.photo=await uploadImage(pfPhotoData,'profile');
+  save();closeModals();render();
+  toast('Profil enregistré ✅');
 }
 function applyTheme(){
   document.body.dataset.theme=db.settings.theme||'sombre';
