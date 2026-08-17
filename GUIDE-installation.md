@@ -63,6 +63,75 @@ C'est tout : chaque modification part en base ~1 s après, et tout appareil conn
 
 Note : la clé « anon public » n'est pas un secret — tes données sont protégées par ton compte (règle RLS : seule toi peux lire/écrire ta ligne).
 
+### c) Activer les amis + le fil d'actualité (optionnel)
+
+Pour utiliser la page **👥 Mes amis** et le **📰 Fil d'actualité**, exécute ce script en plus dans le **SQL Editor** :
+
+```sql
+-- Profils publics (nom + code ami, visibles par les autres comptes connectés)
+create table public.bibli_public_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  code text unique not null,
+  nom text default '',
+  photo text default '',
+  updated_at timestamptz not null default now()
+);
+alter table public.bibli_public_profiles enable row level security;
+create policy "lecture publique" on public.bibli_public_profiles for select using (true);
+create policy "ecriture perso" on public.bibli_public_profiles for insert to authenticated
+  with check (auth.uid() = user_id);
+create policy "maj perso" on public.bibli_public_profiles for update to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Demandes d'amis + relations
+create table public.bibli_friends (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  friend_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'pending',
+  created_at timestamptz not null default now(),
+  unique (user_id, friend_id)
+);
+alter table public.bibli_friends enable row level security;
+create policy "voir mes relations" on public.bibli_friends for select to authenticated
+  using (auth.uid() = user_id or auth.uid() = friend_id);
+create policy "envoyer une demande" on public.bibli_friends for insert to authenticated
+  with check (auth.uid() = user_id);
+create policy "repondre/annuler" on public.bibli_friends for update to authenticated
+  using (auth.uid() = user_id or auth.uid() = friend_id);
+create policy "supprimer" on public.bibli_friends for delete to authenticated
+  using (auth.uid() = user_id or auth.uid() = friend_id);
+
+-- Fil d'actualité : un livre terminé par entrée, visible par soi-même + ami·e·s accepté·e·s
+create table public.bibli_feed (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  book_id text not null,
+  titre text not null,
+  auteur text default '',
+  couverture text default '',
+  note int,
+  date_fin date,
+  updated_at timestamptz not null default now(),
+  unique (user_id, book_id)
+);
+alter table public.bibli_feed enable row level security;
+create policy "voir le fil" on public.bibli_feed for select to authenticated
+  using (
+    auth.uid() = user_id
+    or exists (
+      select 1 from public.bibli_friends f
+      where f.status = 'accepted'
+        and ((f.user_id = auth.uid() and f.friend_id = bibli_feed.user_id)
+          or (f.friend_id = auth.uid() and f.user_id = bibli_feed.user_id))
+    )
+  );
+create policy "ecrire mon fil" on public.bibli_feed for all to authenticated
+  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+```
+
+Ensuite, dans l'app : ouvre **👥 Mes amis** (menu ➕), partage ton code à 6 caractères, et clique sur **🔄 Synchroniser mes livres terminés** dans le **📰 Fil d'actualité** pour envoyer tes livres déjà terminés.
+
 ## 4. À savoir
 
 - **Tes données restent sur ton téléphone** (rien n'est envoyé en ligne). Personne d'autre ne voit tes livres, même si l'URL est publique.
