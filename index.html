@@ -419,6 +419,11 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
   <symbol id="i-saga" viewBox="0 0 24 24"><rect x="4" y="15" width="16" height="4" rx="1"/><rect x="5" y="10" width="14" height="4" rx="1"/><rect x="6" y="5" width="12" height="4" rx="1"/></symbol>
   <symbol id="i-dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></symbol>
+  <symbol id="i-friends" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2 21c0-3.5 3-6.4 7-6.4s7 2.9 7 6.4"/><circle cx="17.2" cy="8.6" r="2.6"/><path d="M15.8 14.4c2.8.5 4.9 2.6 5.2 5.6"/></symbol>
+  <symbol id="i-feed" viewBox="0 0 24 24"><path d="M4 4a16 16 0 0 1 16 16"/><path d="M4 11a9 9 0 0 1 9 9"/><circle cx="6.5" cy="17.5" r="1.6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6l10 7 10-7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+  <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.5-2.2"/></symbol>
 </svg>
 
 <div id="ptrIndicator"><svg class="icn"><use href="#i-refresh"/></svg></div>
@@ -541,7 +546,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <div id="fbPhotoPreview"></div>
     <button class="smallbtn" style="margin-top:8px" onclick="pickFeedbackPhoto()">📷 Ajouter une photo</button>
     <input type="file" id="fbPhotoPick" accept="image/*" class="hidden" onchange="onFeedbackPhotoPicked(this)">
-    <button class="btn" id="fbSendBtn" style="margin-top:18px" onclick="sendFeedback()">📧 Envoyer par mail</button>
+    <button class="btn" id="fbSendBtn" style="margin-top:18px" onclick="sendFeedback()"><span data-spr="mail" data-spr-size="20"><svg class="icn"><use href="#i-mail"/></svg></span> Envoyer par mail</button>
   </section>
 
   <!-- AMIS -->
@@ -566,7 +571,8 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 
   <!-- FEED -->
   <section id="view-feed" class="hidden">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 16px" onclick="openPostCompose()">✍️ Nouveau post</button>
       <button class="smallbtn" onclick="backfillFeed()">🔄 Synchroniser mes livres terminés</button>
     </div>
     <div id="feedListEl"></div>
@@ -595,8 +601,8 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('disc')"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span> Découvrir des livres</button>
-    <button class="btn ghost menub" onclick="closeModals();switchTab('friends')">👥 Mes amis</button>
-    <button class="btn ghost menub" onclick="closeModals();switchTab('feed')">📰 Fil d'actualité</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('friends')"><span data-spr="friends" data-spr-size="20"><svg class="icn"><use href="#i-friends"/></svg></span> Mes amis</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('feed')"><span data-spr="feed" data-spr-size="20"><svg class="icn"><use href="#i-feed"/></svg></span> Fil d'actualité</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('feedback')">💬 Remarque / signaler un bug</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
@@ -747,7 +753,11 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <p class="note-io" style="margin-top:0">Fais glisser les coins pour ajuster, ou déplace le cadre. Tu peux aussi valider sans rogner.</p>
     <div id="cropWrap" style="position:relative;max-width:100%;touch-action:none;user-select:none;line-height:0">
       <img id="cropImgEl" style="display:block;max-width:100%;border-radius:8px" draggable="false" alt="">
-      <div id="cropBox" style="position:absolute;border:2px solid var(--accent);box-shadow:0 0 0 2000px rgba(10,7,15,.6);cursor:move">
+      <div id="veilTop" style="position:absolute;background:rgba(10,7,15,.6);pointer-events:none"></div>
+      <div id="veilBottom" style="position:absolute;background:rgba(10,7,15,.6);pointer-events:none"></div>
+      <div id="veilLeft" style="position:absolute;background:rgba(10,7,15,.6);pointer-events:none"></div>
+      <div id="veilRight" style="position:absolute;background:rgba(10,7,15,.6);pointer-events:none"></div>
+      <div id="cropBox" style="position:absolute;border:2px solid var(--accent);cursor:move">
         <div class="cropHandle" data-c="nw" style="left:-12px;top:-12px;cursor:nwse-resize"></div>
         <div class="cropHandle" data-c="ne" style="right:-12px;top:-12px;cursor:nesw-resize"></div>
         <div class="cropHandle" data-c="sw" style="left:-12px;bottom:-12px;cursor:nesw-resize"></div>
@@ -963,6 +973,26 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost" onclick="closeFriendProfile()">Fermer</button>
   </div>
 </div>
+
+<!-- NOUVEAU POST -->
+<div class="overlay" id="postComposeModal" style="z-index:62" onclick="if(event.target===this)closePostCompose()">
+  <div class="sheet">
+    <h2>Nouveau post</h2>
+    <label>Livre (optionnel)</label>
+    <select id="pc_book"><option value="">Aucun livre</option></select>
+    <label>Texte</label>
+    <textarea id="pc_texte" rows="4" placeholder="Quoi de neuf ?"></textarea>
+    <label>Photos (optionnel)</label>
+    <div class="isbnrow">
+      <button type="button" onclick="pickPostPhoto()"><span data-spr="image" data-spr-size="19"><svg class="icn"><use href="#i-image"/></svg></span></button>
+      <button type="button" onclick="pickPostPhoto(true)"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
+    </div>
+    <div id="pc_photos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+    <div class="isbnmsg" id="pc_msg"></div>
+    <button class="btn" style="margin-top:14px" onclick="submitPost()">Publier</button>
+    <button class="btn ghost" onclick="closePostCompose()">Annuler</button>
+  </div>
+</div>
 </div><!-- /#appRoot -->
 
 <script>
@@ -1023,7 +1053,7 @@ let sbCfg={url:'https://nfyxidwrpzeiasxdwnhn.supabase.co',key:'sb_publishable_z5
 try{sbCfg={...sbCfg,...JSON.parse(localStorage.getItem(SBKEY)||'{}')};}catch(e){}
 if(!sbCfg.url)sbCfg.url='https://nfyxidwrpzeiasxdwnhn.supabase.co';
 if(!sbCfg.key)sbCfg.key='sb_publishable_z5wPhdz64pl4KGXHTj0T7w_rd7TwSf5';
-let sb=null,sbUser=null,sbChannel=null;
+let sb=null,sbUser=null,sbChannel=null,sbSocialChannel=null;
 function setSyncStatus(t){const e=document.getElementById('syncStatus');if(e)e.textContent=t;}
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s);});}
 /* Empêche un appel réseau bloqué (hors ligne) de figer l'app indéfiniment */
@@ -1273,9 +1303,22 @@ async function startCloud(){
       {event:'*',schema:'public',table:'bibli',filter:'user_id=eq.'+sbUser.id},
       ()=>{pullCloud(true).catch(()=>{});}
     ).subscribe();
+    if(sbSocialChannel)c.removeChannel(sbSocialChannel);
+    /* temps réel : amis, fil d'actualité, posts, commentaires, réactions — arrivent
+       en direct sans avoir à retirer pour rafraîchir. Ne redessine que si l'onglet
+       concerné est affiché (inutile de recharger un fil qu'on ne regarde pas). */
+    sbSocialChannel=c.channel('bibli-social')
+      .on('postgres_changes',{event:'*',schema:'public',table:'bibli_friends'},()=>{if(tab==='friends')renderFriends();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'bibli_feed'},()=>{if(tab==='feed')scheduleRenderFeed();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'bibli_posts'},()=>{if(tab==='feed')scheduleRenderFeed();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'bibli_comments'},()=>{if(tab==='feed')scheduleRenderFeed();})
+      .on('postgres_changes',{event:'*',schema:'public',table:'bibli_reactions'},()=>{if(tab==='feed')scheduleRenderFeed();})
+      .subscribe();
     setSyncStatus('✅ Connectée ('+(sbUser.email||'')+') — sync temps réel active');
   }catch(e){setSyncStatus('⚠️ Erreur BDD — la table « bibli » est-elle créée ? (voir guide §3)');}
 }
+let renderFeedTimer=null;
+function scheduleRenderFeed(){clearTimeout(renderFeedTimer);renderFeedTimer=setTimeout(()=>{if(tab==='feed')renderFeed();},400);}
 async function sbPush(){
   const c=await sbClient();if(!c||!sbUser)return;
   /* Garde-fou : si l'état local est vide (bug, chargement raté, etc.) alors que le cloud
@@ -1308,9 +1351,9 @@ async function doPush(){
 async function sbLogout(){
   try{
     const c=await sbClient();
-    if(c){if(sbChannel)c.removeChannel(sbChannel);await c.auth.signOut();}
+    if(c){if(sbChannel)c.removeChannel(sbChannel);if(sbSocialChannel)c.removeChannel(sbSocialChannel);await c.auth.signOut();}
   }catch(e){}
-  sbChannel=null;
+  sbChannel=null;sbSocialChannel=null;
   closeModals();
   /* onAuthStateChange déclenche handleSession(null) : réaffiche l'écran de connexion */
 }
@@ -1416,19 +1459,22 @@ const SPR_FILES={
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
   human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png',
-  user:'profile.png'
+  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png'
 };
-document.querySelectorAll('[data-spr]').forEach(el=>{
-  const f=SPR_FILES[el.dataset.spr];if(!f)return;
-  const px=+el.dataset.sprSize||22;
-  const im=new Image();
-  im.onload=()=>{
-    im.className='sprimg';
-    im.style.height=px+'px';im.style.width='auto';
-    el.innerHTML='';el.appendChild(im);
-  };
-  im.src=f;
-});
+function applySpr(root){
+  (root||document).querySelectorAll('[data-spr]').forEach(el=>{
+    const f=SPR_FILES[el.dataset.spr];if(!f)return;
+    const px=+el.dataset.sprSize||22;
+    const im=new Image();
+    im.onload=()=>{
+      im.className='sprimg';
+      im.style.height=px+'px';im.style.width='auto';
+      el.innerHTML='';el.appendChild(im);
+    };
+    im.src=f;
+  });
+}
+applySpr();
 function imgFallback(el,cls,n){
   const d=document.createElement('div');
   d.className=cls;d.innerHTML=icSvg(n);
@@ -2532,6 +2578,11 @@ function onImgPicked(inp){
     if(!cropped)return; /* rognage annulé */
     const dataUrl=await uploadImage(await resizeDataUrl(cropped,520),(target.kind||'x')+'-'+(target.field||'img'));
     if(target.field==='spine'){const m=currentBookMeta(target.kind,target.id);contributeSpine(m.titre,m.auteur,m.isbn,dataUrl);}
+    if(target.kind==='postcompose'){
+      pcPhotos.push(dataUrl);
+      renderPcPhotos();
+      return;
+    }
     if(target.kind==='form'){
       formImgs[target.field]=dataUrl;
       const m=document.getElementById(target.field==='couverture'?'covMsg':'spMsg');
@@ -2563,8 +2614,16 @@ function openCropper(src,onDone){
   imEl.src=src;
 }
 function renderCropBox(){
-  const b=cropState.box,el=document.getElementById('cropBox');
+  const s=cropState,b=s.box,el=document.getElementById('cropBox');
   el.style.left=b.x+'px';el.style.top=b.y+'px';el.style.width=b.w+'px';el.style.height=b.h+'px';
+  /* Voile obscurcissant = 4 rectangles bornés à l'image (pas de box-shadow qui déborderait
+     sur toute la page), pour que seul ce qui sera rogné reste assombri. */
+  const vt=document.getElementById('veilTop'),vb=document.getElementById('veilBottom'),
+    vl=document.getElementById('veilLeft'),vr=document.getElementById('veilRight');
+  vt.style.left='0px';vt.style.top='0px';vt.style.width=s.dispW+'px';vt.style.height=Math.max(0,b.y)+'px';
+  vb.style.left='0px';vb.style.top=(b.y+b.h)+'px';vb.style.width=s.dispW+'px';vb.style.height=Math.max(0,s.dispH-b.y-b.h)+'px';
+  vl.style.left='0px';vl.style.top=b.y+'px';vl.style.width=Math.max(0,b.x)+'px';vl.style.height=b.h+'px';
+  vr.style.left=(b.x+b.w)+'px';vr.style.top=b.y+'px';vr.style.width=Math.max(0,s.dispW-b.x-b.w)+'px';vr.style.height=b.h+'px';
 }
 function cropClamp(){
   const s=cropState,b=s.box,MIN=30;
@@ -2661,7 +2720,8 @@ async function sendFeedback(){
       ?'\n\nPhoto : '+uploaded
       :'\n\n(Photo non jointe — connecte-toi pour pouvoir l\'envoyer)';
   }
-  btn.disabled=false;btn.textContent='📧 Envoyer par mail';
+  btn.disabled=false;btn.innerHTML='<span data-spr="mail" data-spr-size="20"><svg class="icn"><use href="#i-mail"/></svg></span> Envoyer par mail';
+  applySpr(btn);
   const body=(text||'(pas de description)')+photoNote+'\n\n— Envoyé depuis Ma Bibli';
   const mailto='mailto:'+FEEDBACK_EMAIL+'?subject='+encodeURIComponent('Ma Bibli — Remarque / bug')+'&body='+encodeURIComponent(body);
   window.location.href=mailto;
@@ -3912,13 +3972,20 @@ function renderProfileSections(){
   const wrap=document.getElementById('pfSectionsEl');
   wrap.innerHTML=pfSectionsW.map((s,i)=>`<div class="sitem" data-i="${i}">
     <span class="drag">⠿</span>
-    <input type="checkbox" id="pfSec_${s.key}" ${s.on?'checked':''} style="width:auto" onchange="pfSectionsW[${i}].on=this.checked">
     <span class="nm">${esc(PROFILE_SECTIONS[s.key])}</span>
+    <button type="button" class="smallbtn" onclick="pfToggleSection(${i})" title="${s.on?'Public — touche pour rendre privé':'Privé — touche pour rendre public'}">
+      <span data-spr="${s.on?'unlock':'lock'}" data-spr-size="16"><svg class="icn"><use href="#i-${s.on?'unlock':'lock'}"/></svg></span>
+    </button>
   </div>`).join('');
+  applySpr(wrap);
   makeSortable(wrap,order=>{
     pfSectionsW=order.map(i=>pfSectionsW[i]).filter(Boolean);
     renderProfileSections();
   });
+}
+function pfToggleSection(i){
+  pfSectionsW[i].on=!pfSectionsW[i].on;
+  renderProfileSections();
 }
 function openProfile(){
   document.getElementById('pf_nom').value=db.profile.nom||'';
@@ -4187,34 +4254,173 @@ function removeFriend(id){
     renderFriends();
   },'Retirer');
 }
+const REACTION_EMOJIS=['👍','❤️','😂','😮','😢'];
 async function renderFeed(){
   const el=document.getElementById('feedListEl');
   const c=await sbClient();
   if(!c||!sbUser){el.innerHTML='<div class="isbnmsg">Connecte-toi (compte cloud, voir ⚙️) pour voir le fil de tes amis.</div>';return;}
+  let feedRows=[];
   try{
-    const {data:rows,error}=await c.from('bibli_feed').select('*')
+    const {data,error}=await c.from('bibli_feed').select('*')
       .order('date_fin',{ascending:false,nullsFirst:false}).order('updated_at',{ascending:false}).limit(60);
     if(error)throw error;
-    if(!rows.length){el.innerHTML="<div class=\"empty\">Rien à afficher pour l'instant.<br>Ajoute des ami·e·s, et synchronise tes livres terminés ci-dessus.</div>";return;}
-    const ids=[...new Set(rows.map(r=>r.user_id))];
-    const profiles={};
-    if(ids.length){
-      const {data:profs}=await c.from('bibli_public_profiles').select('user_id,nom,photo').in('user_id',ids);
-      (profs||[]).forEach(p=>profiles[p.user_id]=p);
+    feedRows=data||[];
+  }catch(e){
+    el.innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger le fil — la table bibli_feed existe-t-elle ? (voir le script SQL fourni)</div>';
+    return;
+  }
+  /* Posts/commentaires/réactions : fonctionnalité additive — si les tables n'existent
+     pas encore (SQL pas encore lancé), le fil des livres terminés reste affiché normalement. */
+  let postRows=[],comments=[],reactions=[];
+  try{
+    const {data:posts,error:pe}=await c.from('bibli_posts').select('*').order('created_at',{ascending:false}).limit(60);
+    if(pe)throw pe;
+    postRows=posts||[];
+    const postIds=postRows.map(p=>p.id);
+    if(postIds.length){
+      const[{data:cs},{data:rs}]=await Promise.all([
+        c.from('bibli_comments').select('*').in('post_id',postIds).order('created_at',{ascending:true}),
+        c.from('bibli_reactions').select('*').in('post_id',postIds)
+      ]);
+      comments=cs||[];reactions=rs||[];
     }
-    el.innerHTML=rows.map(r=>{
-      const isMe=r.user_id===sbUser.id;
-      const who=isMe?'Toi':((profiles[r.user_id]&&profiles[r.user_id].nom)||'Un·e ami·e');
+  }catch(e){}
+  if(!feedRows.length&&!postRows.length){el.innerHTML="<div class=\"empty\">Rien à afficher pour l'instant.<br>Ajoute des ami·e·s, poste quelque chose, ou synchronise tes livres terminés ci-dessus.</div>";return;}
+  const ids=new Set();
+  feedRows.forEach(r=>ids.add(r.user_id));
+  postRows.forEach(r=>ids.add(r.user_id));
+  comments.forEach(r=>ids.add(r.user_id));
+  const profiles={};
+  if(ids.size){
+    const {data:profs}=await c.from('bibli_public_profiles').select('user_id,nom,photo').in('user_id',[...ids]);
+    (profs||[]).forEach(p=>profiles[p.user_id]=p);
+  }
+  const nameOf=uid=>uid===sbUser.id?'Toi':((profiles[uid]&&profiles[uid].nom)||'Un·e ami·e');
+  const photoOf=uid=>profiles[uid]&&profiles[uid].photo;
+  const items=[
+    ...feedRows.map(r=>({type:'book',date:r.date_fin||r.updated_at,data:r})),
+    ...postRows.map(r=>({type:'post',date:r.created_at,data:r}))
+  ].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  el.innerHTML=items.map(it=>{
+    if(it.type==='book'){
+      const r=it.data,isMe=r.user_id===sbUser.id;
       return `<div class="book" style="cursor:default">
         <div class="top">${coverEl(r.couverture,'')}
           <div class="tinfo"><h3>${esc(r.titre)}</h3><div class="auth">${esc(r.auteur)||'—'}</div>
-          <div class="meta"><span style="font-weight:700;color:${isMe?'var(--accent)':'var(--txt2)'}">${esc(who)}</span>${r.note?` <span class="stars">${'★'.repeat(r.note)}</span>`:''}</div></div>
+          <div class="meta"><span style="font-weight:700;color:${isMe?'var(--accent)':'var(--txt2)'}">${esc(nameOf(r.user_id))}</span>${r.note?` <span class="stars">${'★'.repeat(r.note)}</span>`:''}</div></div>
         </div>
         ${r.date_fin?`<div style="font-size:.75rem;color:var(--txt2);margin-top:4px">Terminé le ${fmtDateFr(r.date_fin)}</div>`:''}
       </div>`;
-    }).join('');
+    }
+    const p=it.data;
+    const postReactions=reactions.filter(r=>r.post_id===p.id);
+    const grouped={};
+    postReactions.forEach(r=>{grouped[r.emoji]=(grouped[r.emoji]||0)+1;});
+    const mine=new Set(postReactions.filter(r=>r.user_id===sbUser.id).map(r=>r.emoji));
+    const postComments=comments.filter(cm=>cm.post_id===p.id);
+    return `<div class="book" style="cursor:default">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        ${avatarHTML(photoOf(p.user_id),32)}
+        <div><div style="font-weight:700;font-size:.85rem">${esc(nameOf(p.user_id))}</div>
+        <div style="font-size:.7rem;color:var(--txt2)">${fmtDateFr((p.created_at||'').slice(0,10))}</div></div>
+      </div>
+      ${p.book_titre?`<div style="display:flex;gap:8px;align-items:center;background:var(--card2);border-radius:10px;padding:6px;margin-bottom:8px">
+        ${coverEl(p.book_couverture,'')}<div style="font-size:.8rem;font-weight:700">${esc(p.book_titre)}${p.book_auteur?`<div style="font-weight:400;color:var(--txt2);font-size:.72rem">${esc(p.book_auteur)}</div>`:''}</div>
+      </div>`:''}
+      ${p.texte?`<div style="white-space:pre-wrap;font-size:.88rem;margin-bottom:8px">${esc(p.texte)}</div>`:''}
+      ${(p.photos&&p.photos.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${p.photos.map(u=>`<img src="${esc(u)}" loading="lazy" style="width:90px;height:90px;object-fit:cover;border-radius:8px">`).join('')}</div>`:''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+        ${REACTION_EMOJIS.map(em=>`<button class="smallbtn" style="${mine.has(em)?'border-color:var(--accent);color:var(--accent)':''}" onclick="toggleReaction('${p.id}','${em}')">${em}${grouped[em]?' '+grouped[em]:''}</button>`).join('')}
+        <button class="smallbtn" onclick="toggleComments('${p.id}')">💬 ${postComments.length||''} Commentaire${postComments.length>1?'s':''}</button>
+        ${p.user_id===sbUser.id?`<button class="smallbtn" style="color:var(--red)" onclick="deletePost('${p.id}')">🗑️</button>`:''}
+      </div>
+      <div id="comments-${p.id}" class="hidden">
+        ${postComments.map(cm=>`<div class="sitem">${avatarHTML(photoOf(cm.user_id),24)}<span class="nm"><b>${esc(nameOf(cm.user_id))}</b> ${esc(cm.texte)}</span></div>`).join('')}
+        <div class="isbnrow"><input id="cinput-${p.id}" placeholder="Écrire un commentaire…" onkeydown="if(event.key==='Enter'){event.preventDefault();addComment('${p.id}');}">
+        <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 14px" onclick="addComment('${p.id}')">➤</button></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleComments(postId){
+  const el=document.getElementById('comments-'+postId);
+  if(el)el.classList.toggle('hidden');
+}
+async function addComment(postId){
+  const inp=document.getElementById('cinput-'+postId);
+  const texte=(inp&&inp.value||'').trim();
+  if(!texte)return;
+  const c=await sbClient();
+  if(!c||!sbUser)return;
+  try{
+    await c.from('bibli_comments').insert({post_id:postId,user_id:sbUser.id,texte});
+    if(inp)inp.value='';
+    renderFeed();
+  }catch(e){toast("⚠️ Impossible d'envoyer le commentaire");}
+}
+async function toggleReaction(postId,emoji){
+  const c=await sbClient();
+  if(!c||!sbUser)return;
+  try{
+    const {data:existing}=await c.from('bibli_reactions').select('id').eq('post_id',postId).eq('user_id',sbUser.id).eq('emoji',emoji).maybeSingle();
+    if(existing)await c.from('bibli_reactions').delete().eq('id',existing.id);
+    else await c.from('bibli_reactions').insert({post_id:postId,user_id:sbUser.id,emoji});
+    renderFeed();
+  }catch(e){}
+}
+function deletePost(id){
+  askConfirm('Supprimer ce post ?',async()=>{
+    const c=await sbClient();if(!c)return;
+    await c.from('bibli_posts').delete().eq('id',id);
+    renderFeed();
+  },'Supprimer');
+}
+let pcPhotos=[];
+function openPostCompose(){
+  const c1=document.getElementById('postComposeModal');
+  if(!sbUser){toast('Connecte-toi (compte cloud, voir ⚙️) pour publier');return;}
+  pcPhotos=[];
+  document.getElementById('pc_texte').value='';
+  document.getElementById('pc_photos').innerHTML='';
+  const msg=document.getElementById('pc_msg');msg.textContent='';msg.className='isbnmsg';
+  const sel=document.getElementById('pc_book');
+  sel.innerHTML='<option value="">Aucun livre</option>'+db.books.map(b=>`<option value="${b.id}">${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</option>`).join('');
+  c1.classList.add('open');
+}
+function closePostCompose(){document.getElementById('postComposeModal').classList.remove('open');}
+function pickPostPhoto(camera){
+  imgTarget={id:null,field:'postphoto',kind:'postcompose'};
+  const inp=document.getElementById('imgPick');
+  if(camera)inp.setAttribute('capture','environment');else inp.removeAttribute('capture');
+  inp.click();
+}
+function renderPcPhotos(){
+  document.getElementById('pc_photos').innerHTML=pcPhotos.map((u,i)=>
+    `<div style="position:relative"><img src="${esc(u)}" style="width:70px;height:70px;object-fit:cover;border-radius:8px">
+      <button type="button" onclick="pcPhotos.splice(${i},1);renderPcPhotos()" style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;line-height:1;cursor:pointer">✕</button>
+    </div>`).join('');
+}
+async function submitPost(){
+  const texte=document.getElementById('pc_texte').value.trim();
+  const bookId=document.getElementById('pc_book').value;
+  const msg=document.getElementById('pc_msg');
+  if(!texte&&!pcPhotos.length&&!bookId){msg.className='isbnmsg err';msg.textContent='Ajoute au moins un texte, une photo ou un livre.';return;}
+  const c=await sbClient();
+  if(!c||!sbUser){msg.className='isbnmsg err';msg.textContent="Connecte-toi d'abord.";return;}
+  const b=bookId?db.books.find(x=>x.id===bookId):null;
+  try{
+    const {error}=await c.from('bibli_posts').insert({
+      user_id:sbUser.id,
+      book_id:bookId||'',book_titre:(b&&b.titre)||'',book_auteur:(b&&b.auteur)||'',book_couverture:(b&&b.couverture)||'',
+      texte,photos:pcPhotos
+    });
+    if(error)throw error;
+    closePostCompose();
+    toast('Post publié ✅');
+    renderFeed();
   }catch(e){
-    el.innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger le fil — la table bibli_feed existe-t-elle ? (voir le script SQL fourni)</div>';
+    msg.className='isbnmsg err';
+    msg.textContent='⚠️ Impossible de publier — la table bibli_posts existe-t-elle ? (voir le script SQL fourni)';
   }
 }
 async function syncFeedForBook(b){

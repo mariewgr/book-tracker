@@ -156,6 +156,134 @@ create policy "suppression perso" on public.bibli_spines for delete to authentic
 
 Dès qu'une photo de tranche que tu prends toi-même est enregistrée sur un livre, elle est automatiquement partagée dans cette base commune (titre/auteur pour la retrouver). Les tranches trouvées en ligne (recherche Google/Openverse) ne sont, elles, jamais partagées.
 
+### e) Activer les posts (avec photos, commentaires, réactions) + le temps réel
+
+Pour publier un post depuis le fil (texte + livre + photos, avec commentaires et réactions de tes ami·e·s), exécute ce script :
+
+```sql
+-- Posts : texte, livre associé (optionnel), photos
+create table public.bibli_posts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  book_id text default '',
+  book_titre text default '',
+  book_auteur text default '',
+  book_couverture text default '',
+  texte text default '',
+  photos text[] default '{}',
+  created_at timestamptz not null default now()
+);
+alter table public.bibli_posts enable row level security;
+create policy "voir les posts" on public.bibli_posts for select to authenticated
+  using (
+    auth.uid() = user_id
+    or exists (
+      select 1 from public.bibli_friends f
+      where f.status='accepted'
+        and ((f.user_id=auth.uid() and f.friend_id=bibli_posts.user_id)
+          or (f.friend_id=auth.uid() and f.user_id=bibli_posts.user_id))
+    )
+  );
+create policy "creer mes posts" on public.bibli_posts for insert to authenticated
+  with check (auth.uid() = user_id);
+create policy "supprimer mes posts" on public.bibli_posts for delete to authenticated
+  using (auth.uid() = user_id);
+
+-- Commentaires (visibles par qui peut voir le post)
+create table public.bibli_comments (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.bibli_posts(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  texte text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.bibli_comments enable row level security;
+create policy "voir les commentaires" on public.bibli_comments for select to authenticated
+  using (
+    exists (
+      select 1 from public.bibli_posts p
+      where p.id = bibli_comments.post_id
+        and (p.user_id = auth.uid()
+          or exists (
+            select 1 from public.bibli_friends f
+            where f.status='accepted'
+              and ((f.user_id=auth.uid() and f.friend_id=p.user_id)
+                or (f.friend_id=auth.uid() and f.user_id=p.user_id))
+          ))
+    )
+  );
+create policy "ecrire un commentaire" on public.bibli_comments for insert to authenticated
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.bibli_posts p
+      where p.id = bibli_comments.post_id
+        and (p.user_id = auth.uid()
+          or exists (
+            select 1 from public.bibli_friends f
+            where f.status='accepted'
+              and ((f.user_id=auth.uid() and f.friend_id=p.user_id)
+                or (f.friend_id=auth.uid() and f.user_id=p.user_id))
+          ))
+    )
+  );
+create policy "supprimer mes commentaires" on public.bibli_comments for delete to authenticated
+  using (auth.uid() = user_id);
+
+-- Réactions emoji (un·e utilisateur·ice ne peut poser deux fois le même emoji)
+create table public.bibli_reactions (
+  id uuid primary key default gen_random_uuid(),
+  post_id uuid not null references public.bibli_posts(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  emoji text not null,
+  created_at timestamptz not null default now(),
+  unique (post_id, user_id, emoji)
+);
+alter table public.bibli_reactions enable row level security;
+create policy "voir les reactions" on public.bibli_reactions for select to authenticated
+  using (
+    exists (
+      select 1 from public.bibli_posts p
+      where p.id = bibli_reactions.post_id
+        and (p.user_id = auth.uid()
+          or exists (
+            select 1 from public.bibli_friends f
+            where f.status='accepted'
+              and ((f.user_id=auth.uid() and f.friend_id=p.user_id)
+                or (f.friend_id=auth.uid() and f.user_id=p.user_id))
+          ))
+    )
+  );
+create policy "reagir" on public.bibli_reactions for insert to authenticated
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.bibli_posts p
+      where p.id = bibli_reactions.post_id
+        and (p.user_id = auth.uid()
+          or exists (
+            select 1 from public.bibli_friends f
+            where f.status='accepted'
+              and ((f.user_id=auth.uid() and f.friend_id=p.user_id)
+                or (f.friend_id=auth.uid() and f.user_id=p.user_id))
+          ))
+    )
+  );
+create policy "retirer ma reaction" on public.bibli_reactions for delete to authenticated
+  using (auth.uid() = user_id);
+
+-- Temps réel : amis, fil, posts, commentaires, réactions arrivent en direct sur tous les
+-- appareils connectés (sans avoir à tirer pour rafraîchir). Sans authentifiée, la publication
+-- respecte quand même les policies ci-dessus.
+alter publication supabase_realtime add table public.bibli_friends;
+alter publication supabase_realtime add table public.bibli_feed;
+alter publication supabase_realtime add table public.bibli_posts;
+alter publication supabase_realtime add table public.bibli_comments;
+alter publication supabase_realtime add table public.bibli_reactions;
+```
+
+Ensuite, dans l'app : ouvre le **📰 Fil d'actualité** → **✍️ Nouveau post** pour publier un texte, choisir un livre et ajouter des photos. Tes ami·e·s peuvent réagir avec un emoji et répondre en commentaire, et tout apparaît en direct sans recharger la page.
+
 ## 4. À savoir
 
 - **Tes données restent sur ton téléphone** (rien n'est envoyé en ligne). Personne d'autre ne voit tes livres, même si l'URL est publique.
