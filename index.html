@@ -544,6 +544,34 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn" id="fbSendBtn" style="margin-top:18px" onclick="sendFeedback()">📧 Envoyer par mail</button>
   </section>
 
+  <!-- AMIS -->
+  <section id="view-friends" class="hidden">
+    <div class="isbnmsg" id="friendsSyncMsg"></div>
+    <div class="book" style="cursor:default;text-align:center">
+      <div style="font-size:.8rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Ton code ami</div>
+      <div id="friendCodeDisplay" style="font-size:2rem;font-weight:800;color:var(--accent);letter-spacing:6px;margin:8px 0">------</div>
+      <button class="smallbtn" onclick="copyFriendCode()">📋 Copier mon code</button>
+    </div>
+    <h2>Ajouter un·e ami·e</h2>
+    <div class="isbnrow">
+      <input id="friendCodeInput" placeholder="Code à 6 caractères" maxlength="6" style="text-transform:uppercase">
+      <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 18px" onclick="sendFriendRequest()">➕</button>
+    </div>
+    <p class="isbnmsg" id="friendAddMsg"></p>
+    <div id="friendRequestsIn"></div>
+    <div id="friendRequestsOut"></div>
+    <h2>Mes ami·e·s</h2>
+    <div id="friendsListEl"></div>
+  </section>
+
+  <!-- FEED -->
+  <section id="view-feed" class="hidden">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button class="smallbtn" onclick="backfillFeed()">🔄 Synchroniser mes livres terminés</button>
+    </div>
+    <div id="feedListEl"></div>
+  </section>
+
   <!-- JOURNAL -->
   <section id="view-cal" class="hidden">
     <div class="calhead">
@@ -567,6 +595,8 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('disc')"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span> Découvrir des livres</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('friends')">👥 Mes amis</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('feed')">📰 Fil d'actualité</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('feedback')">💬 Remarque / signaler un bug</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
@@ -928,7 +958,7 @@ function normalizeDb(d){
   d.shelves=d.shelves||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
-  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false};
+  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false,friendCode:''};
   d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','shelves','badges'];
   /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
   d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
@@ -1400,8 +1430,8 @@ function thickness(b){
 
 /* ---------- Navigation ---------- */
 let tab='home';
-const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc','feedback'];
-const PLUS_TABS=new Set(['saga','rank','defi','stats','disc','feedback']);
+const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc','feedback','friends','feed'];
+const PLUS_TABS=new Set(['saga','rank','defi','stats','disc','feedback','friends','feed']);
 function switchTab(t){
   tab=t;
   try{sessionStorage.setItem('mabibli_tab',t);}catch(e){}
@@ -1836,6 +1866,7 @@ function saveBook(){
   if(editId)db.books=db.books.map(x=>x.id===editId?b:x);else db.books.push(b);
   save();closeModals();render();
   cacheExternalCover(b.id);
+  syncFeedForBook(b);
 }
 /* ---------- Avancement rapide ---------- */
 let quickId=null;
@@ -1881,6 +1912,7 @@ function saveQuick(finish){
   const newRead=b.statut==='done'?(b.pages||0):(paper?(b.pageActuelle||0):Math.round(b.progression/100*(b.pages||0)));
   if(newRead-oldRead>0)logSession(b.id,b.titre,newRead-oldRead,today);
   save();closeModals();render();
+  syncFeedForBook(b);
   if(finish&&b.statut==='done')setTimeout(()=>openEdit(b.id),150); /* pour noter + laisser un avis */
 }
 function logSession(bookId,titre,pages,date){
@@ -1889,10 +1921,12 @@ function logSession(bookId,titre,pages,date){
 }
 function deleteBook(){
   askConfirm('Supprimer ce livre ?',()=>{
-    db.books=db.books.filter(x=>x.id!==editId);
-    db.shelves.forEach(s=>s.items=s.items.filter(it=>it.bookId!==editId));
-    db.ranking=db.ranking.filter(r=>!(r.type==='book'&&r.id===editId));
+    const delId=editId;
+    db.books=db.books.filter(x=>x.id!==delId);
+    db.shelves.forEach(s=>s.items=s.items.filter(it=>it.bookId!==delId));
+    db.ranking=db.ranking.filter(r=>!(r.type==='book'&&r.id===delId));
     save();closeModals();render();
+    syncFeedForBook({id:delId,statut:'deleted'});
   },'Supprimer');
 }
 
@@ -3914,6 +3948,188 @@ function openProfileVisitor(){
   document.getElementById('profileVisitorModal').classList.add('open');
 }
 function closeProfileVisitor(){document.getElementById('profileVisitorModal').classList.remove('open');}
+
+/* ---------- Amis + Fil d'actualité ----------
+   Nécessite 3 tables Supabase en plus de "bibli" : bibli_public_profiles (code ami + nom,
+   lisible par tous les comptes connectés), bibli_friends (demandes/relations), bibli_feed
+   (livres terminés, visibles par soi-même + ami·e·s accepté·e·s via RLS). Voir le script SQL
+   fourni pour les créer — sans ces tables, ces fonctions échouent proprement (message d'erreur
+   explicite) sans jamais toucher aux données locales. */
+function genFriendCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; /* évite 0/O, 1/I/l */
+  let s='';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+async function syncPublicProfile(){
+  const c=await sbClient();
+  if(!c||!sbUser||!db.profile.friendCode)return;
+  try{
+    await c.from('bibli_public_profiles').upsert({
+      user_id:sbUser.id,code:db.profile.friendCode,
+      nom:db.profile.nom||'',photo:db.profile.photo||'',
+      updated_at:new Date().toISOString()
+    });
+  }catch(e){}
+}
+async function ensureFriendCode(){
+  if(db.profile.friendCode)return db.profile.friendCode;
+  db.profile.friendCode=genFriendCode();
+  save();
+  await syncPublicProfile();
+  return db.profile.friendCode;
+}
+function copyFriendCode(){
+  const code=db.profile.friendCode;
+  if(!code)return;
+  if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>toast('Code copié ✅')).catch(()=>toast('Ton code : '+code));
+  else toast('Ton code : '+code);
+}
+async function renderFriends(){
+  const el=document.getElementById('friendCodeDisplay');
+  const msg=document.getElementById('friendsSyncMsg');
+  const c=await sbClient();
+  if(!c||!sbUser){
+    el.textContent='------';
+    msg.className='isbnmsg err';
+    msg.textContent='⚠️ Connecte-toi (compte cloud, voir ⚙️) pour utiliser les amis.';
+    ['friendRequestsIn','friendRequestsOut','friendsListEl'].forEach(id=>document.getElementById(id).innerHTML='');
+    return;
+  }
+  msg.textContent='';msg.className='isbnmsg';
+  el.textContent=await ensureFriendCode();
+  try{
+    const {data:rows,error}=await c.from('bibli_friends').select('*').or('user_id.eq.'+sbUser.id+',friend_id.eq.'+sbUser.id);
+    if(error)throw error;
+    const ids=new Set();
+    rows.forEach(r=>{ids.add(r.user_id);ids.add(r.friend_id);});
+    ids.delete(sbUser.id);
+    const profiles={};
+    if(ids.size){
+      const {data:profs}=await c.from('bibli_public_profiles').select('user_id,nom,photo,code').in('user_id',[...ids]);
+      (profs||[]).forEach(p=>profiles[p.user_id]=p);
+    }
+    const nameOf=uid=>(profiles[uid]&&profiles[uid].nom)||'Sans nom';
+    const incoming=rows.filter(r=>r.friend_id===sbUser.id&&r.status==='pending');
+    const outgoing=rows.filter(r=>r.user_id===sbUser.id&&r.status==='pending');
+    const accepted=rows.filter(r=>r.status==='accepted');
+    document.getElementById('friendRequestsIn').innerHTML=incoming.length?('<h2>Demandes reçues</h2>'+incoming.map(r=>
+      `<div class="sitem"><span class="nm">${esc(nameOf(r.user_id))}</span>
+        <button style="color:var(--green)" onclick="acceptFriendRequest('${r.id}')">✓ Accepter</button>
+        <button style="color:var(--red)" onclick="declineFriendRequest('${r.id}')">✕</button></div>`
+    ).join('')):'';
+    document.getElementById('friendRequestsOut').innerHTML=outgoing.length?('<h2>Demandes envoyées</h2>'+outgoing.map(r=>
+      `<div class="sitem"><span class="nm">${esc(nameOf(r.friend_id))}</span><span class="h">En attente…</span>
+        <button style="color:var(--red)" onclick="cancelFriendRequest('${r.id}')">✕</button></div>`
+    ).join('')):'';
+    document.getElementById('friendsListEl').innerHTML=accepted.length?accepted.map(r=>{
+      const otherId=r.user_id===sbUser.id?r.friend_id:r.user_id;
+      return `<div class="sitem"><span class="nm">${esc(nameOf(otherId))}</span>
+        <button style="color:var(--red)" onclick="removeFriend('${r.id}')">✕</button></div>`;
+    }).join(''):'<div class="isbnmsg">Aucun·e ami·e pour l\'instant — partage ton code ci-dessus !</div>';
+  }catch(e){
+    msg.className='isbnmsg err';
+    msg.textContent='⚠️ Impossible de charger tes amis — la table bibli_friends existe-t-elle ? (voir le script SQL fourni)';
+  }
+}
+async function sendFriendRequest(){
+  const code=document.getElementById('friendCodeInput').value.trim().toUpperCase();
+  const msg=document.getElementById('friendAddMsg');
+  msg.className='isbnmsg';msg.textContent='';
+  if(code.length!==6){msg.className='isbnmsg err';msg.textContent='Le code fait 6 caractères.';return;}
+  const c=await sbClient();
+  if(!c||!sbUser){msg.className='isbnmsg err';msg.textContent="Connecte-toi d'abord.";return;}
+  try{
+    const {data:found,error}=await c.from('bibli_public_profiles').select('user_id,nom').eq('code',code).maybeSingle();
+    if(error)throw error;
+    if(!found){msg.className='isbnmsg err';msg.textContent='Aucun compte avec ce code 😕';return;}
+    if(found.user_id===sbUser.id){msg.className='isbnmsg err';msg.textContent="C'est ton propre code 😉";return;}
+    const {error:insErr}=await c.from('bibli_friends').insert({user_id:sbUser.id,friend_id:found.user_id,status:'pending'});
+    if(insErr){
+      if(insErr.code==='23505'){msg.className='isbnmsg err';msg.textContent='Demande déjà envoyée (ou déjà ami·e·s).';}
+      else throw insErr;
+    }else{
+      msg.className='isbnmsg ok';
+      msg.textContent='Demande envoyée à '+(found.nom||'ce compte')+' ✅';
+      document.getElementById('friendCodeInput').value='';
+    }
+    renderFriends();
+  }catch(e){msg.className='isbnmsg err';msg.textContent='Erreur réseau — réessaie.';}
+}
+async function acceptFriendRequest(id){
+  const c=await sbClient();if(!c)return;
+  await c.from('bibli_friends').update({status:'accepted'}).eq('id',id);
+  renderFriends();
+  toast('Ami·e ajouté·e ✅');
+}
+async function declineFriendRequest(id){
+  const c=await sbClient();if(!c)return;
+  await c.from('bibli_friends').delete().eq('id',id);
+  renderFriends();
+}
+async function cancelFriendRequest(id){
+  const c=await sbClient();if(!c)return;
+  await c.from('bibli_friends').delete().eq('id',id);
+  renderFriends();
+}
+function removeFriend(id){
+  askConfirm("Retirer cet·te ami·e ? Ses livres terminés n'apparaîtront plus dans ton fil.",async()=>{
+    const c=await sbClient();if(!c)return;
+    await c.from('bibli_friends').delete().eq('id',id);
+    renderFriends();
+  },'Retirer');
+}
+async function renderFeed(){
+  const el=document.getElementById('feedListEl');
+  const c=await sbClient();
+  if(!c||!sbUser){el.innerHTML='<div class="isbnmsg">Connecte-toi (compte cloud, voir ⚙️) pour voir le fil de tes amis.</div>';return;}
+  try{
+    const {data:rows,error}=await c.from('bibli_feed').select('*')
+      .order('date_fin',{ascending:false,nullsFirst:false}).order('updated_at',{ascending:false}).limit(60);
+    if(error)throw error;
+    if(!rows.length){el.innerHTML="<div class=\"empty\">Rien à afficher pour l'instant.<br>Ajoute des ami·e·s, et synchronise tes livres terminés ci-dessus.</div>";return;}
+    const ids=[...new Set(rows.map(r=>r.user_id))];
+    const profiles={};
+    if(ids.length){
+      const {data:profs}=await c.from('bibli_public_profiles').select('user_id,nom,photo').in('user_id',ids);
+      (profs||[]).forEach(p=>profiles[p.user_id]=p);
+    }
+    el.innerHTML=rows.map(r=>{
+      const isMe=r.user_id===sbUser.id;
+      const who=isMe?'Toi':((profiles[r.user_id]&&profiles[r.user_id].nom)||'Un·e ami·e');
+      return `<div class="book" style="cursor:default">
+        <div class="top">${coverEl(r.couverture,'')}
+          <div class="tinfo"><h3>${esc(r.titre)}</h3><div class="auth">${esc(r.auteur)||'—'}</div>
+          <div class="meta"><span style="font-weight:700;color:${isMe?'var(--accent)':'var(--txt2)'}">${esc(who)}</span>${r.note?` <span class="stars">${'★'.repeat(r.note)}</span>`:''}</div></div>
+        </div>
+        ${r.date_fin?`<div style="font-size:.75rem;color:var(--txt2);margin-top:4px">Terminé le ${fmtDateFr(r.date_fin)}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){
+    el.innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger le fil — la table bibli_feed existe-t-elle ? (voir le script SQL fourni)</div>';
+  }
+}
+async function syncFeedForBook(b){
+  const c=await sbClient();
+  if(!c||!sbUser)return;
+  try{
+    if(b.statut==='done'){
+      await c.from('bibli_feed').upsert({user_id:sbUser.id,book_id:b.id,titre:b.titre,auteur:b.auteur||'',
+        couverture:b.couverture||'',note:b.note||null,date_fin:b.dateFin||null,updated_at:new Date().toISOString()});
+    }else{
+      await c.from('bibli_feed').delete().eq('user_id',sbUser.id).eq('book_id',b.id);
+    }
+  }catch(e){}
+}
+async function backfillFeed(){
+  const c=await sbClient();
+  if(!c||!sbUser){toast("Connecte-toi d'abord");return;}
+  const done=db.books.filter(b=>b.statut==='done');
+  if(!done.length){toast('Aucun livre terminé à synchroniser');return;}
+  toast('Synchronisation de '+done.length+' livre(s)…');
+  for(const b of done)await syncFeedForBook(b);
+  toast('Synchronisation terminée ✅');
+  renderFeed();
+}
 function applyTheme(){
   document.body.dataset.theme=db.settings.theme||'sombre';
   document.body.dataset.bois=db.settings.bois||'sombre';
@@ -4031,7 +4247,8 @@ function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classL
 function render(){
   applyTheme();
   const map={home:renderHome,lib:renderLib,shelf:renderShelves,saga:renderSagas,
-    rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc,feedback:()=>{}};
+    rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc,feedback:()=>{},
+    friends:renderFriends,feed:renderFeed};
   (map[tab]||renderHome)();
 }
 async function loadLocalData(){
