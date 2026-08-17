@@ -68,12 +68,14 @@ Note : la clé « anon public » n'est pas un secret — tes données sont prot�
 Pour utiliser la page **👥 Mes amis** et le **📰 Fil d'actualité**, exécute ce script en plus dans le **SQL Editor** :
 
 ```sql
--- Profils publics (nom + code ami, visibles par les autres comptes connectés)
+-- Profils publics (nom + code ami + rendu HTML des sections publiques, visibles par les
+-- autres comptes connectés)
 create table public.bibli_public_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   code text unique not null,
   nom text default '',
   photo text default '',
+  html text default '',
   updated_at timestamptz not null default now()
 );
 alter table public.bibli_public_profiles enable row level security;
@@ -283,6 +285,16 @@ alter publication supabase_realtime add table public.bibli_reactions;
 ```
 
 Ensuite, dans l'app : ouvre le **📰 Fil d'actualité** → **✍️ Nouveau post** pour publier un texte, choisir un livre et ajouter des photos. Tes ami·e·s peuvent réagir avec un emoji et répondre en commentaire, et tout apparaît en direct sans recharger la page.
+
+### f) Voir le vrai profil d'un·e ami·e (pas que ses livres terminés)
+
+Si tu as créé `bibli_public_profiles` **avant** l'ajout de la colonne `html` ci-dessus (section c), ajoute-la avec :
+
+```sql
+alter table public.bibli_public_profiles add column if not exists html text default '';
+```
+
+Dès qu'un compte enregistre son Profil (ou synchronise), les sections cochées dans **Profil → Visible publiquement** (lecture en cours, statistiques, étagères, badges) sont envoyées telles quelles. Cliquer sur la photo/le nom d'un·e ami·e affiche désormais son vrai profil, avec exactement ce qu'iel a choisi de montrer — plus seulement ses livres terminés.
 
 ## 4. À savoir
 

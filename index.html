@@ -1345,6 +1345,7 @@ async function doPush(){
   syncing=true;
   try{
     await sbPush();
+    if(db.profile.friendCode)syncPublicProfile();
     setSyncStatus('✅ Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){setSyncStatus('⚠️ Échec de la sync');}
   syncing=false;
@@ -4032,6 +4033,7 @@ async function saveProfile(){
   pfSectionsW.forEach(s=>{db.profile[profileField(s.key)]=s.on;});
   if(pfPhotoData)db.profile.photo=await uploadImage(pfPhotoData,'profile');
   save();closeModals();render();
+  syncPublicProfile();
   toast('Profil enregistré ✅');
 }
 /* ---------- Aperçu visiteur : rendu en lecture seule des sections cochées, dans l'ordre choisi ---------- */
@@ -4110,6 +4112,14 @@ function genFriendCode(){
   let s='';for(let i=0;i<6;i++)s+=chars[Math.floor(Math.random()*chars.length)];
   return s;
 }
+/* Instantané HTML des sections rendues publiques (mêmes cartes en lecture seule que l'aperçu
+   visiteur), envoyé au cloud pour que les ami·e·s voient le vrai profil tel que réglé dans
+   Profil → « Visible publiquement », pas seulement ses livres terminés. */
+function computeProfileHTML(){
+  const order=(db.profile.sectionOrder&&db.profile.sectionOrder.length)?db.profile.sectionOrder:['reading','stats','shelves','badges'];
+  const on=order.filter(key=>db.profile[profileField(key)]);
+  return on.map(profileSectionHTML).join('');
+}
 async function syncPublicProfile(){
   const c=await sbClient();
   if(!c||!sbUser||!db.profile.friendCode)return;
@@ -4117,6 +4127,7 @@ async function syncPublicProfile(){
     await c.from('bibli_public_profiles').upsert({
       user_id:sbUser.id,code:db.profile.friendCode,
       nom:db.profile.nom||'',photo:db.profile.photo||'',
+      html:computeProfileHTML(),
       updated_at:new Date().toISOString()
     });
   }catch(e){}
@@ -4146,30 +4157,17 @@ async function openFriendProfile(uid){
   const c=await sbClient();
   if(!c){document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">Connecte-toi pour voir les profils.</div>';return;}
   try{
-    const[{data:prof},{data:books}]=await Promise.all([
-      c.from('bibli_public_profiles').select('nom,photo').eq('user_id',uid).maybeSingle(),
-      c.from('bibli_feed').select('*').eq('user_id',uid).order('date_fin',{ascending:false,nullsFirst:false}).order('updated_at',{ascending:false})
-    ]);
+    const{data:prof,error}=await c.from('bibli_public_profiles').select('nom,photo,html').eq('user_id',uid).maybeSingle();
+    if(error)throw error;
     const nom=(prof&&prof.nom)||'Sans nom',photo=prof&&prof.photo;
     let out=`<div style="text-align:center;margin-bottom:16px">
       <div style="display:flex;justify-content:center">${avatarHTML(photo,88)}</div>
       <h2 style="margin:10px 0 0">${esc(nom)}</h2>
     </div>`;
-    if(books&&books.length){
-      out+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">📚 Livres terminés (${books.length})</h3>`;
-      out+=books.map(r=>`<div class="book" style="cursor:default">
-        <div class="top">${coverEl(r.couverture,'')}
-          <div class="tinfo"><h3>${esc(r.titre)}</h3><div class="auth">${esc(r.auteur)||'—'}</div>
-          ${r.note?`<div class="meta"><span class="stars">${'★'.repeat(r.note)}</span></div>`:''}</div>
-        </div>
-        ${r.date_fin?`<div style="font-size:.75rem;color:var(--txt2);margin-top:4px">Terminé le ${fmtDateFr(r.date_fin)}</div>`:''}
-      </div>`).join('');
-    }else{
-      out+='<div class="empty">Aucun livre partagé pour l\'instant 🌙</div>';
-    }
+    out+=(prof&&prof.html)?prof.html:'<div class="empty">Rien n\'est visible publiquement sur ce profil pour l\'instant 🌙</div>';
     document.getElementById('friendProfileBody').innerHTML=out;
   }catch(e){
-    document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger ce profil.</div>';
+    document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger ce profil — la colonne "html" existe-t-elle sur bibli_public_profiles ? (voir le script SQL fourni)</div>';
   }
 }
 function closeFriendProfile(){document.getElementById('friendProfileModal').classList.remove('open');}
