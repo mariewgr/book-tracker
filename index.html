@@ -278,6 +278,8 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
   content:'';position:absolute;left:14%;right:14%;top:32%;height:24%;
   min-height:1px;border-radius:2px;background:rgba(255,255,255,.25);
 }
+/* Rognage photo (couverture / tranche) */
+.cropHandle{position:absolute;width:24px;height:24px;background:var(--accent);border:2px solid #fff;border-radius:50%;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.5)}
 .human{display:flex;flex-direction:column;align-items:center;color:var(--txt2);font-weight:600}
 .human small{font-size:.72rem;margin-top:5px}
 .bignum{font-size:2.2rem;font-weight:800;color:var(--accent)}
@@ -686,6 +688,25 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 <input type="file" id="imgPick" accept="image/*" class="hidden" onchange="onImgPicked(this)">
 <input type="file" id="fichePick" accept="image/*" class="hidden" onchange="onFichePicked(this)">
 <input type="file" id="quotePick" accept="image/*" class="hidden" onchange="onQuotePicked(this)">
+
+<!-- ROGNER PHOTO (couverture / tranche) -->
+<div class="overlay" id="cropModal" style="z-index:65" onclick="if(event.target===this)closeCropper(false)">
+  <div class="sheet">
+    <h2>Rogner la photo</h2>
+    <p class="note-io" style="margin-top:0">Fais glisser les coins pour ajuster, ou déplace le cadre. Tu peux aussi valider sans rogner.</p>
+    <div id="cropWrap" style="position:relative;max-width:100%;touch-action:none;user-select:none;line-height:0">
+      <img id="cropImgEl" style="display:block;max-width:100%;border-radius:8px" draggable="false" alt="">
+      <div id="cropBox" style="position:absolute;border:2px solid var(--accent);box-shadow:0 0 0 2000px rgba(10,7,15,.6);cursor:move">
+        <div class="cropHandle" data-c="nw" style="left:-12px;top:-12px;cursor:nwse-resize"></div>
+        <div class="cropHandle" data-c="ne" style="right:-12px;top:-12px;cursor:nesw-resize"></div>
+        <div class="cropHandle" data-c="sw" style="left:-12px;bottom:-12px;cursor:nesw-resize"></div>
+        <div class="cropHandle" data-c="se" style="right:-12px;bottom:-12px;cursor:nwse-resize"></div>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px" onclick="closeCropper(true)">✂️ Rogner et utiliser</button>
+    <button class="btn ghost" onclick="closeCropper(false)">Annuler</button>
+  </div>
+</div>
 
 <!-- MODAL ÉTAGÈRE DEPUIS SAGAS -->
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
@@ -2419,32 +2440,112 @@ function pickImage(id,field,camera,kind){
   else inp.removeAttribute('capture');
   inp.click();
 }
+function resizeDataUrl(dataUrl,maxH){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1,maxH/img.height);
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      res(c.toDataURL('image/jpeg',0.72));
+    };
+    img.src=dataUrl;
+  });
+}
 function onImgPicked(inp){
   const f=inp.files[0];inp.value='';
   if(!f||!imgTarget)return;
-  const img=new Image();
-  img.onload=async()=>{
-    const maxH=520,scale=Math.min(1,maxH/img.height);
-    const c=document.createElement('canvas');
-    c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
-    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    URL.revokeObjectURL(img.src);
-    const dataUrl=await uploadImage(c.toDataURL('image/jpeg',0.72),(imgTarget.kind||'x')+'-'+(imgTarget.field||'img'));
-    if(imgTarget.kind==='form'){
-      formImgs[imgTarget.field]=dataUrl;
-      const m=document.getElementById(imgTarget.field==='couverture'?'covMsg':'spMsg');
+  const target=imgTarget;
+  const objUrl=URL.createObjectURL(f);
+  openCropper(objUrl,async(cropped)=>{
+    URL.revokeObjectURL(objUrl);
+    if(!cropped)return; /* rognage annulé */
+    const dataUrl=await uploadImage(await resizeDataUrl(cropped,520),(target.kind||'x')+'-'+(target.field||'img'));
+    if(target.kind==='form'){
+      formImgs[target.field]=dataUrl;
+      const m=document.getElementById(target.field==='couverture'?'covMsg':'spMsg');
       if(m){m.textContent='✅ Image ajoutée — sera utilisée à l\'enregistrement';m.className='isbnmsg ok';}
       return;
     }
-    const obj=db.books.find(x=>x.id===imgTarget.id);
+    const obj=db.books.find(x=>x.id===target.id);
     if(!obj)return;
-    obj[imgTarget.field]=dataUrl;
+    obj[target.field]=dataUrl;
     save();render();
     openInfo(obj.id);
     toast('Image mise à jour ✅');
+  });
+}
+/* ---------- Rognage photo (couverture / tranche), sans dépendance externe ---------- */
+let cropState=null;
+function openCropper(src,onDone){
+  const imEl=document.getElementById('cropImgEl');
+  /* Le modal doit être ouvert (donc mis en page) AVANT de mesurer clientWidth/Height,
+     sinon l'image est encore display:none et ces mesures valent 0. */
+  document.getElementById('cropModal').classList.add('open');
+  imEl.onload=()=>{
+    const dispW=imEl.clientWidth,dispH=imEl.clientHeight;
+    const w=dispW*0.8,h=dispH*0.8;
+    cropState={onDone,dispW,dispH,natW:imEl.naturalWidth,natH:imEl.naturalHeight,
+      box:{x:(dispW-w)/2,y:(dispH-h)/2,w,h}};
+    renderCropBox();
   };
-  img.onerror=()=>toast('Image illisible 😕');
-  img.src=URL.createObjectURL(f);
+  imEl.src=src;
+}
+function renderCropBox(){
+  const b=cropState.box,el=document.getElementById('cropBox');
+  el.style.left=b.x+'px';el.style.top=b.y+'px';el.style.width=b.w+'px';el.style.height=b.h+'px';
+}
+function cropClamp(){
+  const s=cropState,b=s.box,MIN=30;
+  b.w=Math.max(MIN,Math.min(b.w,s.dispW));
+  b.h=Math.max(MIN,Math.min(b.h,s.dispH));
+  b.x=Math.max(0,Math.min(b.x,s.dispW-b.w));
+  b.y=Math.max(0,Math.min(b.y,s.dispH-b.h));
+}
+(function(){
+  const wrap=document.getElementById('cropWrap');
+  let mode=null,startX=0,startY=0,startBox=null;
+  wrap.addEventListener('pointerdown',e=>{
+    if(!cropState)return;
+    const handle=e.target.closest('.cropHandle');
+    const box=e.target.closest('#cropBox');
+    if(!handle&&!box)return;
+    e.preventDefault();
+    mode=handle?handle.dataset.c:'move';
+    startX=e.clientX;startY=e.clientY;
+    startBox={...cropState.box};
+    wrap.setPointerCapture(e.pointerId);
+  });
+  wrap.addEventListener('pointermove',e=>{
+    if(!mode||!cropState)return;
+    e.preventDefault();
+    const dx=e.clientX-startX,dy=e.clientY-startY,b=cropState.box;
+    if(mode==='move'){
+      b.x=startBox.x+dx;b.y=startBox.y+dy;
+    }else{
+      if(mode.includes('w')){b.x=startBox.x+dx;b.w=startBox.w-dx;}
+      if(mode.includes('e'))b.w=startBox.w+dx;
+      if(mode.includes('n')){b.y=startBox.y+dy;b.h=startBox.h-dy;}
+      if(mode.includes('s'))b.h=startBox.h+dy;
+    }
+    cropClamp();
+    renderCropBox();
+  });
+  ['pointerup','pointercancel'].forEach(ev=>wrap.addEventListener(ev,()=>{mode=null;}));
+})();
+function closeCropper(apply){
+  document.getElementById('cropModal').classList.remove('open');
+  if(!cropState)return;
+  const {onDone,box:b,natW,dispW,natH,dispH}=cropState;
+  cropState=null;
+  if(!apply){onDone(null);return;}
+  const scaleX=natW/dispW,scaleY=natH/dispH;
+  const c=document.createElement('canvas');
+  c.width=Math.round(b.w*scaleX);c.height=Math.round(b.h*scaleY);
+  c.getContext('2d').drawImage(document.getElementById('cropImgEl'),
+    b.x*scaleX,b.y*scaleY,b.w*scaleX,b.h*scaleY,0,0,c.width,c.height);
+  onDone(c.toDataURL('image/jpeg',0.9));
 }
 
 /* ---------- Remarque / signaler un bug (envoi par mail) ---------- */
