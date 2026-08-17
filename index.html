@@ -318,7 +318,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .shelfhead h3{font-size:1rem;font-weight:800}
 .shelfviz{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 10px 10px;overflow-x:auto}
 .shelfinner{display:inline-block;min-width:100%}
-.shelfrow{display:flex;align-items:flex-end;gap:5px;min-height:150px;padding:0 6px}
+.shelfrow{display:flex;align-items:flex-end;gap:0;min-height:150px;padding:0 6px}
 .board{height:11px;background:linear-gradient(180deg,var(--woodA),var(--woodB));border-radius:3px;margin-top:2px;box-shadow:0 3px 6px rgba(0,0,0,.4)}
 /* Fiche livre + formulaire d'ajout/modification : vraies pages plein écran (pas une modale
    par-dessus) — fond plein (pas de calque assombri), sans coins arrondis, scroll unique. */
@@ -811,7 +811,6 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
       <button type="button" data-val="sombre" class="on" onclick="segPick(this)">Foncé</button>
       <button type="button" data-val="clair" onclick="segPick(this)">Clair</button>
     </div>
-    <button class="btn" onclick="saveSettings()">Enregistrer</button>
     <h2 style="margin-top:24px">Compte</h2>
     <div class="isbnrow" style="align-items:center">
       <div style="flex:1"><div style="font-weight:700">Connecté(e)</div><small id="accountEmail" style="color:var(--txt2)"></small></div>
@@ -833,6 +832,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
     <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(this)">
     <p class="note-io">Tes données sont stockées uniquement sur ton téléphone. Pense à exporter une sauvegarde de temps en temps (elle s'enregistre dans Fichiers).<br><br>L'import accepte aussi les sauvegardes <b>Book Nova</b> (fichier <i>booknova_backup_….json</i>) : statuts, notes, genres, langues, épaisseurs et prêts sont convertis automatiquement.</p>
+    <button class="btn" style="margin-top:24px" onclick="saveSettings()">Enregistrer</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
