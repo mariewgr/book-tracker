@@ -902,6 +902,12 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 <div class="overlay" id="settingsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
     <h2>Réglages</h2>
+    <label>Langue de l'application</label>
+    <div class="seg" id="segLang">
+      <button type="button" data-val="fr" class="on" onclick="segPick(this)">Français</button>
+      <button type="button" data-val="en" onclick="segPick(this)">English</button>
+      <button type="button" data-val="de" onclick="segPick(this)">Deutsch</button>
+    </div>
     <label>Ta taille (cm) — pour le défi de la pile</label>
     <input id="s_taille" type="number" inputmode="numeric" placeholder="165">
     <label>Objectif de lecture annuel (livres)</label>
@@ -1000,6 +1006,458 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 /* ---------- Données ---------- */
 const KEY='mabibli_v1';
 const LANG_FIX={FR:'Français',fr:'Français',EN:'Anglais',en:'Anglais'};
+const I18N={
+  en:{
+    'Accueil':'Home',
+    'Ajouter':'Add',
+    'Ajouter au classement':'Add to ranking',
+    'Ajouter un livre':'Add a book',
+    'Ajouter une saga':'Add a series',
+    'Ajouter un·e ami·e':'Add a friend',
+    'Annuler':'Cancel',
+    'Aucun livre':'No book',
+    'Audio':'Audio',
+    'Auteur·ice':'Author',
+    'Bibli':'Library',
+    'Bois des étagères':'Shelf wood',
+    'Ce qui s\'est passé…':'What happened…',
+    'Chercher':'Search',
+    'Choisis un nouveau mot de passe pour ton compte.':'Choose a new password for your account.',
+    'Clair':'Light',
+    'Clé API Google Gemini (gratuite)':'Google Gemini API key (free)',
+    'Code à 6 caractères':'6-character code',
+    'Comment ça se termine…':'How it ends…',
+    'Commentaires':'Comments',
+    'Compte':'Account',
+    'Connecte-toi pour retrouver ta bibliothèque, sur tous tes appareils.':'Sign in to find your library, on all your devices.',
+    'Connecté(e)':'Signed in',
+    'Couv.':'Cover',
+    'Couverture (URL auto via ISBN, photothèque ou photo)':'Cover (auto URL via ISBN, photo library or photo)',
+    'Créer l\'étagère liée':'Create the linked shelf',
+    'Cumul de livres terminés — année en cours vs précédente':'Cumulative finished books — this year vs last year',
+    'DNF':'DNF',
+    'Date de fin':'Finish date',
+    'Date de parution (optionnel — pour un livre pas encore sorti)':'Release date (optional — for a book not yet out)',
+    'Données':'Data',
+    'Découvrir des livres':'Discover books',
+    'Décris le problème ou ta remarque…':'Describe the problem or your remark…',
+    'Défi de la pile':'Stack challenge',
+    'Délier (figer la liste actuelle)':'Unlink (freeze the current list)',
+    'Email':'Email',
+    'En cours':'In progress',
+    'Enemies to lovers, dieux…':'Enemies to lovers, gods…',
+    'Enregistrer':'Save',
+    'Enregistrer le mot de passe':'Save the password',
+    'Envoyer par mail':'Send by email',
+    'Ex : 123':'E.g.: 123',
+    'Ex : 52':'E.g.: 52',
+    'Ex : 9782266200127':'E.g.: 9782266200127',
+    'Ex : ACOTAR':'E.g.: ACOTAR',
+    'Ex : Albert Camus':'E.g.: Albert Camus',
+    'Ex : Fourth Wing Yarros':'E.g.: Fourth Wing Yarros',
+    'Ex : L\'Étranger':'E.g.: The Stranger',
+    'Ex : Mes coups de cœur':'E.g.: My favorites',
+    'FMC (héroïne)':'FMC (heroine)',
+    'Fermer':'Close',
+    'Fermer le mode visiteur':'Close visitor mode',
+    'Fiction':'Fiction',
+    'Fiction vs non-fiction (terminés)':'Fiction vs non-fiction (finished)',
+    'Fil d\'actualité':'Activity feed',
+    'Foncé':'Dark',
+    'Format':'Format',
+    'Français':'French',
+    'Genre':'Genre',
+    'Hors ligne — tes données locales sont affichées':'Offline — your local data is shown',
+    'IA — analyse de fiches de lecture':'AI — reading card analysis',
+    'ISBN — saisis-le ou scanne le code-barres':'ISBN — type it or scan the barcode',
+    'Image de la tranche / dos (pour les étagères)':'Spine/back image (for shelves)',
+    'Journal':'Journal',
+    'La 4e de couverture…':'The back-cover blurb…',
+    'La fin (spoilers)':'The ending (spoilers)',
+    'Langue':'Language',
+    'Livre (optionnel)':'Book (optional)',
+    'Livres terminés par format':'Finished books by format',
+    'Livres terminés par langue':'Finished books by language',
+    'Lu le':'Read on',
+    'MMC (héros)':'MMC (hero)',
+    'Ma Bibli — carnet de lecture':'My Library — reading journal',
+    'Mes amis':'My friends',
+    'Mes ami·e·s':'My friends',
+    'Mode d\'affichage :':'Display mode:',
+    'Modifier ce livre':'Edit this book',
+    'Modifier l\'étagère':'Edit the shelf',
+    'Mot de passe (6 caractères min.)':'Password (6 characters min.)',
+    'Mot de passe oublié ?':'Forgot password?',
+    'Nom':'Name',
+    'Nombre d\'étages':'Number of shelves',
+    'Non terminées':'Unfinished',
+    'Non-fiction':'Non-fiction',
+    'Note globale':'Overall rating',
+    'Notes détaillées':'Detailed notes',
+    'Nouveau':'New',
+    'Nouveau mot de passe (6 caractères min.)':'New password (6 characters min.)',
+    'Nouveau post':'New post',
+    'Numérique':'Digital',
+    'Objectif de lecture annuel (livres)':'Annual reading goal (books)',
+    'Page actuelle':'Current page',
+    'Pages':'Pages',
+    'Pages (l\'épaisseur sur les étagères et dans le défi en découle automatiquement)':'Pages (the thickness on shelves and in the challenge follows automatically)',
+    'Paliers':'Milestones',
+    'Papier':'Print',
+    'Pas de compte ? Crée-en un':'No account? Create one',
+    'Photo':'Photo',
+    'Photographier la tranche':'Photograph the spine',
+    'Photos (optionnel)':'Photos (optional)',
+    'Pile':'Stack',
+    'Plus':'More',
+    'Prendre la photo':'Take the photo',
+    'Profil':'Profile',
+    'Progression':'Progress',
+    'Publier':'Publish',
+    'Qu\'en as-tu pensé ?':'What did you think?',
+    'Quoi de neuf ?':'What\'s new?',
+    'Recherche en ligne — titre, auteur…':'Online search — title, author…',
+    'Rechercher':'Search',
+    'Recommander ?':'Recommend?',
+    'Remplir depuis une photo de fiche de lecture':'Fill in from a reading-card photo',
+    'Rogner la photo':'Crop the photo',
+    'Roman, SF, Polar…':'Novel, sci-fi, thriller…',
+    'Réglages':'Settings',
+    'Résumé (pour toi)':'Summary (for you)',
+    'Résumé du livre (éditeur — rempli automatiquement)':'Book summary (publisher — filled in automatically)',
+    'Saga (optionnel)':'Series (optional)',
+    'Sagas':'Series',
+    'Sagas liées (dans l\'ordre)':'Linked series (in order)',
+    'Sauvegarde':'Backup',
+    'Scanner':'Scan',
+    'Scanner le code-barres':'Scan the barcode',
+    'Se connecter':'Sign in',
+    'Se déconnecter':'Sign out',
+    'Smut':'Smut',
+    'Statistiques':'Statistics',
+    'Statut':'Status',
+    'Supprimer ce livre':'Delete this book',
+    'Supprimer l\'étagère':'Delete the shelf',
+    'Ta taille (cm) — pour le défi de la pile':'Your height (cm) — for the stack challenge',
+    'Terminé':'Finished',
+    'Terminées (100 %)':'Finished (100%)',
+    'Texte':'Text',
+    'Thème':'Theme',
+    'Tiens le livre vertical, tranche face à toi':'Hold the book upright, spine facing you',
+    'Titre *':'Title *',
+    'Titre ou auteur':'Title or author',
+    'Tome':'Volume',
+    'Ton code ami':'Your friend code',
+    'Ton message':'Your message',
+    'Ton nom ou pseudo':'Your name or nickname',
+    'Top — mon classement':'Top — my ranking',
+    'Toutes les sagas':'All series',
+    'Tranche':'Spine',
+    'Trier : % lu (croissant)':'Sort: % read (ascending)',
+    'Trier : % lu (décroissant)':'Sort: % read (descending)',
+    'Trier : Nom (A→Z)':'Sort: Name (A→Z)',
+    'Tropes':'Tropes',
+    'Trouver une tranche':'Find a spine',
+    'Type':'Type',
+    'Vise le code-barres au dos du livre…':'Aim at the barcode on the back of the book…',
+    'Visible publiquement':'Publicly visible',
+    'À lire':'To read',
+    'Étagère liée':'Linked shelf',
+    'Étagères':'Shelves',
+    '↺ Reprendre':'↺ Retake',
+    '☀️ Clair':'☀️ Light',
+    '✂️ Rogner et utiliser':'✂️ Crop and use',
+    '✍️ Nouveau post':'✍️ New post',
+    '✓ Utiliser':'✓ Use',
+    '⬆️ Importer une sauvegarde':'⬆️ Import a backup',
+    '⬇️ Exporter mes données (JSON)':'⬇️ Export my data (JSON)',
+    '＋ Étagère liée à une saga / parutions à venir':'＋ Shelf linked to a series / upcoming releases',
+    '🌐 Chercher sur Google Images':'🌐 Search on Google Images',
+    '🌐 Recherche en ligne':'🌐 Online search',
+    '🌙 Sombre':'🌙 Dark',
+    '🎉 Générer mon récap de l\'année':'🎉 Generate my year recap',
+    '🎉 J\'ai terminé ce livre !':'🎉 I finished this book!',
+    '👀 Voir comme un·e visiteur·se':'👀 View as a visitor',
+    '👍 Oui':'👍 Yes',
+    '👎 Non':'👎 No',
+    '👥 Communauté Ma Bibli':'👥 My Library community',
+    '💬 Remarque / signaler un bug':'💬 Feedback / report a bug',
+    '📋 Copier mon code':'📋 Copy my code',
+    '📖 Récupérer les résumés manquants':'📖 Fetch missing summaries',
+    '📴 Hors ligne':'📴 Offline',
+    '📷 Ajouter une photo':'📷 Add a photo',
+    '📷 Choisir une photo':'📷 Choose a photo',
+    '🔄 Synchroniser mes livres terminés':'🔄 Sync my finished books',
+    '🔍 Chercher dans ta bibli…':'🔍 Search your library…',
+    '🔍 Chercher une saga…':'🔍 Search a series…',
+    '🔍 Livre, auteur ou saga…':'🔍 Book, author or series…',
+    '🔍 Rechercher un titre, un auteur, une saga…':'🔍 Search a title, author, series…',
+    '🔍 Trouver une tranche':'🔍 Find a spine',
+    'Chat':'Cat',
+    'Beagle':'Beagle',
+    'Panda assis':'Sitting panda',
+    'Ta taille !':'Your height!',
+    'Autruche':'Ostrich',
+    'Girafe':'Giraffe',
+    'Modifier':'Edit',
+    'Supprimer':'Delete',
+    'Confirmer':'Confirm',
+    'OK':'OK',
+    'Envoyer':'Send',
+    'Créer mon compte':'Create my account',
+  },
+  de:{
+    'Accueil':'Start',
+    'Ajouter':'Hinzufügen',
+    'Ajouter au classement':'Zur Rangliste hinzufügen',
+    'Ajouter un livre':'Buch hinzufügen',
+    'Ajouter une saga':'Reihe hinzufügen',
+    'Ajouter un·e ami·e':'Freund·in hinzufügen',
+    'Annuler':'Abbrechen',
+    'Aucun livre':'Kein Buch',
+    'Audio':'Hörbuch',
+    'Auteur·ice':'Autor·in',
+    'Bibli':'Bibliothek',
+    'Bois des étagères':'Regalholz',
+    'Ce qui s\'est passé…':'Was ist passiert…',
+    'Chercher':'Suchen',
+    'Choisis un nouveau mot de passe pour ton compte.':'Wähle ein neues Passwort für dein Konto.',
+    'Clair':'Hell',
+    'Clé API Google Gemini (gratuite)':'Google-Gemini-API-Schlüssel (kostenlos)',
+    'Code à 6 caractères':'6-stelliger Code',
+    'Comment ça se termine…':'Wie es endet…',
+    'Commentaires':'Kommentare',
+    'Compte':'Konto',
+    'Connecte-toi pour retrouver ta bibliothèque, sur tous tes appareils.':'Melde dich an, um deine Bibliothek auf allen Geräten wiederzufinden.',
+    'Connecté(e)':'Angemeldet',
+    'Couv.':'Cover',
+    'Couverture (URL auto via ISBN, photothèque ou photo)':'Cover (automatische URL via ISBN, Fotomediathek oder Foto)',
+    'Créer l\'étagère liée':'Verknüpftes Regal erstellen',
+    'Cumul de livres terminés — année en cours vs précédente':'Kumulierte beendete Bücher — dieses Jahr vs. letztes Jahr',
+    'DNF':'Abgebrochen',
+    'Date de fin':'Enddatum',
+    'Date de parution (optionnel — pour un livre pas encore sorti)':'Erscheinungsdatum (optional — für ein noch nicht erschienenes Buch)',
+    'Données':'Daten',
+    'Découvrir des livres':'Bücher entdecken',
+    'Décris le problème ou ta remarque…':'Beschreibe das Problem oder deine Anmerkung…',
+    'Défi de la pile':'Stapel-Challenge',
+    'Délier (figer la liste actuelle)':'Entkoppeln (aktuelle Liste einfrieren)',
+    'Email':'E-Mail',
+    'En cours':'Laufend',
+    'Enemies to lovers, dieux…':'Enemies to lovers, Götter…',
+    'Enregistrer':'Speichern',
+    'Enregistrer le mot de passe':'Passwort speichern',
+    'Envoyer par mail':'Per E-Mail senden',
+    'Ex : 123':'Z. B.: 123',
+    'Ex : 52':'Z. B.: 52',
+    'Ex : 9782266200127':'Z. B.: 9782266200127',
+    'Ex : ACOTAR':'Z. B.: ACOTAR',
+    'Ex : Albert Camus':'Z. B.: Albert Camus',
+    'Ex : Fourth Wing Yarros':'Z. B.: Fourth Wing Yarros',
+    'Ex : L\'Étranger':'Z. B.: Der Fremde',
+    'Ex : Mes coups de cœur':'Z. B.: Meine Favoriten',
+    'FMC (héroïne)':'FMC (Heldin)',
+    'Fermer':'Schließen',
+    'Fermer le mode visiteur':'Besuchermodus schließen',
+    'Fiction':'Belletristik',
+    'Fiction vs non-fiction (terminés)':'Belletristik vs. Sachbuch (beendet)',
+    'Fil d\'actualité':'Aktivitäts-Feed',
+    'Foncé':'Dunkel',
+    'Format':'Format',
+    'Français':'Französisch',
+    'Genre':'Genre',
+    'Hors ligne — tes données locales sont affichées':'Offline — deine lokalen Daten werden angezeigt',
+    'IA — analyse de fiches de lecture':'KI — Analyse von Lesekarten',
+    'ISBN — saisis-le ou scanne le code-barres':'ISBN — eingeben oder Barcode scannen',
+    'Image de la tranche / dos (pour les étagères)':'Buchrücken-Bild (für Regale)',
+    'Journal':'Journal',
+    'La 4e de couverture…':'Der Klappentext…',
+    'La fin (spoilers)':'Das Ende (Spoiler)',
+    'Langue':'Sprache',
+    'Livre (optionnel)':'Buch (optional)',
+    'Livres terminés par format':'Beendete Bücher nach Format',
+    'Livres terminés par langue':'Beendete Bücher nach Sprache',
+    'Lu le':'Gelesen am',
+    'MMC (héros)':'MMC (Held)',
+    'Ma Bibli — carnet de lecture':'Meine Bibliothek — Lesetagebuch',
+    'Mes amis':'Meine Freunde',
+    'Mes ami·e·s':'Meine Freund·innen',
+    'Mode d\'affichage :':'Anzeigemodus:',
+    'Modifier ce livre':'Dieses Buch bearbeiten',
+    'Modifier l\'étagère':'Regal bearbeiten',
+    'Mot de passe (6 caractères min.)':'Passwort (mind. 6 Zeichen)',
+    'Mot de passe oublié ?':'Passwort vergessen?',
+    'Nom':'Name',
+    'Nombre d\'étages':'Anzahl Etagen',
+    'Non terminées':'Nicht abgeschlossen',
+    'Non-fiction':'Sachbuch',
+    'Note globale':'Gesamtbewertung',
+    'Notes détaillées':'Detaillierte Notizen',
+    'Nouveau':'Neu',
+    'Nouveau mot de passe (6 caractères min.)':'Neues Passwort (mind. 6 Zeichen)',
+    'Nouveau post':'Neuer Beitrag',
+    'Numérique':'Digital',
+    'Objectif de lecture annuel (livres)':'Jährliches Leseziel (Bücher)',
+    'Page actuelle':'Aktuelle Seite',
+    'Pages':'Seiten',
+    'Pages (l\'épaisseur sur les étagères et dans le défi en découle automatiquement)':'Seiten (die Dicke in Regalen und in der Challenge ergibt sich automatisch)',
+    'Paliers':'Meilensteine',
+    'Papier':'Print',
+    'Pas de compte ? Crée-en un':'Kein Konto? Erstelle eins',
+    'Photo':'Foto',
+    'Photographier la tranche':'Buchrücken fotografieren',
+    'Photos (optionnel)':'Fotos (optional)',
+    'Pile':'Stapel',
+    'Plus':'Mehr',
+    'Prendre la photo':'Foto aufnehmen',
+    'Profil':'Profil',
+    'Progression':'Fortschritt',
+    'Publier':'Veröffentlichen',
+    'Qu\'en as-tu pensé ?':'Was hast du davon gehalten?',
+    'Quoi de neuf ?':'Was gibt es Neues?',
+    'Recherche en ligne — titre, auteur…':'Online-Suche — Titel, Autor…',
+    'Rechercher':'Suchen',
+    'Recommander ?':'Empfehlen?',
+    'Remplir depuis une photo de fiche de lecture':'Aus einem Foto einer Lesekarte ausfüllen',
+    'Rogner la photo':'Foto zuschneiden',
+    'Roman, SF, Polar…':'Roman, Sci-Fi, Krimi…',
+    'Réglages':'Einstellungen',
+    'Résumé (pour toi)':'Zusammenfassung (für dich)',
+    'Résumé du livre (éditeur — rempli automatiquement)':'Buchzusammenfassung (Verlag — automatisch ausgefüllt)',
+    'Saga (optionnel)':'Reihe (optional)',
+    'Sagas':'Reihen',
+    'Sagas liées (dans l\'ordre)':'Verknüpfte Reihen (in Reihenfolge)',
+    'Sauvegarde':'Sicherung',
+    'Scanner':'Scannen',
+    'Scanner le code-barres':'Barcode scannen',
+    'Se connecter':'Anmelden',
+    'Se déconnecter':'Abmelden',
+    'Smut':'Smut',
+    'Statistiques':'Statistiken',
+    'Statut':'Status',
+    'Supprimer ce livre':'Dieses Buch löschen',
+    'Supprimer l\'étagère':'Regal löschen',
+    'Ta taille (cm) — pour le défi de la pile':'Deine Größe (cm) — für die Stapel-Challenge',
+    'Terminé':'Beendet',
+    'Terminées (100 %)':'Beendet (100 %)',
+    'Texte':'Text',
+    'Thème':'Design',
+    'Tiens le livre vertical, tranche face à toi':'Halte das Buch aufrecht, Buchrücken zu dir gerichtet',
+    'Titre *':'Titel *',
+    'Titre ou auteur':'Titel oder Autor',
+    'Tome':'Band',
+    'Ton code ami':'Dein Freundescode',
+    'Ton message':'Deine Nachricht',
+    'Ton nom ou pseudo':'Dein Name oder Spitzname',
+    'Top — mon classement':'Top — meine Rangliste',
+    'Toutes les sagas':'Alle Reihen',
+    'Tranche':'Buchrücken',
+    'Trier : % lu (croissant)':'Sortieren: % gelesen (aufsteigend)',
+    'Trier : % lu (décroissant)':'Sortieren: % gelesen (absteigend)',
+    'Trier : Nom (A→Z)':'Sortieren: Name (A→Z)',
+    'Tropes':'Tropen',
+    'Trouver une tranche':'Buchrücken finden',
+    'Type':'Typ',
+    'Vise le code-barres au dos du livre…':'Ziele auf den Barcode auf der Buchrückseite…',
+    'Visible publiquement':'Öffentlich sichtbar',
+    'À lire':'Zu lesen',
+    'Étagère liée':'Verknüpftes Regal',
+    'Étagères':'Regale',
+    '↺ Reprendre':'↺ Wiederholen',
+    '☀️ Clair':'☀️ Hell',
+    '✂️ Rogner et utiliser':'✂️ Zuschneiden und verwenden',
+    '✍️ Nouveau post':'✍️ Neuer Beitrag',
+    '✓ Utiliser':'✓ Verwenden',
+    '⬆️ Importer une sauvegarde':'⬆️ Sicherung importieren',
+    '⬇️ Exporter mes données (JSON)':'⬇️ Meine Daten exportieren (JSON)',
+    '＋ Étagère liée à une saga / parutions à venir':'＋ Regal verknüpft mit Reihe / kommenden Veröffentlichungen',
+    '🌐 Chercher sur Google Images':'🌐 Auf Google Bilder suchen',
+    '🌐 Recherche en ligne':'🌐 Online-Suche',
+    '🌙 Sombre':'🌙 Dunkel',
+    '🎉 Générer mon récap de l\'année':'🎉 Meinen Jahresrückblick erstellen',
+    '🎉 J\'ai terminé ce livre !':'🎉 Ich habe dieses Buch beendet!',
+    '👀 Voir comme un·e visiteur·se':'👀 Als Besucher·in ansehen',
+    '👍 Oui':'👍 Ja',
+    '👎 Non':'👎 Nein',
+    '👥 Communauté Ma Bibli':'👥 Meine-Bibliothek-Community',
+    '💬 Remarque / signaler un bug':'💬 Feedback / Fehler melden',
+    '📋 Copier mon code':'📋 Meinen Code kopieren',
+    '📖 Récupérer les résumés manquants':'📖 Fehlende Zusammenfassungen abrufen',
+    '📴 Hors ligne':'📴 Offline',
+    '📷 Ajouter une photo':'📷 Foto hinzufügen',
+    '📷 Choisir une photo':'📷 Foto auswählen',
+    '🔄 Synchroniser mes livres terminés':'🔄 Meine beendeten Bücher synchronisieren',
+    '🔍 Chercher dans ta bibli…':'🔍 In deiner Bibliothek suchen…',
+    '🔍 Chercher une saga…':'🔍 Eine Reihe suchen…',
+    '🔍 Livre, auteur ou saga…':'🔍 Buch, Autor oder Reihe…',
+    '🔍 Rechercher un titre, un auteur, une saga…':'🔍 Titel, Autor, Reihe suchen…',
+    '🔍 Trouver une tranche':'🔍 Buchrücken finden',
+    'Chat':'Katze',
+    'Beagle':'Beagle',
+    'Panda assis':'Sitzender Panda',
+    'Ta taille !':'Deine Größe!',
+    'Autruche':'Strauß',
+    'Girafe':'Giraffe',
+    'Modifier':'Bearbeiten',
+    'Supprimer':'Löschen',
+    'Confirmer':'Bestätigen',
+    'OK':'OK',
+    'Envoyer':'Senden',
+    'Créer mon compte':'Mein Konto erstellen',
+  },
+};
+/* ---------- Internationalisation (FR source, EN/DE traduits) ----------
+   FR reste la langue "source" : tous les gabarits du code écrivent en français, et cette
+   couche traduit après coup le texte affiché — pas besoin de dupliquer chaque gabarit.
+   t(s) traduit une chaîne isolée (utile dans un template littéral). translatePage() parcourt
+   les nœuds de texte + attributs placeholder/title d'une racine et remplace ceux qui
+   correspondent exactement (une fois recadrés) à une clé du dictionnaire. Un MutationObserver
+   (tout en bas du fichier) rappelle translatePage() après chaque rendu/ouverture de modale,
+   donc aucune fonction render()/open*() n'a besoin d'être modifiée individuellement. */
+function curLang(){return (db&&db.settings&&db.settings.lang)||'fr';}
+function t(s){const l=curLang(),d=I18N[l];return (d&&d[s])||s;}
+function translatePage(root){
+  const l=curLang();
+  root=root||document.body;
+  if(!root||!root.querySelectorAll)return;
+  /* Le HTML statique (modales déjà présentes au chargement) n'est jamais régénéré — une fois
+     son texte remplacé par une traduction, le français d'origine serait perdu. Chaque nœud
+     retient donc son texte français d'origine (1re rencontre) pour pouvoir toujours re-traduire
+     à partir de la source, quel que soit l'enchaînement de langues (ex. EN → DE directement). */
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null);
+  const nodes=[];let n;while(n=walker.nextNode())nodes.push(n);
+  nodes.forEach(node=>{
+    const p=node.parentNode;
+    if(!p||p.tagName==='SCRIPT'||p.tagName==='STYLE')return;
+    let orig=node.__i18nOrig;
+    if(orig===undefined){orig=node.textContent;node.__i18nOrig=orig;}
+    const trimmed=orig.trim();
+    if(!trimmed)return;
+    const dict=I18N[l];
+    const target=(dict&&dict[trimmed])?orig.replace(trimmed,dict[trimmed]):orig;
+    /* Garde anti-boucle : une réécriture avec une valeur identique (ex. « Email »→« Email »,
+       ou un retour au français) déclenche quand même une mutation — sans ce test, le
+       MutationObserver ci-dessous se re-déclencherait à l'infini. */
+    if(node.textContent!==target)node.textContent=target;
+  });
+  root.querySelectorAll('[placeholder],[title]').forEach(el=>{
+    ['placeholder','title'].forEach(attr=>{
+      const cacheKey='__i18nOrig_'+attr;
+      let orig=el[cacheKey];
+      if(orig===undefined){orig=el.getAttribute(attr)||'';el[cacheKey]=orig;}
+      if(!orig)return;
+      const dict=I18N[l];
+      const target=(dict&&dict[orig])?dict[orig]:orig;
+      if(el.getAttribute(attr)!==target)el.setAttribute(attr,target);
+    });
+  });
+}
+function setLang(l){
+  db.settings.lang=l;
+  save();
+  translatePage(document.getElementById('appRoot'));
+  translatePage(document.getElementById('authScreen'));
+}
 function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
   d.shelves=d.shelves||[];d.ranking=d.ranking||[];
@@ -3955,6 +4413,7 @@ async function cacheAllCoversQuiet(){
   for(const b of db.books.filter(b=>needsCaching(b.couverture)))await cacheExternalCover(b.id);
 }
 function openSettings(){
+  segSet('segLang',db.settings.lang||'fr');
   document.getElementById('s_taille').value=db.settings.taille||'';
   document.getElementById('s_objectif').value=db.settings.objectif||'';
   segSet('segTheme',db.settings.theme||'sombre');
@@ -3965,6 +4424,7 @@ function openSettings(){
   document.getElementById('settingsModal').classList.add('open');
 }
 function saveSettings(){
+  db.settings.lang=segVal('segLang');
   db.settings.taille=+document.getElementById('s_taille').value||165;
   db.settings.objectif=+document.getElementById('s_objectif').value||0;
   db.settings.theme=segVal('segTheme');
@@ -3972,6 +4432,7 @@ function saveSettings(){
   gemKey=document.getElementById('g_key').value.trim();
   localStorage.setItem(GKEY,gemKey);
   save();closeModals();render();
+  translatePage(document.getElementById('appRoot'));
 }
 let pfPhotoData='';
 function renderProfilePreview(){
@@ -4665,6 +5126,17 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
   }
   new MutationObserver(apply).observe(document.body,{attributes:true,attributeFilter:['class'],subtree:true});
 })();
+
+/* Traduction automatique : retraduit tout contenu nouvellement rendu (onglets, modales,
+   fiches…) sans avoir à appeler translatePage() dans chaque fonction render()/open*(). Se
+   stabilise seule après un passage (le texte déjà traduit ne correspond plus à une clé FR,
+   donc plus de mutation à observer). */
+translatePage(document.getElementById('appRoot'));
+translatePage(document.getElementById('authScreen'));
+new MutationObserver(()=>{
+  translatePage(document.getElementById('appRoot'));
+  translatePage(document.getElementById('authScreen'));
+}).observe(document.body,{childList:true,subtree:true,characterData:true});
 </script>
 </body>
 </html>
