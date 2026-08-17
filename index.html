@@ -215,6 +215,9 @@ input,select,textarea{
   color:var(--txt);padding:11px 13px;font-size:1rem;font-family:inherit;
 }
 textarea{min-height:70px;resize:vertical}
+input[type=date]{text-align:center}
+input[type=date]::-webkit-datetime-edit{text-align:center;flex-grow:0}
+input[type=date]::-webkit-datetime-edit-fields-wrapper{display:flex;justify-content:center;width:100%}
 .row{display:flex;gap:10px}
 .row>div{flex:1}
 .seg{display:flex;background:var(--card);border-radius:11px;padding:4px;gap:4px;border:1px solid var(--line2)}
