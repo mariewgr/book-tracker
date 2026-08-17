@@ -176,7 +176,8 @@ nav button.active{color:var(--accent)}
 .book .meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--txt2)}
 .stars{color:var(--gold);letter-spacing:1px}
 .pbar{height:6px;background:#191323;border-radius:3px;margin-top:10px;overflow:hidden}
-.quickbtn{margin-top:10px;width:100%;background:var(--card2);border:1px solid var(--line2);color:var(--accent);padding:9px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer}
+.quickbtn{margin-top:10px;width:100%;background:var(--card2);border:1px solid var(--line2);color:var(--accent);padding:9px;border-radius:10px;font-weight:700;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.quickbtn .icn{width:16px;height:16px;flex:none}
 .pbar>div{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:3px}
 .empty{color:var(--txt2);text-align:center;padding:50px 20px;font-size:.95rem;line-height:1.6}
 .empty .big{font-size:2.6rem;display:block;margin-bottom:10px}
@@ -294,6 +295,12 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .mile .name{font-weight:700;font-size:.92rem}
 .mile .h{margin-left:auto;color:var(--txt2);font-size:.85rem;font-weight:600}
 .mile .check{color:var(--green);font-size:1.1rem}
+/* Ligne du journal : glisser vers la gauche révèle "Supprimer" derrière la carte */
+.swipeRow{position:relative;overflow:hidden;border-radius:13px;margin-bottom:8px}
+.swipeRow .mile{margin-bottom:0}
+.swipeAction{position:absolute;top:0;right:0;bottom:0;width:90px;background:var(--red);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;cursor:pointer}
+.swipeContent{position:relative;touch-action:pan-y}
 
 /* Stats */
 .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -3460,10 +3467,12 @@ function renderCal(){
   fin.forEach(b=>out+=`<div class="mile" style="cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
   ses.forEach(s=>{
     const bk=db.books.find(b=>b.id===s.bookId);
-    out+=`<div class="mile">
-      <div style="display:flex;align-items:center;gap:12px;min-width:0${bk?';cursor:pointer':''}"${bk?` onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','book-open')}<span class="name">${esc(s.titre)}</span></div>
-      <span class="h">+${s.pages} p.</span>
-      <button style="color:var(--red);margin-left:10px" onclick="deleteSession('${s.id}')" title="Supprimer cette entrée">✕</button>
+    out+=`<div class="swipeRow">
+      <div class="swipeAction" onclick="deleteSession('${s.id}')">Supprimer</div>
+      <div class="swipeContent mile">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0${bk?';cursor:pointer':''}"${bk?` onclick="openInfo('${bk.id}')"`:''}>${coverEl(bk&&bk.couverture,'sm','book-open')}<span class="name">${esc(s.titre)}</span></div>
+        <span class="h">+${s.pages} p.</span>
+      </div>
     </div>`;
   });
   det.innerHTML=out;
@@ -3474,6 +3483,53 @@ function deleteSession(id){
     save();renderCal();
   });
 }
+/* Glisser une ligne du journal vers la gauche révèle le bouton "Supprimer" derrière —
+   délégation sur #dayDetail puisque les lignes sont reconstruites à chaque renderCal(). */
+(function(){
+  const MAXR=90,THRESH=70;
+  let active=null,startX=0,startY=0,curX=0,dragging=false,axis=null;
+  function closeOthers(except){
+    document.querySelectorAll('#dayDetail .swipeRow.open').forEach(r=>{
+      if(r!==except){r.classList.remove('open');r.querySelector('.swipeContent').style.transform='';}
+    });
+  }
+  function onDown(e){
+    const row=e.target.closest('.swipeRow');
+    if(!row)return;
+    closeOthers(row);
+    active=row;startX=e.clientX;startY=e.clientY;curX=row.classList.contains('open')?-MAXR:0;
+    dragging=false;axis=null;
+  }
+  function onMove(e){
+    if(!active)return;
+    const dx=e.clientX-startX,dy=e.clientY-startY;
+    if(axis===null){
+      if(Math.abs(dx)<6&&Math.abs(dy)<6)return;
+      axis=Math.abs(dx)>Math.abs(dy)?'x':'y';
+      if(axis==='y'){active=null;return;} /* laisse le scroll vertical normal */
+    }
+    if(axis!=='x')return;
+    dragging=true;
+    e.preventDefault();
+    const base=active.classList.contains('open')?-MAXR:0;
+    curX=Math.max(-MAXR,Math.min(0,base+dx));
+    active.querySelector('.swipeContent').style.transform='translateX('+curX+'px)';
+  }
+  function onUp(){
+    if(!active)return;
+    if(dragging){
+      const openNow=curX<-THRESH;
+      active.classList.toggle('open',openNow);
+      active.querySelector('.swipeContent').style.transform=openNow?'translateX(-'+MAXR+'px)':'';
+    }
+    active=null;dragging=false;axis=null;
+  }
+  const el=document.getElementById('dayDetail');
+  el.addEventListener('pointerdown',onDown);
+  el.addEventListener('pointermove',onMove,{passive:false});
+  el.addEventListener('pointerup',onUp);
+  el.addEventListener('pointercancel',onUp);
+})();
 
 /* ---------- Réglages / sauvegarde ---------- */
 /* Récupère les résumés éditeur manquants pour toute la bibliothèque */
