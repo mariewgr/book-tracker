@@ -896,25 +896,19 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <label style="margin-top:16px">Nom</label>
     <input id="pf_nom" placeholder="Ton nom ou pseudo">
     <h2 style="margin-top:24px">Visible publiquement</h2>
-    <p class="note-io">Pour l'instant, ces réglages n'ont pas encore d'effet — le partage public arrive bientôt.</p>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
-      <input type="checkbox" id="pf_pubReading" style="width:auto">
-      Livres en cours de lecture et leur avancement
-    </label>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
-      <input type="checkbox" id="pf_pubStats" style="width:auto">
-      Statistiques
-    </label>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
-      <input type="checkbox" id="pf_pubShelves" style="width:auto">
-      Étagères
-    </label>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;text-transform:none;font-size:.85rem">
-      <input type="checkbox" id="pf_pubBadges" style="width:auto">
-      Badges
-    </label>
+    <p class="note-io">Coche ce qui doit apparaître sur ton profil, glisse ⠿ pour changer l'ordre d'affichage.</p>
+    <div id="pfSectionsEl"></div>
+    <button class="btn ghost" style="margin-top:14px" onclick="openProfileVisitor()">👀 Voir comme un·e visiteur·se</button>
     <button class="btn" style="margin-top:24px" onclick="saveProfile()">Enregistrer</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
+  </div>
+</div>
+
+<!-- PROFIL — APERÇU VISITEUR -->
+<div class="overlay" id="profileVisitorModal" style="z-index:62" onclick="if(event.target===this)closeProfileVisitor()">
+  <div class="sheet">
+    <div id="pfVisitorBody"></div>
+    <button class="btn ghost" onclick="closeProfileVisitor()">Fermer le mode visiteur</button>
   </div>
 </div>
 </div><!-- /#appRoot -->
@@ -929,6 +923,7 @@ function normalizeDb(d){
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
   d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false};
+  d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','shelves','badges'];
   /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
   d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
   return d;
@@ -3781,12 +3776,25 @@ function renderProfilePreview(){
     ?`<img src="${url}" style="width:88px;height:88px;object-fit:cover;border-radius:50%;display:block;margin-top:6px">`
     :'<div class="isbnmsg" style="margin-top:6px">Aucune photo pour l\'instant.</div>';
 }
+const PROFILE_SECTIONS={reading:'Livres en cours de lecture et leur avancement',stats:'Statistiques',shelves:'Étagères',badges:'Badges'};
+const profileField=key=>'public'+key.charAt(0).toUpperCase()+key.slice(1);
+let pfSectionsW=[];
+function renderProfileSections(){
+  const wrap=document.getElementById('pfSectionsEl');
+  wrap.innerHTML=pfSectionsW.map((s,i)=>`<div class="sitem" data-i="${i}">
+    <span class="drag">⠿</span>
+    <input type="checkbox" id="pfSec_${s.key}" ${s.on?'checked':''} style="width:auto" onchange="pfSectionsW[${i}].on=this.checked">
+    <span class="nm">${esc(PROFILE_SECTIONS[s.key])}</span>
+  </div>`).join('');
+  makeSortable(wrap,order=>{
+    pfSectionsW=order.map(i=>pfSectionsW[i]).filter(Boolean);
+    renderProfileSections();
+  });
+}
 function openProfile(){
   document.getElementById('pf_nom').value=db.profile.nom||'';
-  document.getElementById('pf_pubReading').checked=!!db.profile.publicReading;
-  document.getElementById('pf_pubStats').checked=!!db.profile.publicStats;
-  document.getElementById('pf_pubShelves').checked=!!db.profile.publicShelves;
-  document.getElementById('pf_pubBadges').checked=!!db.profile.publicBadges;
+  pfSectionsW=db.profile.sectionOrder.map(key=>({key,on:!!db.profile[profileField(key)]}));
+  renderProfileSections();
   pfPhotoData='';
   renderProfilePreview();
   document.getElementById('profileModal').classList.add('open');
@@ -3810,14 +3818,74 @@ function onProfilePhotoPicked(inp){
 }
 async function saveProfile(){
   db.profile.nom=document.getElementById('pf_nom').value.trim();
-  db.profile.publicReading=document.getElementById('pf_pubReading').checked;
-  db.profile.publicStats=document.getElementById('pf_pubStats').checked;
-  db.profile.publicShelves=document.getElementById('pf_pubShelves').checked;
-  db.profile.publicBadges=document.getElementById('pf_pubBadges').checked;
+  db.profile.sectionOrder=pfSectionsW.map(s=>s.key);
+  pfSectionsW.forEach(s=>{db.profile[profileField(s.key)]=s.on;});
   if(pfPhotoData)db.profile.photo=await uploadImage(pfPhotoData,'profile');
   save();closeModals();render();
   toast('Profil enregistré ✅');
 }
+/* ---------- Aperçu visiteur : rendu en lecture seule des sections cochées, dans l'ordre choisi ---------- */
+function profileSectionHTML(key){
+  if(key==='reading'){
+    const reading=db.books.filter(b=>b.statut==='reading');
+    let h='<h2>📖 En cours de lecture</h2>';
+    if(!reading.length)return h+'<div class="empty" style="padding:14px">Aucune lecture en cours 🌙</div>';
+    reading.forEach(b=>{
+      h+=`<div class="book" style="cursor:default">
+        <div class="top">${coverEl(b.couverture,'')}
+          <div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div>
+          <div class="meta"><span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span></div></div>
+        </div>
+        <div class="pbar"><div style="width:${b.progression||0}%"></div></div>
+      </div>`;
+    });
+    return h;
+  }
+  if(key==='stats'){
+    const done=db.books.filter(b=>b.statut==='done');
+    const pages=done.reduce((s,b)=>s+(b.pages||0),0);
+    const noted=done.filter(b=>b.note>0);
+    const avg=noted.length?(noted.reduce((s,b)=>s+b.note,0)/noted.length).toFixed(1):'—';
+    return `<h2>📊 Statistiques</h2><div class="statgrid">
+      <div class="stat"><div class="n">${done.length}</div><div class="l">Livres terminés</div></div>
+      <div class="stat"><div class="n">${pages.toLocaleString('fr-FR')}</div><div class="l">Pages lues</div></div>
+      <div class="stat"><div class="n">${avg} ★</div><div class="l">Note moyenne</div></div>
+    </div>`;
+  }
+  if(key==='shelves'){
+    let h='<h2>📚 Étagères</h2>';
+    if(!db.shelves.length)return h+'<div class="empty" style="padding:14px">Aucune étagère 🌙</div>';
+    db.shelves.forEach(s=>{h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${shelfVisual(s)}`;});
+    return h;
+  }
+  if(key==='badges'){
+    const taille=db.settings.taille||165;
+    const doneAll=db.books.filter(b=>b.statut==='done');
+    const hgt=+doneAll.reduce((s,b)=>s+thickness(b),0).toFixed(1);
+    const reached=MILESTONES.map(([e,n,v])=>[e,n,v===null?taille:v]).filter(([,,v])=>hgt>=v);
+    let h='<h2>🏆 Badges</h2>';
+    if(!reached.length)return h+'<div class="empty" style="padding:14px">Aucun badge débloqué pour l\'instant 🌱</div>';
+    return h+`<div style="display:flex;flex-wrap:wrap;gap:10px">${reached.map(([e,n])=>
+      `<div class="mile reached" style="flex:none"><span class="emo">${e}</span><span class="name">${esc(n)}</span><span class="check">✓</span></div>`
+    ).join('')}</div>`;
+  }
+  return '';
+}
+function openProfileVisitor(){
+  const p=db.profile,name=(document.getElementById('pf_nom').value||'').trim()||'Sans nom';
+  const photo=pfPhotoData||p.photo;
+  let out=`<div style="text-align:center;margin-bottom:20px">
+    ${photo?`<img src="${esc(photo)}" style="width:96px;height:96px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 10px">`
+      :`<div style="width:96px;height:96px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icn" style="width:40px;height:40px;color:var(--txt2)"><use href="#i-user"/></svg></div>`}
+    <h2 style="margin:0">${esc(name)}</h2>
+    <div style="color:var(--txt2);font-size:.8rem;margin-top:4px">👀 Aperçu — ce que verrait un·e visiteur·se</div>
+  </div>`;
+  const sections=pfSectionsW.filter(s=>s.on);
+  out+=sections.length?sections.map(s=>profileSectionHTML(s.key)).join(''):'<div class="empty">Rien n\'est encore visible publiquement.<br>Coche au moins une section ci-dessus.</div>';
+  document.getElementById('pfVisitorBody').innerHTML=out;
+  document.getElementById('profileVisitorModal').classList.add('open');
+}
+function closeProfileVisitor(){document.getElementById('profileVisitorModal').classList.remove('open');}
 function applyTheme(){
   document.body.dataset.theme=db.settings.theme||'sombre';
   document.body.dataset.bois=db.settings.bois||'sombre';
