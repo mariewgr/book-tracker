@@ -351,6 +351,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 .shelfSlot.dragging{opacity:.35}
 .shelfSlot.dropBefore{box-shadow:-3px 0 0 var(--accent) inset}
 .shelfSlot.dropAfter{box-shadow:3px 0 0 var(--accent) inset}
+.shelfPlaceholder{border:2px dashed var(--line2);border-radius:6px;background:rgba(255,255,255,.03);flex:none}
 /* Livre "soulevé" qui suit le doigt pendant le glisser */
 .shelfGhost{position:fixed;z-index:70;pointer-events:none;margin:0;
   transform:scale(1.06) rotate(-2deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
@@ -3321,7 +3322,7 @@ function layoutShelfRows(groups,nRows,cap){
   });
   return rows;
 }
-function renderShelfEditViz(){
+function renderShelfEditViz(dragBookId){
   const wrap=document.getElementById('shelfEditViz');
   if(!wrap)return;
   const s=db.shelves.find(x=>x.id===shelfId);
@@ -3335,11 +3336,20 @@ function renderShelfEditViz(){
   const cap=Math.max(240,(wrap.clientWidth||window.innerWidth-32)-44);
   const rows=layoutShelfRows(groups,nRows,cap);
   const delBadge=i=>linked?'':`<button class="slotDel" onclick="event.stopPropagation();shelfRemove(${i})">✕</button>`;
-  const slot=(i,html)=>`<div class="shelfSlot" data-i="${i}" onclick="shelfSlotTap(${i})">${html}${delBadge(i)}</div>`;
+  /* Pendant un glisser, le livre déplacé s'affiche comme un espace vide à sa position
+     actuelle (le livre lui-même suit le doigt via le "ghost" flottant) — pour voir en direct
+     où il atterrirait et le trou qu'il laisse, sans attendre de lâcher. */
+  const slot=(i,html,w,h)=>{
+    if(dragBookId&&shelfItemsW[i]&&shelfItemsW[i].bookId===dragBookId){
+      const dim=(w?`width:${w}px;`:'')+(h?`height:${h}px;`:'');
+      return `<div class="shelfSlot shelfPlaceholder" data-i="${i}" style="${dim}"></div>`;
+    }
+    return `<div class="shelfSlot" data-i="${i}" onclick="shelfSlotTap(${i})">${html}${delBadge(i)}</div>`;
+  };
   const rowsHtml=rows.map((row,rIdx)=>{
     const inner=row.els.map(g=>g.pile
-      ?`<div class="pilestack">${g.entries.map(e=>slot(e.i,pileEl(e.b))).join('')}</div>`
-      :slot(g.i,standEl(g.b,g.mode))).join('');
+      ?`<div class="pilestack">${g.entries.map(e=>slot(e.i,pileEl(e.b),112,24)).join('')}</div>`
+      :slot(g.i,standEl(g.b,g.mode),g.w,138)).join('');
     return `<div class="shelfrow" data-row="${rIdx+1}">${inner}</div><div class="board"></div>`;
   }).join('');
   wrap.innerHTML=`<div class="shelfviz"><div class="shelfinner">${rowsHtml}</div></div>`;
@@ -3350,11 +3360,13 @@ function shelfSlotTap(i){
   renderShelfEditViz();
 }
 function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelfAdd();}
-/* Glisser un livre : repositionne dans shelfItemsW et fixe l'étage sur lequel il est lâché.
-   Lâché hors de la zone d'étagère → annulé (pas de suppression accidentelle, on garde ça pour
-   le bouton ✕ explicite). Un simple tap (peu de mouvement) reste géré par le onclick du slot. */
+/* Glisser un livre : shelfItemsW est réordonné EN DIRECT pendant le glisser (pas seulement au
+   lâcher), avec un espace vide à la position actuelle du livre déplacé — le livre lui-même
+   continue de suivre le doigt via le "ghost" flottant. Lâché hors de la zone d'étagère →
+   annulé, on restaure l'ordre d'avant le glisser (pas de suppression accidentelle, on garde ça
+   pour le bouton ✕ explicite). Un simple tap (peu de mouvement) reste géré par le onclick du slot. */
 (function(){
-  let dragging=null,movedFar=false,ghostEl=null;
+  let dragging=null,movedFar=false,ghostEl=null,origSnapshot=null,lastKey=null;
   const THRESH=8;
   function wrap(){return document.getElementById('shelfEditViz');}
   function startGhost(slot,clientX,clientY){
@@ -3377,7 +3389,8 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelf
     const w=wrap();if(!w||!w.contains(e.target))return;
     const slot=e.target.closest('.shelfSlot');
     if(!slot||e.target.closest('.slotDel'))return;
-    dragging={fromIndex:+slot.dataset.i,startX:e.clientX,startY:e.clientY,el:slot,dropIndex:null,dropBefore:false,dropRow:null};
+    const i=+slot.dataset.i;
+    dragging={bookId:shelfItemsW[i].bookId,startX:e.clientX,startY:e.clientY,el:slot,dropRow:null};
     movedFar=false;
   });
   document.addEventListener('pointermove',e=>{
@@ -3386,58 +3399,59 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelf
     if(!movedFar){
       if(Math.hypot(dx,dy)<THRESH)return;
       movedFar=true;
-      dragging.el.classList.add('dragging');
+      origSnapshot=shelfItemsW.map(it=>({...it}));
       startGhost(dragging.el,e.clientX,e.clientY);
+      renderShelfEditViz(dragging.bookId);
     }
     e.preventDefault();
     moveGhost(e.clientX,e.clientY);
-    document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
     const overEl=document.elementFromPoint(e.clientX,e.clientY);
     const overSlot=overEl&&overEl.closest('.shelfSlot');
-    if(overSlot&&overSlot!==dragging.el){
+    if(overSlot){
       const r=overSlot.getBoundingClientRect();
       const before=e.clientX<r.left+r.width/2;
-      overSlot.classList.add(before?'dropBefore':'dropAfter');
-      dragging.dropIndex=+overSlot.dataset.i;
-      dragging.dropBefore=before;
       const rowEl=overSlot.closest('.shelfrow');
       dragging.dropRow=rowEl?+rowEl.dataset.row:null;
+      const targetIdx=+overSlot.dataset.i;
+      const key=targetIdx+':'+(before?'b':'a');
+      if(key!==lastKey){
+        lastKey=key;
+        const curIdx=shelfItemsW.findIndex(it=>it.bookId===dragging.bookId);
+        if(curIdx!==-1&&curIdx!==targetIdx){
+          const item=shelfItemsW[curIdx];
+          shelfItemsW.splice(curIdx,1);
+          let insertAt=targetIdx;
+          if(targetIdx>curIdx)insertAt--;
+          insertAt=before?insertAt:insertAt+1;
+          shelfItemsW.splice(insertAt,0,item);
+          renderShelfEditViz(dragging.bookId);
+        }
+      }
     }else{
       const rowEl=overEl&&overEl.closest&&overEl.closest('.shelfrow');
-      dragging.dropIndex=null;
       dragging.dropRow=rowEl?+rowEl.dataset.row:null;
+      lastKey=null;
     }
   });
   function finish(e){
     if(!dragging)return;
     removeGhost();
-    document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
     if(movedFar){
       const w=wrap();
       const r=w&&w.getBoundingClientRect();
       const inside=r&&e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;
-      if(inside)applyShelfDrag(dragging);
-      else renderShelfEditViz(); /* lâché hors zone : annule, on ré-affiche l'état inchangé */
+      if(inside)finalizeShelfDrag(dragging.bookId,dragging.dropRow);
+      else{shelfItemsW=origSnapshot;renderShelfEditViz();} /* lâché hors zone : annule, on restaure l'ordre d'avant */
     }
-    dragging=null;movedFar=false;
+    dragging=null;movedFar=false;origSnapshot=null;lastKey=null;
   }
   document.addEventListener('pointerup',finish);
   document.addEventListener('pointercancel',finish);
 })();
-function applyShelfDrag(d){
-  const item=shelfItemsW[d.fromIndex];
-  shelfItemsW.splice(d.fromIndex,1);
-  let insertAt;
-  if(d.dropIndex!=null){
-    let idx=d.dropIndex;
-    if(idx>d.fromIndex)idx--;
-    insertAt=d.dropBefore?idx:idx+1;
-  }else{
-    insertAt=shelfItemsW.length;
-  }
-  const targetRow=d.dropRow||null;
-  item.row=targetRow;
-  shelfItemsW.splice(insertAt,0,item);
+function finalizeShelfDrag(bookId,dropRow){
+  const item=shelfItemsW.find(it=>it.bookId===bookId);
+  const targetRow=dropRow||null;
+  if(item)item.row=targetRow;
   /* Un livre à étage fixé se place toujours avant les livres à "Auto" dans sa rangée (voir
      layoutShelfRows) : sans ça, déposer un livre "après" un autre dans une rangée encore en
      mode auto le ferait sauter en tête de rangée au lieu de rester où on l'a lâché. On fixe
