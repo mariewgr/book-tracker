@@ -449,7 +449,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 <header>
   <h1><span data-spr="book" data-spr-size="22"><svg class="icn" style="width:22px;height:22px;color:var(--accent)"><use href="#i-book"/></svg></span> Ma <span>Bibli</span><span class="offlinebadge hidden" id="offlineBadge" title="Hors ligne — tes données locales sont affichées">📴 Hors ligne</span></h1>
   <div style="display:flex;gap:8px">
-    <button class="iconbtn" onclick="openProfile()" title="Profil"><svg class="icn"><use href="#i-user"/></svg></button>
+    <button class="iconbtn" onclick="openProfile()" title="Profil"><span data-spr="user" data-spr-size="20"><svg class="icn"><use href="#i-user"/></svg></span></button>
     <button class="iconbtn" onclick="openSettings()" title="Réglages"><span data-spr="gear" data-spr-size="20"><svg class="icn"><use href="#i-gear"/></svg></span></button>
   </div>
 </header>
@@ -1384,7 +1384,8 @@ const IC_FILES={
   chart:'stats.png',calendar:'calendar.png',refresh:'refresh.png',gear:'settings.png',
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
-  pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png'
+  pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png',
+  user:'profile.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -1397,7 +1398,8 @@ const SPR_FILES={
   pile:'book_pile.png',chart:'stats.png',calendar:'calendar.png',
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
-  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png'
+  human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png',
+  user:'profile.png'
 };
 document.querySelectorAll('[data-spr]').forEach(el=>{
   const f=SPR_FILES[el.dataset.spr];if(!f)return;
