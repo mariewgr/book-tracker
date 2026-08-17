@@ -348,6 +348,9 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 .shelfSlot.dragging{opacity:.35}
 .shelfSlot.dropBefore{box-shadow:-3px 0 0 var(--accent) inset}
 .shelfSlot.dropAfter{box-shadow:3px 0 0 var(--accent) inset}
+/* Livre "soulevé" qui suit le doigt pendant le glisser */
+.shelfGhost{position:fixed;z-index:70;pointer-events:none;margin:0;
+  transform:scale(1.06) rotate(-2deg);filter:drop-shadow(0 10px 18px rgba(0,0,0,.55))}
 .slotDel{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--red);
   color:#fff;border:2px solid var(--bg2);font-size:.7rem;line-height:1;cursor:pointer;display:flex;
   align-items:center;justify-content:center;padding:0;z-index:2}
@@ -3184,9 +3187,25 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelf
    Lâché hors de la zone d'étagère → annulé (pas de suppression accidentelle, on garde ça pour
    le bouton ✕ explicite). Un simple tap (peu de mouvement) reste géré par le onclick du slot. */
 (function(){
-  let dragging=null,movedFar=false;
+  let dragging=null,movedFar=false,ghostEl=null;
   const THRESH=8;
   function wrap(){return document.getElementById('shelfEditViz');}
+  function startGhost(slot,clientX,clientY){
+    const r=slot.getBoundingClientRect();
+    ghostEl=slot.cloneNode(true);
+    const del=ghostEl.querySelector('.slotDel');if(del)del.remove();
+    ghostEl.classList.add('shelfGhost');
+    ghostEl.style.width=r.width+'px';ghostEl.style.height=r.height+'px';
+    ghostEl.dataset.offX=clientX-r.left;ghostEl.dataset.offY=clientY-r.top;
+    ghostEl.style.left=r.left+'px';ghostEl.style.top=r.top+'px';
+    document.body.appendChild(ghostEl);
+  }
+  function moveGhost(clientX,clientY){
+    if(!ghostEl)return;
+    ghostEl.style.left=(clientX-ghostEl.dataset.offX)+'px';
+    ghostEl.style.top=(clientY-ghostEl.dataset.offY)+'px';
+  }
+  function removeGhost(){if(ghostEl){ghostEl.remove();ghostEl=null;}}
   document.addEventListener('pointerdown',e=>{
     const w=wrap();if(!w||!w.contains(e.target))return;
     const slot=e.target.closest('.shelfSlot');
@@ -3201,8 +3220,10 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelf
       if(Math.hypot(dx,dy)<THRESH)return;
       movedFar=true;
       dragging.el.classList.add('dragging');
+      startGhost(dragging.el,e.clientX,e.clientY);
     }
     e.preventDefault();
+    moveGhost(e.clientX,e.clientY);
     document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
     const overEl=document.elementFromPoint(e.clientX,e.clientY);
     const overSlot=overEl&&overEl.closest('.shelfSlot');
@@ -3222,6 +3243,7 @@ function shelfRemove(i){shelfItemsW.splice(i,1);renderShelfEditViz();renderShelf
   });
   function finish(e){
     if(!dragging)return;
+    removeGhost();
     document.querySelectorAll('.shelfSlot.dropBefore,.shelfSlot.dropAfter').forEach(x=>x.classList.remove('dropBefore','dropAfter'));
     if(movedFar){
       const w=wrap();
