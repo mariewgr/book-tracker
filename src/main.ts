@@ -1108,9 +1108,10 @@ const STATUT={tbr:['À lire','b-tbr'],reading:['En cours','b-reading'],done:['Te
 function renderChips(){
   document.getElementById('filterChips').innerHTML=FILTERS.map(([v,l])=>{
     const n=v==='all'?db.books.length:(v==='upcoming'?db.books.filter(isUpcoming).length:db.books.filter(b=>b.statut===v).length);
-    return `<div class="chip ${filter===v?'active':''}" onclick="filter='${v}';renderLib()">${l} (${n})</div>`;
+    return `<div class="chip ${filter===v?'active':''}" onclick="setLibFilter('${v}')">${l} (${n})</div>`;
   }).join('');
 }
+function setLibFilter(v){filter=v;renderLib();}
 /* Recherche unifiée : titre, auteur ou saga */
 function bookMatch(b,q){
   return (b.titre+' '+(b.auteur||'')+' '+(b.saga||'')).toLowerCase().includes(q);
@@ -1268,8 +1269,9 @@ function toggleStatutFields(){
 }
 function renderStars(){
   document.getElementById('starPick').innerHTML=[1,2,3,4,5].map(i=>
-    `<span class="${i<=starVal?'on':''}" onclick="starVal=${i};renderStars()">★</span>`).join('');
+    `<span class="${i<=starVal?'on':''}" onclick="setStarVal(${i})">★</span>`).join('');
 }
+function setStarVal(n){starVal=n;renderStars();}
 /* Notes détaillées (fiche de lecture) */
 const SUBCATS=[['ecriture','Qualité de l\'écriture'],['histoire','Qualité de l\'histoire'],
   ['personnages','Personnages'],['tension','Tension'],['tristesse','Tristesse'],
@@ -3271,6 +3273,7 @@ function attachSwipe(card){
 const MOIS_FULL=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 let calRef=new Date(),calSel=null;
 function calMove(d){calRef=new Date(calRef.getFullYear(),calRef.getMonth()+d,1);calSel=null;renderCal();}
+function selectCalDay(iso){calSel=iso;renderCal();}
 function renderCal(){
   const y=calRef.getFullYear(),m=calRef.getMonth();
   document.getElementById('calTitle').textContent=MOIS_FULL[m]+' '+y;
@@ -3288,7 +3291,7 @@ function renderCal(){
     const cover=fin&&fin[0]&&fin[0].couverture;
     html+=`<div class="calday ${iso===today?'today':''} ${calSel===iso?'sel':''} ${cover?'hascover':''}"
       ${cover?`style="background-image:url('${esc(cover)}')"`:''}
-      onclick="calSel='${iso}';renderCal()">
+      onclick="selectCalDay('${iso}')">
       <div class="dnum">${d}</div>
       ${fin&&!cover?`<div class="fin">${icSvg('book')}</div>`:''}
       ${fin&&fin.length>1?`<div class="calmore">+${fin.length-1}</div>`:''}
@@ -4002,8 +4005,9 @@ function renderPcBookChip(){
   const b=pcBookId&&db.books.find(x=>x.id===pcBookId);
   if(!b){pcBookId='';el.innerHTML='';return;}
   el.innerHTML=`<div class="sitem">${coverEl(b.couverture,'sm')}<span class="nm">${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</span>
-    <button type="button" onclick="pcBookId='';renderPcBookChip()">✕</button></div>`;
+    <button type="button" onclick="clearPcBook()">✕</button></div>`;
 }
+function clearPcBook(){pcBookId='';renderPcBookChip();}
 function pcPickBook(id){
   pcBookId=id;
   document.getElementById('pc_bookSearch').value='';
@@ -4333,6 +4337,7 @@ window.chooseSpine=chooseSpine;
 window.closeBookPreview=closeBookPreview;
 window.closeCropper=closeCropper;
 window.closeFriendProfile=closeFriendProfile;
+window.clearPcBook=clearPcBook;
 window.closeModals=closeModals;
 window.closePostCompose=closePostCompose;
 window.closeProfileVisitor=closeProfileVisitor;
@@ -4415,9 +4420,12 @@ window.sbLogout=sbLogout;
 window.searchCommunitySpines=searchCommunitySpines;
 window.searchOnline=searchOnline;
 window.segPick=segPick;
+window.selectCalDay=selectCalDay;
 window.sendFeedback=sendFeedback;
 window.sendFriendRequest=sendFriendRequest;
+window.setLibFilter=setLibFilter;
 window.setSmut=setSmut;
+window.setStarVal=setStarVal;
 window.setSub=setSub;
 window.sfcToggle=sfcToggle;
 window.shelfAddBook=shelfAddBook;
