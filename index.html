@@ -1009,6 +1009,15 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
     <button class="btn ghost" onclick="closePostCompose()">Annuler</button>
   </div>
 </div>
+
+<!-- APERÇU LIVRE (chez un·e ami·e / dans un post) -->
+<div class="overlay" id="bookPreviewModal" style="z-index:63" onclick="if(event.target===this)closeBookPreview()">
+  <div class="sheet">
+    <div id="bookPreviewBody"></div>
+    <button class="btn" onclick="addBookFromPreview()">➕ Ajouter à ma bibliothèque</button>
+    <button class="btn ghost" onclick="closeBookPreview()">Fermer</button>
+  </div>
+</div>
 </div><!-- /#appRoot -->
 
 <script>
@@ -4527,10 +4536,57 @@ async function saveProfile(){
   toast('Profil enregistré ✅');
 }
 /* ---------- Aperçu visiteur : rendu en lecture seule des sections cochées, dans l'ordre choisi ---------- */
+/* Encode les champs connus d'un livre en attribut data-book (JSON échappé) pour un clic sur
+   sa carte — utilisé aussi bien sur son propre appareil que sur le profil déjà synchronisé
+   d'un·e ami·e (aucune donnée JS partagée dans ce cas, juste le HTML publié : tout ce qu'on
+   peut proposer d'ajouter doit donc être embarqué directement dans le HTML). */
+function bookDataAttr(b){
+  return esc(JSON.stringify({
+    titre:b.titre||'',auteur:b.auteur||'',couverture:b.couverture||'',genre:b.genre||'',
+    pages:b.pages||0,isbn:b.isbn||'',langue:b.langue||'',synopsis:b.synopsis||b.resume||''
+  }));
+}
 function hstripHTML(books){
-  return `<div class="hscroll">${books.map(b=>`<div class="hcard">
+  return `<div class="hscroll">${books.map(b=>`<div class="hcard" style="cursor:pointer" data-book="${bookDataAttr(b)}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
     ${coverEl(b.couverture,'')}<span class="nm">${esc(b.titre)}</span><span class="sub">${esc(b.auteur)||''}</span>
   </div>`).join('')}</div>`;
+}
+let bookPreviewData=null;
+function openBookPreview(d){
+  bookPreviewData=d;
+  document.getElementById('bookPreviewBody').innerHTML=`<div style="text-align:center;margin-bottom:14px">
+    <div style="display:flex;justify-content:center">${coverEl(d.couverture,'lg')}</div>
+    <h2 style="margin:10px 0 2px">${esc(d.titre)}</h2>
+    <div style="color:var(--txt2)">${esc(d.auteur)||'—'}</div>
+  </div>
+  ${(d.genre||d.pages||d.langue)?`<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">
+    ${d.genre?`<span class="chip">${esc(d.genre)}</span>`:''}
+    ${d.pages?`<span class="chip">${d.pages} pages</span>`:''}
+    ${d.langue?`<span class="chip">${esc(d.langue)}</span>`:''}
+  </div>`:''}
+  ${d.synopsis?`<p style="font-size:.85rem;color:var(--txt2);white-space:pre-wrap">${esc(d.synopsis)}</p>`:''}`;
+  document.getElementById('bookPreviewModal').classList.add('open');
+}
+function closeBookPreview(){document.getElementById('bookPreviewModal').classList.remove('open');bookPreviewData=null;}
+function addBookFromPreview(){
+  const d=bookPreviewData;
+  if(!d||!d.titre)return;
+  const exists=db.books.some(b=>(b.titre||'').toLowerCase()===d.titre.toLowerCase()&&(b.auteur||'').toLowerCase()===(d.auteur||'').toLowerCase());
+  if(exists){toast('Ce livre est déjà dans ta bibliothèque 📚');return;}
+  /* Volontairement sans fiche de lecture : ni note, ni avis, ni notes détaillées — ce sont
+     des jugements personnels, pas des infos objectives du livre qu'on peut copier de chez
+     quelqu'un d'autre. Juste les infos du livre lui-même, en « à lire ». */
+  const b={
+    id:uid(),titre:d.titre,auteur:d.auteur||'',saga:'',tome:0,synopsis:d.synopsis||'',citations:[],relectures:0,
+    isbn:d.isbn||'',couverture:d.couverture||'',spine:'',genre:d.genre||'',langue:d.langue||'',dateParution:'',
+    pages:d.pages||0,fiction:true,format:'papier',statut:'tbr',progression:0,pageActuelle:0,note:0,avis:'',
+    fmc:'',mmc:'',tropes:'',resume:'',finNote:'',sousNotes:{},smut:0,recommande:null,dateFin:'',dateAjout:Date.now()
+  };
+  db.books.push(b);
+  save();render();
+  if(b.couverture)cacheExternalCover(b.id);
+  closeBookPreview();
+  toast('Ajouté à ta bibliothèque ✅');
 }
 function profileSectionHTML(key){
   if(key==='reading'){
@@ -4538,7 +4594,7 @@ function profileSectionHTML(key){
     let h='<h2>📖 En cours de lecture</h2>';
     if(!reading.length)return h+'<div class="empty" style="padding:14px">Aucune lecture en cours 🌙</div>';
     reading.forEach(b=>{
-      h+=`<div class="book" style="cursor:default">
+      h+=`<div class="book" style="cursor:pointer" data-book="${bookDataAttr(b)}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
         <div class="top">${coverEl(b.couverture,'')}
           <div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div>
           <div class="meta"><span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span></div></div>
@@ -4830,7 +4886,7 @@ async function renderFeed(){
   el.innerHTML=items.map(it=>{
     if(it.type==='book'){
       const r=it.data,isMe=r.user_id===sbUser.id;
-      return `<div class="book" style="cursor:default">
+      return `<div class="book" style="cursor:pointer" data-book="${bookDataAttr(r)}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
         <div class="top">${coverEl(r.couverture,'')}
           <div class="tinfo"><h3>${esc(r.titre)}</h3><div class="auth">${esc(r.auteur)||'—'}</div>
           <div class="meta"><span style="font-weight:700;color:${isMe?'var(--accent)':'var(--txt2)'}">${esc(nameOf(r.user_id))}</span>${r.note?` <span class="stars">${'★'.repeat(r.note)}</span>`:''}</div></div>
@@ -4850,7 +4906,7 @@ async function renderFeed(){
         <div><div style="font-weight:700;font-size:.85rem">${esc(nameOf(p.user_id))}</div>
         <div style="font-size:.7rem;color:var(--txt2)">${fmtDateFr((p.created_at||'').slice(0,10))}</div></div>
       </div>
-      ${p.book_titre?`<div style="display:flex;gap:8px;align-items:center;background:var(--card2);border-radius:10px;padding:6px;margin-bottom:8px">
+      ${p.book_titre?`<div style="display:flex;gap:8px;align-items:center;background:var(--card2);border-radius:10px;padding:6px;margin-bottom:8px;cursor:pointer" data-book="${bookDataAttr({titre:p.book_titre,auteur:p.book_auteur,couverture:p.book_couverture})}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
         ${coverEl(p.book_couverture,'')}<div style="font-size:.8rem;font-weight:700">${esc(p.book_titre)}${p.book_auteur?`<div style="font-weight:400;color:var(--txt2);font-size:.72rem">${esc(p.book_auteur)}</div>`:''}</div>
       </div>`:''}
       ${p.texte?`<div style="white-space:pre-wrap;font-size:.88rem;margin-bottom:8px">${esc(p.texte)}</div>`:''}
