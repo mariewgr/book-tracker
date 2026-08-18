@@ -1418,8 +1418,16 @@ const I18N={
    donc aucune fonction render()/open*() n'a besoin d'être modifiée individuellement. */
 function curLang(){return (db&&db.settings&&db.settings.lang)||'fr';}
 function t(s){const l=curLang(),d=I18N[l];return (d&&d[s])||s;}
+/* Tant que la langue n'a jamais quitté le français dans cette session, il n'y a rien à
+   traduire NI à restaurer : on peut sauter tout le parcours du DOM (appelé à chaque mutation
+   par l'observateur plus bas — sans ce raccourci, chaque rendu de l'appli, même en français,
+   revisiterait inutilement tout l'arbre). Dès que l'anglais/allemand a été utilisé une fois,
+   on ne le saute plus, pour pouvoir restaurer le français d'origine si on y revient. */
+let i18nEverUsed=false;
 function translatePage(root){
   const l=curLang();
+  if(l!=='fr')i18nEverUsed=true;
+  if(l==='fr'&&!i18nEverUsed)return;
   root=root||document.body;
   if(!root||!root.querySelectorAll)return;
   /* Le HTML statique (modales déjà présentes au chargement) n'est jamais régénéré — une fois
@@ -1799,13 +1807,21 @@ function scheduleSync(){
   clearTimeout(syncTimer);
   syncTimer=setTimeout(doPush,1200);
 }
+let lastProfileSync=0;
 async function doPush(){
   if(!sbUser)return;
   if(syncing){scheduleSync();return;}
   syncing=true;
   try{
     await sbPush();
-    if(db.profile.friendCode)syncPublicProfile();
+    /* Le profil public (recalcul HTML + upload) ne doit pas partir à CHAQUE sync — sur une
+       session d'édition active (plusieurs livres modifiés d'affilée), ça ajoutait une requête
+       réseau supplémentaire à chaque coup, perceptible comme lenteur. Limité à une fois toutes
+       les 5 min automatiquement ; saveProfile() le force en plus immédiatement. */
+    if(db.profile.friendCode&&Date.now()-lastProfileSync>300000){
+      lastProfileSync=Date.now();
+      syncPublicProfile();
+    }
     setSyncStatus('✅ Synchronisé à '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){setSyncStatus('⚠️ Échec de la sync');}
   syncing=false;
@@ -4496,6 +4512,7 @@ async function saveProfile(){
   pfSectionsW.forEach(s=>{db.profile[profileField(s.key)]=s.on;});
   if(pfPhotoData)db.profile.photo=await uploadImage(pfPhotoData,'profile');
   save();closeModals();render();
+  lastProfileSync=Date.now();
   syncPublicProfile();
   toast('Profil enregistré ✅');
 }
