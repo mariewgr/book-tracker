@@ -2013,6 +2013,19 @@ async function uploadImage(dataUrl,name){
     return (data&&data.publicUrl)||dataUrl;
   }catch(e){return dataUrl;}
 }
+/* Fichier quelconque (pas forcément une image) → Supabase Storage. Retourne null si pas
+   connecté ou en cas d'erreur (pas de repli base64 ici : un fichier d'import peut être gros). */
+async function uploadFile(blob,name,contentType){
+  try{
+    const c=await sbClient();
+    if(!c||!sbUser)return null;
+    const path=sbUser.id+'/'+name+'-'+Date.now();
+    const {error}=await c.storage.from('bibli').upload(path,blob,{contentType:contentType||'application/octet-stream',upsert:true});
+    if(error)return null;
+    const {data}=c.storage.from('bibli').getPublicUrl(path);
+    return (data&&data.publicUrl)||null;
+  }catch(e){return null;}
+}
 /* Couvertures récupérées en ligne (recherche, ISBN...) : l'URL externe (Open Library, Google
    Books...) est souvent lente à recharger à chaque affichage. On la télécharge une seule fois,
    juste après l'enregistrement, et on la stocke comme une photo prise depuis le téléphone —
@@ -4170,9 +4183,27 @@ function importData(input){
           {label:'Annuler',ghost:true}
         ]);
       else apply(false);
-    }catch(e){toast('Fichier invalide 😕');}
+    }catch(e){offerImportFailureReport(f);}
   };
   r.readAsText(f);input.value='';
+}
+/* Format non reconnu : propose d'envoyer le fichier (avec le nom de l'appli d'origine) pour
+   qu'on puisse ajouter la prise en charge de ce format, sur le même principe que sendFeedback
+   (mailto + fichier hébergé, mailto n'acceptant pas de pièce jointe). */
+async function sendImportFailureReport(file,appName){
+  toast('Préparation…');
+  const url=sbUser?await uploadFile(file,'import-fail',file.type||'application/json'):null;
+  const fileNote=url?'\n\nFichier : '+url:'\n\n(Fichier non joint — connecte-toi pour pouvoir l\'envoyer)';
+  const body='Fichier d\'import non reconnu, venant de : '+(appName||'(non précisé)')+fileNote+'\n\n— Envoyé depuis Ma Bibli';
+  const mailto='mailto:'+FEEDBACK_EMAIL+'?subject='+encodeURIComponent('Ma Bibli — Format d\'import non reconnu')+'&body='+encodeURIComponent(body);
+  window.location.href=mailto;
+  toast('Ton appli mail va s\'ouvrir avec le fichier prêt 📧');
+}
+function offerImportFailureReport(file){
+  openDlg('Fichier non reconnu 😕 De quelle application vient-il ? On peut t\'aider à l\'importer si tu nous l\'envoies.','',[
+    {label:'Envoyer',fn:v=>sendImportFailureReport(file,(v||'').trim())},
+    {label:'Annuler',ghost:true}
+  ]);
 }
 function closeModals(){document.querySelectorAll('.overlay').forEach(o=>o.classList.remove('open'));}
 
