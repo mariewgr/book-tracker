@@ -134,6 +134,9 @@ const I18N={
     'Scanner le code-barres':'Scan the barcode',
     'Se connecter':'Sign in',
     'Se déconnecter':'Sign out',
+    'Continuer avec Google':'Continue with Google',
+    'Continuer avec Apple':'Continue with Apple',
+    'ou':'or',
     'Smut':'Smut',
     'Statistiques':'Statistics',
     'Statut':'Status',
@@ -332,6 +335,9 @@ const I18N={
     'Scanner le code-barres':'Barcode scannen',
     'Se connecter':'Anmelden',
     'Se déconnecter':'Abmelden',
+    'Continuer avec Google':'Mit Google fortfahren',
+    'Continuer avec Apple':'Mit Apple fortfahren',
+    'ou':'oder',
     'Smut':'Smut',
     'Statistiques':'Statistiken',
     'Statut':'Status',
@@ -618,6 +624,19 @@ async function handleAuthSubmit(){
   }finally{
     btn.disabled=false;
   }
+}
+async function signInWithOAuth(provider){
+  const errEl=document.getElementById('authError');
+  errEl.className='isbnmsg err';errEl.textContent='';
+  if(!navigator.onLine){errEl.textContent='Pas de connexion réseau — la première connexion nécessite du réseau.';return;}
+  let c;
+  try{c=await withTimeout(sbClient(),8000);}catch(e){c=null;}
+  if(!c){errEl.textContent="Impossible de joindre Supabase (réseau ou configuration).";return;}
+  /* Redirection vers Google/Apple puis retour sur cette même page — onAuthStateChange (déjà
+     en place dans initAuth) détecte la session dans l'URL au retour, comme pour le lien de
+     récupération de mot de passe : aucun code de callback séparé n'est nécessaire. */
+  const {error}=await c.auth.signInWithOAuth({provider,options:{redirectTo:location.origin+location.pathname}});
+  if(error){errEl.className='isbnmsg err';errEl.textContent=translateAuthError(error.message||String(error));}
 }
 async function handleForgotPassword(){
   const email=(document.getElementById('authEmail').value||'').trim();
@@ -4307,6 +4326,7 @@ window.esc=esc;
 window.exportData=exportData;
 window.genRecap=genRecap;
 window.handleAuthSubmit=handleAuthSubmit;
+window.signInWithOAuth=signInWithOAuth;
 window.handleForgotPassword=handleForgotPassword;
 window.handleResetPassword=handleResetPassword;
 window.imgFallback=imgFallback;
