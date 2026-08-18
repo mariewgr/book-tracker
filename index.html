@@ -1481,11 +1481,11 @@ function normalizeDb(d){
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.settings.lang=d.settings.lang||'fr';
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
-  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicPal:false,publicDone:false,publicBadges:false,friendCode:''};
-  d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','pal','shelves','done','badges'];
-  /* Ajoute les sections PAL/Livres terminés (nouvelles) aux profils déjà réglés avant leur
-     existence, sans perturber l'ordre déjà choisi pour les sections existantes. */
-  ['pal','done'].forEach(k=>{if(!d.profile.sectionOrder.includes(k))d.profile.sectionOrder.push(k);});
+  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicPal:false,publicDone:false,publicCoups:false,publicBadges:false,friendCode:''};
+  d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','pal','shelves','done','coups','badges'];
+  /* Ajoute les sections PAL/Livres terminés/Coups de cœur (nouvelles) aux profils déjà réglés
+     avant leur existence, sans perturber l'ordre déjà choisi pour les sections existantes. */
+  ['pal','done','coups'].forEach(k=>{if(!d.profile.sectionOrder.includes(k))d.profile.sectionOrder.push(k);});
   /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
   d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
   return d;
@@ -4469,7 +4469,7 @@ function renderProfilePreview(){
     ?`<img src="${url}" style="width:88px;height:88px;object-fit:cover;border-radius:50%;display:block;margin-top:6px">`
     :'<div class="isbnmsg" style="margin-top:6px">Aucune photo pour l\'instant.</div>';
 }
-const PROFILE_SECTIONS={reading:'Livres en cours de lecture et leur avancement',stats:'Statistiques',pal:'Ma PAL',shelves:'Étagères',done:'Livres terminés',badges:'Badges'};
+const PROFILE_SECTIONS={reading:'Livres en cours de lecture et leur avancement',stats:'Statistiques',pal:'Ma PAL',shelves:'Étagères',done:'Livres terminés',coups:'Coups de cœur',badges:'Badges'};
 const profileField=key=>'public'+key.charAt(0).toUpperCase()+key.slice(1);
 let pfSectionsW=[];
 function renderProfileSections(){
@@ -4581,6 +4581,12 @@ function profileSectionHTML(key){
     if(!done.length)return h+'<div class="empty" style="padding:14px">Aucun livre terminé pour l\'instant 🌙</div>';
     return h+hstripHTML(done);
   }
+  if(key==='coups'){
+    const coups=db.books.filter(b=>b.statut==='done'&&b.note>=5);
+    let h=`<h2>💖 Coups de cœur (${coups.length})</h2>`;
+    if(!coups.length)return h+'<div class="empty" style="padding:14px">Aucun coup de cœur pour l\'instant 🌙</div>';
+    return h+hstripHTML(coups);
+  }
   if(key==='badges'){
     const taille=db.settings.taille||165;
     const doneAll=db.books.filter(b=>b.statut==='done');
@@ -4624,7 +4630,7 @@ function genFriendCode(){
    visiteur), envoyé au cloud pour que les ami·e·s voient le vrai profil tel que réglé dans
    Profil → « Visible publiquement », pas seulement ses livres terminés. */
 function computeProfileHTML(){
-  const order=(db.profile.sectionOrder&&db.profile.sectionOrder.length)?db.profile.sectionOrder:['reading','stats','pal','shelves','done','badges'];
+  const order=(db.profile.sectionOrder&&db.profile.sectionOrder.length)?db.profile.sectionOrder:['reading','stats','pal','shelves','done','coups','badges'];
   const on=order.filter(key=>db.profile[profileField(key)]);
   return on.map(profileSectionHTML).join('');
 }
