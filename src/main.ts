@@ -1039,7 +1039,7 @@ function renderHome(){
   let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
     <div class="stat"><div class="n">${reading.length}</div><div class="l">En cours</div></div>
     <div class="stat"><div class="n">${doneY}</div><div class="l">Terminés en ${year}</div></div>
-    <div class="stat"><div class="n">${icSvg('streak')} ${streak}</div><div class="l">Jour${streak>1?'s':''} d'affilée</div></div>
+    <div class="stat"><div class="n">🔥 ${streak}</div><div class="l">Jour${streak>1?'s':''} d'affilée</div></div>
   </div>`;
   if(obj>0){
     const pct=Math.min(100,Math.round(doneY/obj*100));
