@@ -165,27 +165,26 @@ const I18N={
     'À lire':'To read',
     'Étagère liée':'Linked shelf',
     'Étagères':'Shelves',
-    '↺ Reprendre':'↺ Retake',
-    '☀️ Clair':'☀️ Light',
-    '✂️ Rogner et utiliser':'✂️ Crop and use',
+    'Reprendre':'Retake',
+    'Rogner et utiliser':'Crop and use',
     '✍️ Nouveau post':'✍️ New post',
-    '✓ Utiliser':'✓ Use',
-    '⬆️ Importer une sauvegarde':'⬆️ Import a backup',
-    '⬇️ Exporter mes données (JSON)':'⬇️ Export my data (JSON)',
+    'Utiliser':'Use',
+    'Importer une sauvegarde':'Import a backup',
+    'Exporter mes données (JSON)':'Export my data (JSON)',
     '＋ Étagère liée à une saga / parutions à venir':'＋ Shelf linked to a series / upcoming releases',
-    '🌐 Chercher sur Google Images':'🌐 Search on Google Images',
-    '🌐 Recherche en ligne':'🌐 Online search',
-    '🌙 Sombre':'🌙 Dark',
-    '🎉 Générer mon récap de l\'année':'🎉 Generate my year recap',
-    '🎉 J\'ai terminé ce livre !':'🎉 I finished this book!',
-    '👀 Voir comme un·e visiteur·se':'👀 View as a visitor',
-    '👍 Oui':'👍 Yes',
-    '👎 Non':'👎 No',
+    'Chercher sur Google Images':'Search on Google Images',
+    'Recherche en ligne':'Online search',
+    'Sombre':'Dark',
+    'Générer mon récap de l\'année':'Generate my year recap',
+    'J\'ai terminé ce livre !':'I finished this book!',
+    'Voir comme un·e visiteur·se':'View as a visitor',
+    'Oui':'Yes',
+    'Non':'No',
     '👥 Communauté Ma Bibli':'👥 My Library community',
-    '💬 Remarque / signaler un bug':'💬 Feedback / report a bug',
-    '📋 Copier mon code':'📋 Copy my code',
-    '📖 Récupérer les résumés manquants':'📖 Fetch missing summaries',
-    '📴 Hors ligne':'📴 Offline',
+    'Remarque / signaler un bug':'Feedback / report a bug',
+    'Copier mon code':'Copy my code',
+    'Récupérer les résumés manquants':'Fetch missing summaries',
+    'Hors ligne':'Offline',
     '📷 Ajouter une photo':'📷 Add a photo',
     '📷 Choisir une photo':'📷 Choose a photo',
     '🔄 Synchroniser mes livres terminés':'🔄 Sync my finished books',
@@ -364,27 +363,26 @@ const I18N={
     'À lire':'Zu lesen',
     'Étagère liée':'Verknüpftes Regal',
     'Étagères':'Regale',
-    '↺ Reprendre':'↺ Wiederholen',
-    '☀️ Clair':'☀️ Hell',
-    '✂️ Rogner et utiliser':'✂️ Zuschneiden und verwenden',
+    'Reprendre':'Wiederholen',
+    'Rogner et utiliser':'Zuschneiden und verwenden',
     '✍️ Nouveau post':'✍️ Neuer Beitrag',
-    '✓ Utiliser':'✓ Verwenden',
-    '⬆️ Importer une sauvegarde':'⬆️ Sicherung importieren',
-    '⬇️ Exporter mes données (JSON)':'⬇️ Meine Daten exportieren (JSON)',
+    'Utiliser':'Verwenden',
+    'Importer une sauvegarde':'Sicherung importieren',
+    'Exporter mes données (JSON)':'Meine Daten exportieren (JSON)',
     '＋ Étagère liée à une saga / parutions à venir':'＋ Regal verknüpft mit Reihe / kommenden Veröffentlichungen',
-    '🌐 Chercher sur Google Images':'🌐 Auf Google Bilder suchen',
-    '🌐 Recherche en ligne':'🌐 Online-Suche',
-    '🌙 Sombre':'🌙 Dunkel',
-    '🎉 Générer mon récap de l\'année':'🎉 Meinen Jahresrückblick erstellen',
-    '🎉 J\'ai terminé ce livre !':'🎉 Ich habe dieses Buch beendet!',
-    '👀 Voir comme un·e visiteur·se':'👀 Als Besucher·in ansehen',
-    '👍 Oui':'👍 Ja',
-    '👎 Non':'👎 Nein',
+    'Chercher sur Google Images':'Auf Google Bilder suchen',
+    'Recherche en ligne':'Online-Suche',
+    'Sombre':'Dunkel',
+    'Générer mon récap de l\'année':'Meinen Jahresrückblick erstellen',
+    'J\'ai terminé ce livre !':'Ich habe dieses Buch beendet!',
+    'Voir comme un·e visiteur·se':'Als Besucher·in ansehen',
+    'Oui':'Ja',
+    'Non':'Nein',
     '👥 Communauté Ma Bibli':'👥 Meine-Bibliothek-Community',
-    '💬 Remarque / signaler un bug':'💬 Feedback / Fehler melden',
-    '📋 Copier mon code':'📋 Meinen Code kopieren',
-    '📖 Récupérer les résumés manquants':'📖 Fehlende Zusammenfassungen abrufen',
-    '📴 Hors ligne':'📴 Offline',
+    'Remarque / signaler un bug':'Feedback / Fehler melden',
+    'Copier mon code':'Meinen Code kopieren',
+    'Récupérer les résumés manquants':'Fehlende Zusammenfassungen abrufen',
+    'Hors ligne':'Offline',
     '📷 Ajouter une photo':'📷 Foto hinzufügen',
     '📷 Choisir une photo':'📷 Foto auswählen',
     '🔄 Synchroniser mes livres terminés':'🔄 Meine beendeten Bücher synchronisieren',
@@ -558,7 +556,7 @@ async function offlineFallback(){
 }
 window.addEventListener('offline',()=>{
   setOfflineBadge(true);
-  if(sbUser)toast('📴 Hors ligne — tes modifications seront synchronisées au retour du réseau');
+  if(sbUser)toast('Hors ligne — tes modifications seront synchronisées au retour du réseau');
 });
 window.addEventListener('online',async()=>{
   toast('🔌 Connexion rétablie…');
@@ -925,7 +923,14 @@ const IC_FILES={
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
   pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png',
-  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png'
+  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
+  recap:'recap.png',retry:'retry.png',sun:'sun.png',moon:'moon.png',rogner:'rogner.png',
+  check:'check.png',import:'import.png',export:'export.png',web:'web.png',preview:'preview.png',
+  thumbsup:'thumbsup.png',thumbsdown:'thumbsdown.png',comment:'comment.png',copy:'copy.png',
+  badge:'badge.png',heart:'heart.png',add:'add.png',send:'send.png',delete:'delete.png',
+  target:'target.png',streak:'streak.png',offline:'offline.png',empty:'empty.png',
+  finished:'finished.png',summary:'summary.png',cat:'cat.png',dog:'dog.png',panda:'panda.png',
+  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -939,7 +944,14 @@ const SPR_FILES={
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
   human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png',
-  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png'
+  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
+  recap:'recap.png',retry:'retry.png',sun:'sun.png',moon:'moon.png',rogner:'rogner.png',
+  check:'check.png',import:'import.png',export:'export.png',web:'web.png',preview:'preview.png',
+  thumbsup:'thumbsup.png',thumbsdown:'thumbsdown.png',comment:'comment.png',copy:'copy.png',
+  badge:'badge.png',heart:'heart.png',add:'add.png',send:'send.png',delete:'delete.png',
+  target:'target.png',streak:'streak.png',offline:'offline.png',empty:'empty.png',
+  finished:'finished.png',summary:'summary.png',cat:'cat.png',dog:'dog.png',panda:'panda.png',
+  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png'
 };
 function applySpr(root){
   (root||document).querySelectorAll('[data-spr]').forEach(el=>{
@@ -1027,7 +1039,7 @@ function renderHome(){
   let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
     <div class="stat"><div class="n">${reading.length}</div><div class="l">En cours</div></div>
     <div class="stat"><div class="n">${doneY}</div><div class="l">Terminés en ${year}</div></div>
-    <div class="stat"><div class="n">🔥 ${streak}</div><div class="l">Jour${streak>1?'s':''} d'affilée</div></div>
+    <div class="stat"><div class="n">${icSvg('streak')} ${streak}</div><div class="l">Jour${streak>1?'s':''} d'affilée</div></div>
   </div>`;
   if(obj>0){
     const pct=Math.min(100,Math.round(doneY/obj*100));
@@ -1039,12 +1051,12 @@ function renderHome(){
     </div>`;
   }else{
     out+=`<div class="book" style="cursor:pointer;margin-top:10px" onclick="editObjectif()">
-      <div style="font-size:.85rem;color:var(--txt2)">🎯 Appuie pour définir un objectif de lecture ${year}</div>
+      <div style="font-size:.85rem;color:var(--txt2)">${icSvg('target')} Appuie pour définir un objectif de lecture ${year}</div>
     </div>`;
   }
   out+=`<h2>Mes lectures en cours</h2>`;
   if(!reading.length)
-    out+=`<div class="empty">Aucune lecture en cours 🌙<br>Passe un livre « En cours » depuis la Bibli !</div>`;
+    out+=`<div class="empty">${icSvg('empty')} Aucune lecture en cours<br>Passe un livre « En cours » depuis la Bibli !</div>`;
   reading.forEach(b=>{
     out+=`<div class="book" onclick="openInfo('${b.id}')">
       <div class="top">${coverEl(b.couverture,'')}
@@ -1062,7 +1074,7 @@ function renderHome(){
       out+=`<div class="book" onclick="openInfo('${b.id}')">
         <div class="top">${coverEl(b.couverture,'')}
           <div class="tinfo"><h3>${esc(b.titre)}</h3><div class="auth">${esc(b.auteur)||'—'}</div></div>
-          <span style="color:var(--accent2);font-weight:700;white-space:nowrap">🔜 ${fmtDateFr(b.dateParution)}</span>
+          <span style="color:var(--accent2);font-weight:700;white-space:nowrap">${icSvg('soon')} ${fmtDateFr(b.dateParution)}</span>
         </div>
       </div>`;
     });
@@ -1210,7 +1222,7 @@ function renderLib(){
         ${b.genre?`<span>${icSvg('tag')} ${esc(b.genre)}</span>`:''}
         ${b.saga?`<span>${icSvg('saga')} ${esc(b.saga)}${b.tome?' T'+b.tome:''}</span>`:''}
         ${b.pages?`<span>${b.pages} p.</span>`:''}
-        ${isUpcoming(b)?`<span style="color:var(--accent2);font-weight:700">🔜 Sortie le ${fmtDateFr(b.dateParution)}</span>`:''}
+        ${isUpcoming(b)?`<span style="color:var(--accent2);font-weight:700">${icSvg('soon')} Sortie le ${fmtDateFr(b.dateParution)}</span>`:''}
         ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<span class="stars">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</span>`:''}
         ${b.statut==='reading'?`<span style="color:var(--accent);font-weight:700">${fmt(b)==='papier'&&b.pages?`p. ${b.pageActuelle||0}/${b.pages}`:(b.progression||0)+' %'}</span>`:''}
         ${b.statut==='dnf'&&b.progression?`<span style="color:var(--red);font-weight:700">arrêté à ${b.progression} %</span>`:''}
@@ -1788,7 +1800,7 @@ function closeScanner(){
 
 /* ---------- Défi pile ---------- */
 const MILESTONES=[
-  ['🐱','Chat',25],['🐶','Beagle',40],['🐼','Panda assis',90],
+  [icSvg('cat'),'Chat',25],[icSvg('dog'),'Beagle',40],[icSvg('panda'),'Panda assis',90],
   ['🧍‍♀️','Ta taille !',null],['🦩','Autruche',250],['🦒','Girafe',500],
 ];
 const COLORS=['#8b5cf6','#c9a2ff','#f5c86e','#6ee7a8','#7fc5ff','#ff9ad5','#ff8a8a'];
@@ -1811,7 +1823,7 @@ function defiCardHTML(){
     const dx=(hash%15)-7;
     const rot=(((hash>>3)%5)-2)*0.5;
     return `<div class="sbook r" style="height:${Math.max(4,thickness(b)*scale)}px;--c:${col};transform:translateX(${dx}px) rotate(${rot}deg)" title="${esc(b.titre)}"></div>`;
-  }).join('')||'<div style="color:var(--txt2);font-size:.8rem">Pas encore de pile 🌱</div>';
+  }).join('')||`<div style="color:var(--txt2);font-size:.8rem">${icSvg('empty')} Pas encore de pile</div>`;
   const fallback="this.replaceWith(Object.assign(document.createElement('div'),{innerHTML:'<svg viewBox=\\'0 0 60 180\\' style=\\'height:176px\\'><g fill=\\'#8b5cf6\\'><circle cx=\\'30\\' cy=\\'11\\' r=\\'9\\'/><path d=\\'M30 21c-10 0-14 9-15 21l-5 35c7 5 33 5 40 0l-5-35c-1-12-5-21-15-21z\\'/><rect x=\\'21\\' y=\\'75\\' width=\\'7.5\\' height=\\'99\\' rx=\\'3.5\\'/><rect x=\\'31.5\\' y=\\'75\\' width=\\'7.5\\' height=\\'99\\' rx=\\'3.5\\'/></g></svg>'}))";
   return `<div class="challenge-card" onclick="toggleDefiScope()" style="cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -2490,10 +2502,10 @@ function openInfo(id){
         ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<div class="stars" style="margin-top:8px;font-size:1.1rem">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</div>`:''}
       </div>
     </div>
-    ${b.statut==='done'?`<button class="btn ghost" style="margin:4px 0 10px" onclick="rereadBook('${b.id}')">↺ J'ai relu ce livre${b.relectures?' — déjà '+(1+b.relectures)+' lectures':''}</button>`:''}
+    ${b.statut==='done'?`<button class="btn ghost" style="margin:4px 0 10px" onclick="rereadBook('${b.id}')">${icSvg('retry')} J'ai relu ce livre${b.relectures?' — déjà '+(1+b.relectures)+' lectures':''}</button>`:''}
     ${rows.map(([l,v])=>`<div class="inforow"><span>${l}</span><b>${esc(String(v))}</b></div>`).join('')}
     ${subHtml?`<div style="margin-top:12px;font-weight:700;font-size:.85rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Notes détaillées</div>${subHtml}`:''}
-    ${b.synopsis?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--txt2);cursor:pointer;font-weight:700">📖 Résumé du livre</summary><div style="margin-top:6px">${esc(b.synopsis)}</div></details>`:''}
+    ${b.synopsis?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--txt2);cursor:pointer;font-weight:700">${icSvg('summary')} Résumé du livre</summary><div style="margin-top:6px">${esc(b.synopsis)}</div></details>`:''}
     ${b.resume?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Mon résumé :</span><br>${esc(b.resume)}</div>`:''}
     ${b.finNote?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--gold);cursor:pointer;font-weight:700">⚠️ La fin (spoilers)</summary><div style="margin-top:6px">${esc(b.finNote)}</div></details>`:''}
     ${b.avis?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Commentaires :</span><br>${esc(b.avis)}</div>`:''}
@@ -2669,7 +2681,7 @@ function sfcToggle(k){sfcSel.has(k)?sfcSel.delete(k):sfcSel.add(k);renderSfc();}
 function renderSfc(){
   const up=upcomingBooks();
   document.getElementById('sfcPick').innerHTML=
-    (up.length?`<div class="chip ${sfcSel.has('upcoming|upcoming')?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="upcoming|upcoming">🔜 Livres à paraître (${up.length})</div>`:'')+
+    (up.length?`<div class="chip ${sfcSel.has('upcoming|upcoming')?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="upcoming|upcoming">${icSvg('soon')} Livres à paraître (${up.length})</div>`:'')+
     sagaNames().map(n=>{
       const k='saga|'+n;
       return `<div class="chip ${sfcSel.has(k)?'active':''}" onclick="sfcToggle(this.dataset.k)" data-k="${esc(k)}">${esc(n)} (${sagaBooks(n).length} t.)</div>`;
@@ -3148,7 +3160,7 @@ async function discLoad(){
 }
 function renderDisc(){
   const el=document.getElementById('discWrap');if(!el)return;
-  if(discLoading){el.innerHTML='<div class="empty">🔮 Je cherche des livres qui devraient te plaire…</div>';return;}
+  if(discLoading){el.innerHTML=`<div class="empty">${icSvg('crystalball')} Je cherche des livres qui devraient te plaire…</div>`;return;}
   if(!discCards.length){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('search')}</span>
       ${discTried
@@ -3259,7 +3271,7 @@ function renderCal(){
   const fin=finBy[calSel]||[],ses=db.sessions.filter(s=>s.date===calSel);
   const dstr=new Date(calSel+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
   let out=`<h2>${dstr}</h2>`;
-  if(!fin.length&&!ses.length)out+='<div class="empty" style="padding:14px">Rien noté ce jour-là 🌙</div>';
+  if(!fin.length&&!ses.length)out+=`<div class="empty" style="padding:14px">${icSvg('empty')} Rien noté ce jour-là</div>`;
   fin.forEach(b=>out+=`<div class="mile" style="cursor:pointer" onclick="openInfo('${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">Terminé : ${esc(b.titre)}</span>${b.note?`<span class="h stars">${'★'.repeat(b.note)}</span>`:''}</div>`);
   ses.forEach(s=>{
     const bk=db.books.find(b=>b.id===s.bookId);
@@ -3423,7 +3435,7 @@ async function backfillSynopsis(){
   }
   save();render();
   btn.disabled=false;
-  btn.textContent='📖 Récupérer les résumés manquants';
+  btn.innerHTML=icSvg('summary')+' Récupérer les résumés manquants';
   if(!ok&&gbFail>0)toast('⚠️ Google Books semble inaccessible depuis ton réseau ('+gbFail+' échecs) — Open Library n\'a rien trouvé non plus');
   else toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
 }
@@ -3575,7 +3587,7 @@ function profileSectionHTML(key){
   if(key==='reading'){
     const reading=db.books.filter(b=>b.statut==='reading');
     let h='<h2>📖 En cours de lecture</h2>';
-    if(!reading.length)return h+'<div class="empty" style="padding:14px">Aucune lecture en cours 🌙</div>';
+    if(!reading.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucune lecture en cours</div>`;
     reading.forEach(b=>{
       h+=`<div class="book" style="cursor:pointer" data-book="${bookDataAttr(b)}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
         <div class="top">${coverEl(b.couverture,'')}
@@ -3601,29 +3613,29 @@ function profileSectionHTML(key){
   if(key==='pal'){
     const tbr=db.books.filter(b=>b.statut==='tbr');
     let h=`<h2>📖 Ma PAL (${tbr.length})</h2>`;
-    if(!tbr.length)return h+'<div class="empty" style="padding:14px">Aucun livre à lire pour l\'instant 🌙</div>';
+    if(!tbr.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun livre à lire pour l'instant</div>`;
     const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
     return h+shelfVisual(pal);
   }
   if(key==='shelves'){
     let h='<h2>📚 Étagères</h2>';
-    if(!db.shelves.length)return h+'<div class="empty" style="padding:14px">Aucune étagère 🌙</div>';
+    if(!db.shelves.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucune étagère</div>`;
     db.shelves.forEach(s=>{
       const books=(s.items||[]).map(it=>db.books.find(b=>b.id===it.bookId)).filter(Boolean);
-      h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${books.length?hstripHTML(books):'<div class="empty" style="padding:14px">Étagère vide 🌙</div>'}`;
+      h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${books.length?hstripHTML(books):`<div class="empty" style="padding:14px">${icSvg('empty')} Étagère vide</div>`}`;
     });
     return h;
   }
   if(key==='done'){
     const done=db.books.filter(b=>b.statut==='done');
-    let h=`<h2>✅ Livres terminés (${done.length})</h2>`;
-    if(!done.length)return h+'<div class="empty" style="padding:14px">Aucun livre terminé pour l\'instant 🌙</div>';
+    let h=`<h2>${icSvg('finished')} Livres terminés (${done.length})</h2>`;
+    if(!done.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun livre terminé pour l'instant</div>`;
     return h+hstripHTML(done);
   }
   if(key==='coups'){
     const coups=db.books.filter(b=>b.statut==='done'&&b.note>=5);
-    let h=`<h2>💖 Coups de cœur (${coups.length})</h2>`;
-    if(!coups.length)return h+'<div class="empty" style="padding:14px">Aucun coup de cœur pour l\'instant 🌙</div>';
+    let h=`<h2>${icSvg('heart')} Coups de cœur (${coups.length})</h2>`;
+    if(!coups.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun coup de cœur pour l'instant</div>`;
     return h+hstripHTML(coups);
   }
   if(key==='badges'){
@@ -3631,8 +3643,8 @@ function profileSectionHTML(key){
     const doneAll=db.books.filter(b=>b.statut==='done');
     const hgt=+doneAll.reduce((s,b)=>s+thickness(b),0).toFixed(1);
     const reached=MILESTONES.map(([e,n,v])=>[e,n,v===null?taille:v]).filter(([,,v])=>hgt>=v);
-    let h='<h2>🏆 Badges</h2>';
-    if(!reached.length)return h+'<div class="empty" style="padding:14px">Aucun badge débloqué pour l\'instant 🌱</div>';
+    let h=`<h2>${icSvg('badge')} Badges</h2>`;
+    if(!reached.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun badge débloqué pour l'instant</div>`;
     return h+`<div style="display:flex;flex-wrap:wrap;gap:10px">${reached.map(([e,n])=>
       `<div class="mile reached" style="flex:none"><span class="emo">${e}</span><span class="name">${esc(n)}</span><span class="check">✓</span></div>`
     ).join('')}</div>`;
@@ -3645,7 +3657,7 @@ function openProfileVisitor(){
   let out=`<div style="text-align:center;margin-bottom:20px">
     <div style="display:flex;justify-content:center;margin-bottom:10px">${avatarHTML(photo,96)}</div>
     <h2 style="margin:0">${esc(name)}</h2>
-    <div style="color:var(--txt2);font-size:.8rem;margin-top:4px">👀 Aperçu — ce que verrait un·e visiteur·se</div>
+    <div style="color:var(--txt2);font-size:.8rem;margin-top:4px">${icSvg('preview')} Aperçu — ce que verrait un·e visiteur·se</div>
   </div>`;
   const sections=pfSectionsW.filter(s=>s.on);
   out+=sections.length?sections.map(s=>profileSectionHTML(s.key)).join(''):'<div class="empty">Rien n\'est encore visible publiquement.<br>Coche au moins une section ci-dessus.</div>';
@@ -3717,7 +3729,7 @@ async function openFriendProfile(uid){
       <div style="display:flex;justify-content:center">${avatarHTML(photo,88)}</div>
       <h2 style="margin:10px 0 0">${esc(nom)}</h2>
     </div>`;
-    out+=(prof&&prof.html)?prof.html:'<div class="empty">Rien n\'est visible publiquement sur ce profil pour l\'instant 🌙</div>';
+    out+=(prof&&prof.html)?prof.html:`<div class="empty">${icSvg('empty')} Rien n'est visible publiquement sur ce profil pour l'instant</div>`;
     document.getElementById('friendProfileBody').innerHTML=out;
   }catch(e){
     document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg err">⚠️ Impossible de charger ce profil — la colonne "html" existe-t-elle sur bibli_public_profiles ? (voir le script SQL fourni)</div>';
@@ -3896,13 +3908,13 @@ async function renderFeed(){
       ${(p.photos&&p.photos.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${p.photos.map(u=>`<img src="${esc(u)}" loading="lazy" style="width:90px;height:90px;object-fit:cover;border-radius:8px">`).join('')}</div>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
         ${REACTION_EMOJIS.map(em=>`<button class="smallbtn" style="${mine.has(em)?'border-color:var(--accent);color:var(--accent)':''}" onclick="toggleReaction('${p.id}','${em}')">${em}${grouped[em]?' '+grouped[em]:''}</button>`).join('')}
-        <button class="smallbtn" onclick="toggleComments('${p.id}')">💬 ${postComments.length||''} Commentaire${postComments.length>1?'s':''}</button>
-        ${p.user_id===sbUser.id?`<button class="smallbtn" style="color:var(--red)" onclick="deletePost('${p.id}')">🗑️</button>`:''}
+        <button class="smallbtn" onclick="toggleComments('${p.id}')">${icSvg('comment')} ${postComments.length||''} Commentaire${postComments.length>1?'s':''}</button>
+        ${p.user_id===sbUser.id?`<button class="smallbtn" style="color:var(--red)" onclick="deletePost('${p.id}')">${icSvg('delete')}</button>`:''}
       </div>
       <div id="comments-${p.id}" class="hidden">
         ${postComments.map(cm=>`<div class="sitem">${avatarHTML(photoOf(cm.user_id),24)}<span class="nm"><b>${esc(nameOf(cm.user_id))}</b> ${esc(cm.texte)}</span></div>`).join('')}
         <div class="isbnrow"><input id="cinput-${p.id}" placeholder="Écrire un commentaire…" onkeydown="if(event.key==='Enter'){event.preventDefault();addComment('${p.id}');}">
-        <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 14px" onclick="addComment('${p.id}')">➤</button></div>
+        <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 14px" onclick="addComment('${p.id}')">${icSvg('send')}</button></div>
       </div>
     </div>`;
   }).join('');
