@@ -2,16 +2,26 @@
 
 ## 1. Mettre l'app en ligne (GitHub Pages, gratuit)
 
+Depuis le passage du code à TypeScript (voir §7), l'app n'est plus un simple `index.html` à
+envoyer tel quel : elle doit être **compilée** avant d'être publiée. Ça se fait automatiquement
+via GitHub Actions à chaque envoi de code — il faut juste l'activer une fois.
+
 1. Crée un compte gratuit sur [github.com](https://github.com) (si tu n'en as pas).
 2. Clique sur **+** en haut à droite → **New repository**.
    - Nom : `ma-bibli`
    - Coche **Public** → **Create repository**.
-3. Sur la page du dépôt : **uploading an existing file** (ou Add file → Upload files).
-4. Glisse le fichier `index.html` → **Commit changes**.
-5. Va dans **Settings** → **Pages** (menu de gauche).
-   - Source : **Deploy from a branch**, Branch : **main** / (root) → **Save**.
-6. Attends 1 à 2 minutes. Ton app est en ligne à :
-   `https://TON-PSEUDO.github.io/ma-bibli/`
+3. Envoie tout le contenu du projet (dossier `src/`, `public/`, `.github/`, `index.html`,
+   `package.json`, `vite.config.ts`, `tsconfig.json`…) dans le dépôt — le plus simple est
+   d'utiliser `git push` depuis un terminal plutôt que le glisser-déposer web (voir §7 pour
+   les commandes).
+4. Va dans **Settings** → **Pages** (menu de gauche).
+   - Source : choisis **GitHub Actions** (et non « Deploy from a branch »).
+5. Va dans l'onglet **Actions** du dépôt : le premier envoi de code déclenche automatiquement
+   le workflow *Build and deploy to GitHub Pages*. Attends qu'il passe au vert (1 à 2 minutes).
+6. Ton app est en ligne à : `https://TON-PSEUDO.github.io/ma-bibli/`
+
+Pour toute modification future : `git push` sur `main` republie automatiquement la nouvelle
+version — plus besoin de re-uploader un fichier à la main.
 
 ## 2. Ajouter le raccourci sur ton iPhone
 
@@ -314,3 +324,43 @@ Pour remplir un livre en photographiant une fiche de lecture manuscrite :
 ## 6. Réglage du défi
 
 ⚙️ → entre ta taille en cm. Chaque livre terminé ajoute son épaisseur à la pile (réelle si tu la renseignes, sinon estimée d'après le nombre de pages).
+
+## 7. Développer en local (TypeScript + Vite)
+
+Le code est passé d'un unique `index.html` (HTML + tout le JS mélangé dedans) à une vraie
+structure de projet, pour rester lisible à mesure que l'app grossit :
+
+```
+book-tracker/
+  index.html        squelette HTML (structure des pages, quasi plus de logique)
+  src/
+    main.ts         toute la logique de l'app (TypeScript)
+    style.css       tout le CSS
+  public/           images, manifest, service worker — copiés tels quels au build
+  package.json, vite.config.ts, tsconfig.json
+```
+
+**Lancer l'app en local** (nécessite [Node.js](https://nodejs.org)) :
+
+```bash
+npm install   # une seule fois
+npm run dev   # démarre le serveur de développement (rechargement automatique)
+```
+
+**Construire la version publiée** (fait automatiquement par GitHub Actions à chaque push,
+inutile de le faire à la main sauf pour vérifier avant d'envoyer) :
+
+```bash
+npm run build     # génère dist/
+npm run preview   # sert dist/ pour vérifier le résultat final
+```
+
+Note sur le TypeScript : le typage est actuellement permissif (`strict: false` dans
+`tsconfig.json`) — le code migré depuis l'ancien `index.html` fonctionne tel quel sans qu'il
+ait fallu annoter chaque variable. Le typage peut être resserré progressivement au fil des
+modifications, fichier par fichier, sans tout casser d'un coup.
+
+Les fonctions appelées depuis des attributs `onclick="..."` dans le HTML (partout dans l'app)
+sont explicitement exposées sur `window` à la fin de `src/main.ts` — c'est nécessaire en
+module ES (contrairement à un `<script>` classique) et permet de garder ces centaines
+d'attributs HTML inchangés plutôt que de tout réécrire en écouteurs d'évènements.

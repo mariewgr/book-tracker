@@ -1,5 +1,5 @@
 /* Ma Bibli — service worker : app 100 % hors ligne */
-const CACHE='mabibli-v5';
+const CACHE='mabibli-v6'; /* v6 : passage à un build Vite (fichiers JS/CSS mis en cache dynamiquement) */
 const ASSETS=['./','./index.html','./book.png','./shelf.png','./rank.png',
   './book_pile.png','./stats.png','./calendar.png','./refresh.png','./settings.png','./paper.png',
   './numeric.png','./audio.png','./human.png','./search.png','./modify.png','./photo.png',
