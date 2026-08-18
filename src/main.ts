@@ -3925,7 +3925,7 @@ async function renderFeed(){
       ${(p.photos&&p.photos.length)?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">${p.photos.map(u=>`<img src="${esc(u)}" loading="lazy" style="width:90px;height:90px;object-fit:cover;border-radius:8px">`).join('')}</div>`:''}
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
         ${REACTION_EMOJIS.map(em=>`<button class="smallbtn" style="${mine.has(em)?'border-color:var(--accent);color:var(--accent)':''}" onclick="toggleReaction('${p.id}','${em}')">${em}${grouped[em]?' '+grouped[em]:''}</button>`).join('')}
-        <button class="smallbtn" onclick="toggleComments('${p.id}')">${icSvg('comment')} ${postComments.length||''} Commentaire${postComments.length>1?'s':''}</button>
+        <button class="smallbtn" onclick="toggleComments('${p.id}')">💬 ${postComments.length||''} Commentaire${postComments.length>1?'s':''}</button>
         ${p.user_id===sbUser.id?`<button class="smallbtn" style="color:var(--red)" onclick="deletePost('${p.id}')">${icSvg('delete')}</button>`:''}
       </div>
       <div id="comments-${p.id}" class="hidden">

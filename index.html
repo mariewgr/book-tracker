@@ -220,7 +220,7 @@
     <h2>Ajouter un·e ami·e</h2>
     <div class="isbnrow">
       <input id="friendCodeInput" placeholder="Code à 6 caractères" maxlength="6" style="text-transform:uppercase">
-      <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 18px" onclick="sendFriendRequest()"><span data-spr="add" data-spr-size="16"><svg class="icn"><use href="#i-add"/></svg></span></button>
+      <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 18px" onclick="sendFriendRequest()">➕</button>
     </div>
     <p class="isbnmsg" id="friendAddMsg"></p>
     <div id="friendRequestsIn"></div>
@@ -263,7 +263,7 @@
     <button class="btn ghost menub" onclick="closeModals();switchTab('disc')"><span data-spr="search" data-spr-size="20"><svg class="icn"><use href="#i-search"/></svg></span> Découvrir des livres</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('friends')"><span data-spr="friends" data-spr-size="20"><svg class="icn"><use href="#i-friends"/></svg></span> Mes amis</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('feed')"><span data-spr="feed" data-spr-size="20"><svg class="icn"><use href="#i-feed"/></svg></span> Fil d'actualité</button>
-    <button class="btn ghost menub" onclick="closeModals();switchTab('feedback')"><span data-spr="comment" data-spr-size="20"><svg class="icn"><use href="#i-comment"/></svg></span> Remarque / signaler un bug</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('feedback')">💬 Remarque / signaler un bug</button>
     <button class="btn ghost" onclick="closeModals()">Fermer</button>
   </div>
 </div>
@@ -596,8 +596,8 @@
     <button class="btn ghost" style="margin-top:0" id="bfBtn" onclick="backfillSynopsis()"><span data-spr="summary" data-spr-size="18"><svg class="icn"><use href="#i-summary"/></svg></span> Récupérer les résumés manquants</button>
     <p class="note-io">Cherche en ligne le résumé de chaque livre qui n'en a pas — en français d'abord : Google Books (FR), puis <b>Booknode</b>, puis Google Books toutes langues et Open Library en dernier recours.</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
-    <button class="btn ghost" style="margin-top:0" onclick="exportData()"><span data-spr="export" data-spr-size="18"><svg class="icn"><use href="#i-export"/></svg></span> Exporter mes données (JSON)</button>
-    <button class="btn ghost" onclick="document.getElementById('importFile').click()"><span data-spr="import" data-spr-size="18"><svg class="icn"><use href="#i-import"/></svg></span> Importer une sauvegarde</button>
+    <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
+    <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>
     <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(this)">
     <p class="note-io">Tes données sont stockées uniquement sur ton téléphone. Pense à exporter une sauvegarde de temps en temps (elle s'enregistre dans Fichiers).<br><br>L'import accepte aussi les sauvegardes <b>Book Nova</b> (fichier <i>booknova_backup_….json</i>) : statuts, notes, genres, langues, épaisseurs et prêts sont convertis automatiquement.</p>
     <button class="btn" style="margin-top:24px" onclick="saveSettings()">Enregistrer</button>
@@ -666,7 +666,7 @@
 <div class="overlay" id="bookPreviewModal" style="z-index:63" onclick="if(event.target===this)closeBookPreview()">
   <div class="sheet">
     <div id="bookPreviewBody"></div>
-    <button class="btn" onclick="addBookFromPreview()"><span data-spr="add" data-spr-size="18"><svg class="icn"><use href="#i-add"/></svg></span> Ajouter à ma bibliothèque</button>
+    <button class="btn" onclick="addBookFromPreview()">➕ Ajouter à ma bibliothèque</button>
     <button class="btn ghost" onclick="closeBookPreview()">Fermer</button>
   </div>
 </div>
