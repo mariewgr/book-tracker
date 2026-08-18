@@ -158,6 +158,13 @@ nav button.active{color:var(--accent)}
 .cover{width:46px;height:66px;border-radius:6px;object-fit:cover;background:var(--card2);flex:none}
 .cover.sm{width:34px;height:48px;border-radius:5px}
 .cover.lg{width:82px;height:118px;border-radius:8px}
+/* Profil (public/aperçu visiteur) : étagères et livres terminés en bande défilable
+   horizontalement plutôt qu'empilés verticalement — plus compact, se parcourt d'un glissement. */
+.hscroll{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
+.hscroll .hcard{flex:none;width:88px;text-align:center}
+.hscroll .hcard .cover{width:88px;height:126px;margin:0 auto 6px}
+.hscroll .hcard .nm{font-size:.72rem;font-weight:700;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hscroll .hcard .sub{font-size:.66rem;color:var(--txt2);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .spineimg{width:auto;max-width:46px;min-width:16px;height:118px;object-fit:cover;border-radius:4px;background:var(--card2);display:block;margin:0 auto}
 .imgcol{text-align:center;flex:none}
 .imgcol .lbl{font-size:.66rem;color:var(--txt2);margin-top:4px}
@@ -1474,8 +1481,11 @@ function normalizeDb(d){
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.settings.lang=d.settings.lang||'fr';
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];
-  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicBadges:false,friendCode:''};
-  d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','shelves','badges'];
+  d.profile=d.profile||{nom:'',photo:'',publicReading:false,publicStats:false,publicShelves:false,publicPal:false,publicDone:false,publicBadges:false,friendCode:''};
+  d.profile.sectionOrder=(d.profile.sectionOrder&&d.profile.sectionOrder.length)?d.profile.sectionOrder:['reading','stats','pal','shelves','done','badges'];
+  /* Ajoute les sections PAL/Livres terminés (nouvelles) aux profils déjà réglés avant leur
+     existence, sans perturber l'ordre déjà choisi pour les sections existantes. */
+  ['pal','done'].forEach(k=>{if(!d.profile.sectionOrder.includes(k))d.profile.sectionOrder.push(k);});
   /* Uniformise les codes langue abrégés (FR/EN) en toutes lettres, quelle que soit la source */
   d.books.forEach(b=>{if(LANG_FIX[b.langue])b.langue=LANG_FIX[b.langue];});
   return d;
@@ -4459,7 +4469,7 @@ function renderProfilePreview(){
     ?`<img src="${url}" style="width:88px;height:88px;object-fit:cover;border-radius:50%;display:block;margin-top:6px">`
     :'<div class="isbnmsg" style="margin-top:6px">Aucune photo pour l\'instant.</div>';
 }
-const PROFILE_SECTIONS={reading:'Livres en cours de lecture et leur avancement',stats:'Statistiques',shelves:'Étagères',badges:'Badges'};
+const PROFILE_SECTIONS={reading:'Livres en cours de lecture et leur avancement',stats:'Statistiques',pal:'Ma PAL',shelves:'Étagères',done:'Livres terminés',badges:'Badges'};
 const profileField=key=>'public'+key.charAt(0).toUpperCase()+key.slice(1);
 let pfSectionsW=[];
 function renderProfileSections(){
@@ -4517,6 +4527,11 @@ async function saveProfile(){
   toast('Profil enregistré ✅');
 }
 /* ---------- Aperçu visiteur : rendu en lecture seule des sections cochées, dans l'ordre choisi ---------- */
+function hstripHTML(books){
+  return `<div class="hscroll">${books.map(b=>`<div class="hcard">
+    ${coverEl(b.couverture,'')}<span class="nm">${esc(b.titre)}</span><span class="sub">${esc(b.auteur)||''}</span>
+  </div>`).join('')}</div>`;
+}
 function profileSectionHTML(key){
   if(key==='reading'){
     const reading=db.books.filter(b=>b.statut==='reading');
@@ -4544,14 +4559,27 @@ function profileSectionHTML(key){
       <div class="stat"><div class="n">${avg} ★</div><div class="l">Note moyenne</div></div>
     </div>`;
   }
+  if(key==='pal'){
+    const tbr=db.books.filter(b=>b.statut==='tbr');
+    let h=`<h2>📖 Ma PAL (${tbr.length})</h2>`;
+    if(!tbr.length)return h+'<div class="empty" style="padding:14px">Aucun livre à lire pour l\'instant 🌙</div>';
+    const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
+    return h+shelfVisual(pal);
+  }
   if(key==='shelves'){
     let h='<h2>📚 Étagères</h2>';
-    const tbr=db.books.filter(b=>b.statut==='tbr');
-    const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
-    h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">📖 Ma PAL (${tbr.length})</h3>${shelfVisual(pal)}`;
-    if(!db.shelves.length)return h+'<div class="empty" style="padding:14px">Aucune autre étagère 🌙</div>';
-    db.shelves.forEach(s=>{h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${shelfVisual(s)}`;});
+    if(!db.shelves.length)return h+'<div class="empty" style="padding:14px">Aucune étagère 🌙</div>';
+    db.shelves.forEach(s=>{
+      const books=(s.items||[]).map(it=>db.books.find(b=>b.id===it.bookId)).filter(Boolean);
+      h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${books.length?hstripHTML(books):'<div class="empty" style="padding:14px">Étagère vide 🌙</div>'}`;
+    });
     return h;
+  }
+  if(key==='done'){
+    const done=db.books.filter(b=>b.statut==='done');
+    let h=`<h2>✅ Livres terminés (${done.length})</h2>`;
+    if(!done.length)return h+'<div class="empty" style="padding:14px">Aucun livre terminé pour l\'instant 🌙</div>';
+    return h+hstripHTML(done);
   }
   if(key==='badges'){
     const taille=db.settings.taille||165;
@@ -4596,7 +4624,7 @@ function genFriendCode(){
    visiteur), envoyé au cloud pour que les ami·e·s voient le vrai profil tel que réglé dans
    Profil → « Visible publiquement », pas seulement ses livres terminés. */
 function computeProfileHTML(){
-  const order=(db.profile.sectionOrder&&db.profile.sectionOrder.length)?db.profile.sectionOrder:['reading','stats','shelves','badges'];
+  const order=(db.profile.sectionOrder&&db.profile.sectionOrder.length)?db.profile.sectionOrder:['reading','stats','pal','shelves','done','badges'];
   const on=order.filter(key=>db.profile[profileField(key)]);
   return on.map(profileSectionHTML).join('');
 }
