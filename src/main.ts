@@ -2659,7 +2659,7 @@ function pileEl(b){
   if(b.spine)return `<div class="pilebook"><img src="${esc(b.spine)}" loading="lazy"></div>`;
   return `<div class="pilefake" style="background:${spineColor(b.id)}">${esc(b.titre)}</div>`;
 }
-function shelfVisual(s){
+function shelfVisual(s,preview){
   const groups=[];let pile=null;
   shelfEffItems(s).forEach(it=>{
     const b=db.books.find(x=>x.id===it.bookId);if(!b)return;
@@ -2690,7 +2690,9 @@ function shelfVisual(s){
     while(cur<nRows-1&&rows[cur].w+g.w>cap)cur++;
     rows[cur].els.push(g);rows[cur].w+=g.w;
   });
-  const click=(b,html)=>`<div style="cursor:pointer" onclick="openInfo('${b.id}')">${html}</div>`;
+  const click=(b,html)=>preview
+    ?`<div style="cursor:pointer" data-book="${bookDataAttr(b)}" onclick="openBookPreview(JSON.parse(this.dataset.book))">${html}</div>`
+    :`<div style="cursor:pointer" onclick="openInfo('${b.id}')">${html}</div>`;
   const rowsHtml=rows.map(row=>{
     const inner=row.els.map(g=>g.pile
       ?`<div class="pilestack">${g.books.map(b=>click(b,pileEl(b))).join('')}</div>`
@@ -3687,7 +3689,7 @@ function profileSectionHTML(key){
     let h=`<h2>📖 Ma PAL (${tbr.length})</h2>`;
     if(!tbr.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun livre à lire pour l'instant</div>`;
     const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
-    return h+shelfVisual(pal);
+    return h+shelfVisual(pal,true);
   }
   if(key==='shelves'){
     let h='<h2>📚 Étagères</h2>';
