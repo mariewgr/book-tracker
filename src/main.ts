@@ -3677,7 +3677,7 @@ function profileSectionHTML(key){
     const doneAll=db.books.filter(b=>b.statut==='done');
     const hgt=+doneAll.reduce((s,b)=>s+thickness(b),0).toFixed(1);
     const reached=MILESTONES.map(([e,n,v])=>[e,n,v===null?taille:v]).filter(([,,v])=>hgt>=v);
-    let h=`<h2>${icSvg('badge')} Badges</h2>`;
+    let h=`<h2>${icSvg('human')} Badges</h2>`;
     if(!reached.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun badge débloqué pour l'instant</div>`;
     return h+`<div style="display:flex;flex-wrap:wrap;gap:10px">${reached.map(([e,n])=>
       `<div class="mile reached" style="flex:none"><span class="emo">${e}</span><span class="name">${esc(n)}</span><span class="check">✓</span></div>`
