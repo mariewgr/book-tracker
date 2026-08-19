@@ -3810,9 +3810,15 @@ async function openFriendProfile(uid){
   }
 }
 function closeFriendProfile(){document.getElementById('friendProfileModal').classList.remove('open');}
+let friendsLoadedOnce=false;
 async function renderFriends(){
   const el=document.getElementById('friendCodeDisplay');
   const msg=document.getElementById('friendsSyncMsg');
+  /* Marqueur de chargement seulement au tout premier affichage, pas à chaque nouvel appel
+     (accepter/refuser/retirer un·e ami·e, mise à jour temps réel…) — même principe que
+     renderFeed(), sinon la liste clignote en blanc à chaque action. */
+  if(!friendsLoadedOnce)document.getElementById('friendsListEl').innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('refresh')+'</span><br>Chargement…</div>';
+  friendsLoadedOnce=true;
   const c=await sbClient();
   if(!c||!sbUser){
     el.textContent='------';
