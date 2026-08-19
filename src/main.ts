@@ -947,7 +947,8 @@ const IC_FILES={
   badge:'badge.png',heart:'heart.png',add:'add.png',send:'send.png',delete:'delete.png',
   target:'target.png',streak:'streak.png',offline:'offline.png',empty:'empty.png',
   finished:'finished.png',summary:'summary.png',cat:'cat.png',dog:'dog.png',panda:'panda.png',
-  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png'
+  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png',
+  flamingo:'flamingo.png',giraffe:'giraffe.png',warning:'warning.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -1820,7 +1821,7 @@ function closeScanner(){
 /* ---------- Défi pile ---------- */
 const MILESTONES=[
   [icSvg('cat'),'Chat',25],[icSvg('dog'),'Beagle',40],[icSvg('panda'),'Panda assis',90],
-  ['🧍‍♀️','Ta taille !',null],['🦩','Autruche',250],['🦒','Girafe',500],
+  ['🧍‍♀️','Ta taille !',null],[icSvg('flamingo'),'Autruche',250],[icSvg('giraffe'),'Girafe',500],
 ];
 const COLORS=['#8b5cf6','#c9a2ff','#f5c86e','#6ee7a8','#7fc5ff','#ff9ad5','#ff8a8a'];
 function toggleDefiScope(){
@@ -2539,7 +2540,7 @@ function openInfo(id){
     ${subHtml?`<div style="margin-top:12px;font-weight:700;font-size:.85rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">Notes détaillées</div>${subHtml}`:''}
     ${b.synopsis?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--txt2);cursor:pointer;font-weight:700">${icSvg('summary')} Résumé du livre</summary><div style="margin-top:6px">${esc(b.synopsis)}</div></details>`:''}
     ${b.resume?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Mon résumé :</span><br>${esc(b.resume)}</div>`:''}
-    ${b.finNote?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--gold);cursor:pointer;font-weight:700">⚠️ La fin (spoilers)</summary><div style="margin-top:6px">${esc(b.finNote)}</div></details>`:''}
+    ${b.finNote?`<details style="margin-top:12px;font-size:.9rem;line-height:1.5"><summary style="color:var(--gold);cursor:pointer;font-weight:700">${icSvg('warning')} La fin (spoilers)</summary><div style="margin-top:6px">${esc(b.finNote)}</div></details>`:''}
     ${b.avis?`<div style="margin-top:12px;font-size:.9rem;line-height:1.5"><span style="color:var(--txt2)">Commentaires :</span><br>${esc(b.avis)}</div>`:''}
     <div style="margin-top:14px">
       <span style="color:var(--txt2);font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Citations</span>
