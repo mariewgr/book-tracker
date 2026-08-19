@@ -940,7 +940,7 @@ const IC_FILES={
   search:'search.png',pencil:'modify.png',tablet:'numeric.png',headphones:'audio.png',
   tag:'book_types.png','book-open':'paper.png',paper:'paper.png',
   pile:'book_pile.png',human:'human.png',camera:'photo.png',image:'image.png',saga:'saga.png',
-  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
+  user:'profile-female.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
   recap:'recap.png',retry:'retry.png',sun:'sun.png',moon:'moon.png',rogner:'rogner.png',
   check:'check.png',import:'import.png',export:'export.png',web:'web.png',preview:'preview.png',
   thumbsup:'thumbsup.png',thumbsdown:'thumbsdown.png',comment:'comment.png',copy:'copy.png',
@@ -962,7 +962,7 @@ const SPR_FILES={
   refresh:'refresh.png',gear:'settings.png',
   paper:'paper.png',tablet:'numeric.png',headphones:'audio.png',
   human:'human.png',search:'search.png',pencil:'modify.png',camera:'photo.png',image:'image.png',home:'home.png',tag:'book_types.png',saga:'saga.png',
-  user:'profile.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
+  user:'profile-female.png',friends:'friends.png',feed:'feed.png',mail:'mail.png',lock:'lock.png',unlock:'unlock.png',
   recap:'recap.png',retry:'retry.png',sun:'sun.png',moon:'moon.png',rogner:'rogner.png',
   check:'check.png',import:'import.png',export:'export.png',web:'web.png',preview:'preview.png',
   thumbsup:'thumbsup.png',thumbsdown:'thumbsdown.png',comment:'comment.png',copy:'copy.png',
@@ -3786,7 +3786,7 @@ function avatarHTML(photo,size,uid){
   const s=size||32,cur=uid?'cursor:pointer;':'',oc=uid?` onclick="openFriendProfile('${uid}')"`:'';
   if(photo)return `<img src="${esc(photo)}" loading="lazy" style="width:${s}px;height:${s}px;object-fit:cover;border-radius:50%;flex:none;${cur}" onerror="this.outerHTML='<div style=&quot;width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);flex:none;${cur}&quot;></div>'"${oc}>`;
   const isz=Math.round(s*.55);
-  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;${cur}"${oc}><img src="profile.png" alt="" style="width:${isz}px;height:${isz}px;object-fit:contain" onerror="this.outerHTML='<svg class=&quot;icn&quot; style=&quot;width:${isz}px;height:${isz}px;color:var(--txt2)&quot;><use href=&quot;#i-user&quot;/></svg>'"></div>`;
+  return `<div style="width:${s}px;height:${s}px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;${cur}"${oc}><img src="profile-female.png" alt="" style="width:${isz}px;height:${isz}px;object-fit:contain" onerror="this.outerHTML='<svg class=&quot;icn&quot; style=&quot;width:${isz}px;height:${isz}px;color:var(--txt2)&quot;><use href=&quot;#i-user&quot;/></svg>'"></div>`;
 }
 async function openFriendProfile(uid){
   document.getElementById('friendProfileBody').innerHTML='<div class="isbnmsg">Chargement…</div>';
