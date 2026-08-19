@@ -2122,6 +2122,42 @@ function onImgPicked(inp){
     toast('Image mise à jour ✅');
   });
 }
+/* Re-rogner une image déjà en place (couverture ou tranche) : on la retélécharge en blob
+   (même une image en ligne, type Google Books) pour éviter qu'un canvas "taché" par une
+   image cross-origin sans en-têtes CORS bloque le rognage. */
+async function reRognerImage(url,onCropped){
+  url=(url||'').trim();
+  if(!url){toast('Ajoute d\'abord une image à rogner');return;}
+  let objUrl;
+  try{
+    const blob=await (await fetch(url)).blob();
+    objUrl=URL.createObjectURL(blob);
+  }catch(e){toast('Impossible de charger cette image pour la rogner 😕');return;}
+  openCropper(objUrl,async(cropped)=>{
+    URL.revokeObjectURL(objUrl);
+    if(!cropped)return;
+    onCropped(await uploadImage(await resizeDataUrl(cropped,520),'recrop'));
+  });
+}
+/* Depuis le formulaire d'ajout/édition (champ Couverture ou Tranche encore non enregistré). */
+function reRognerField(field){
+  const inp=document.getElementById(field==='couverture'?'f_couverture':'f_spine');
+  reRognerImage(inp.value,dataUrl=>{
+    inp.value=dataUrl;
+    const m=document.getElementById(field==='couverture'?'covMsg':'spMsg');
+    if(m){m.textContent='✅ Image rognée';m.className='isbnmsg ok';}
+  });
+}
+/* Depuis la fiche d'un livre déjà enregistré. */
+function reRognerBookImage(id,field){
+  const obj=db.books.find(x=>x.id===id);
+  if(!obj)return;
+  reRognerImage(obj[field],dataUrl=>{
+    obj[field]=dataUrl;
+    save();render();openInfo(id);
+    toast('Image rognée ✅');
+  });
+}
 /* ---------- Rognage photo (couverture / tranche), sans dépendance externe ---------- */
 let cropState=null;
 function openCropper(src,onDone){
@@ -2514,6 +2550,7 @@ function openInfo(id){
         <div class="btns">
           <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','couverture',false)">${icSvg('image')}</button>
           <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','couverture',true)">${icSvg('camera')}</button>
+          ${b.couverture?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','couverture')">${icSvg('rogner')}</button>`:''}
         </div>
         <div class="lbl">Couverture</div>
       </div>
@@ -2522,6 +2559,7 @@ function openInfo(id){
         <div class="btns">
           <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">${icSvg('image')}</button>
           <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">${icSvg('camera')}</button>
+          ${b.spine?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','spine')">${icSvg('rogner')}</button>`:''}
         </div>
         <div class="btns" style="margin-top:4px">
           <button class="smallbtn" title="Chercher en ligne" onclick="openSpineFind('book','${id}')">🔍</button>
@@ -4411,6 +4449,8 @@ window.renderShelfAdd=renderShelfAdd;
 window.renderShelfEditViz=renderShelfEditViz;
 window.renderStars=renderStars;
 window.rereadBook=rereadBook;
+window.reRognerBookImage=reRognerBookImage;
+window.reRognerField=reRognerField;
 window.sagaSuggest=sagaSuggest;
 window.saveBook=saveBook;
 window.saveProfile=saveProfile;

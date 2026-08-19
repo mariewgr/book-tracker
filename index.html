@@ -306,6 +306,7 @@
       <input id="f_couverture" placeholder="https://…">
       <button type="button" onclick="pickImage(null,'couverture',false,'form')"><span data-spr="image" data-spr-size="19"><svg class="icn"><use href="#i-image"/></svg></span></button>
       <button type="button" onclick="pickImage(null,'couverture',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
+      <button type="button" onclick="reRognerField('couverture')" title="Re-rogner cette image"><span data-spr="rogner" data-spr-size="19"><svg class="icn"><use href="#i-rogner"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="covMsg"></div>
     <label>Image de la tranche / dos (pour les étagères)</label>
@@ -313,6 +314,7 @@
       <input id="f_spine" placeholder="https://… (optionnel)">
       <button type="button" onclick="pickImage(null,'spine',false,'form')"><span data-spr="image" data-spr-size="19"><svg class="icn"><use href="#i-image"/></svg></span></button>
       <button type="button" onclick="pickImage(null,'spine',true,'form')"><span data-spr="camera" data-spr-size="19"><svg class="icn"><use href="#i-camera"/></svg></span></button>
+      <button type="button" onclick="reRognerField('spine')" title="Re-rogner cette image"><span data-spr="rogner" data-spr-size="19"><svg class="icn"><use href="#i-rogner"/></svg></span></button>
     </div>
     <div class="isbnmsg" id="spMsg"></div>
     <button type="button" class="smallbtn" style="color:var(--accent);margin-top:6px" onclick="openSpineFind('form')">🔍 Trouver une tranche</button>
