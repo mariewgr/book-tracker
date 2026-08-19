@@ -3906,8 +3906,14 @@ function removeFriend(id){
   },'Retirer');
 }
 const REACTION_EMOJIS=['👍','❤️','😂','😮','😢'];
+let feedLoadedOnce=false;
 async function renderFeed(){
   const el=document.getElementById('feedListEl');
+  /* Marqueur de chargement seulement au tout premier affichage du fil (chargement souvent
+     lent) — pas à chaque rafraîchissement temps réel (nouveau commentaire/réaction d'un·e
+     ami·e) ni après une action locale, sinon le fil clignote en blanc à chaque fois. */
+  if(!feedLoadedOnce)el.innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('refresh')+'</span><br>Chargement du fil…</div>';
+  feedLoadedOnce=true;
   const c=await sbClient();
   if(!c||!sbUser){el.innerHTML='<div class="isbnmsg">Connecte-toi (compte cloud, voir ⚙️) pour voir le fil de tes amis.</div>';return;}
   let feedRows=[];
