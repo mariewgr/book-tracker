@@ -2542,29 +2542,31 @@ function openInfo(id){
     ?`<img class="spineimg" src="${esc(b.spine)}" onerror="imgFallback(this,'spineimg ph','book')">`
     :`<div class="spinefake" style="background:${spineColor(b.id)};width:30px;height:118px;margin:0 auto">${esc(b.titre)}</div>`;
   document.getElementById('infoBody').innerHTML=`
-    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
-      <div class="imgcol">
-        ${coverEl(b.couverture,'lg')}
-        <div class="btns">
-          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','couverture',false)">${icSvg('image')}</button>
-          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','couverture',true)">${icSvg('camera')}</button>
-          ${b.couverture?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','couverture')">${icSvg('rogner')}</button>`:''}
+    <div style="margin-bottom:12px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div class="imgcol">
+          ${coverEl(b.couverture,'lg')}
+          <div class="btns">
+            <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','couverture',false)">${icSvg('image')}</button>
+            <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','couverture',true)">${icSvg('camera')}</button>
+            ${b.couverture?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','couverture')">${icSvg('rogner')}</button>`:''}
+          </div>
+          <div class="lbl">Couverture</div>
         </div>
-        <div class="lbl">Couverture</div>
+        <div class="imgcol">
+          ${spineImg}
+          <div class="btns">
+            <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">${icSvg('image')}</button>
+            <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">${icSvg('camera')}</button>
+            ${b.spine?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','spine')">${icSvg('rogner')}</button>`:''}
+          </div>
+          <div class="btns" style="margin-top:4px">
+            <button class="smallbtn" title="Chercher en ligne" onclick="openSpineFind('book','${id}')">🔍</button>
+          </div>
+          <div class="lbl">Tranche</div>
+        </div>
       </div>
-      <div class="imgcol">
-        ${spineImg}
-        <div class="btns">
-          <button class="smallbtn" title="Depuis l'appareil" onclick="pickImage('${id}','spine',false)">${icSvg('image')}</button>
-          <button class="smallbtn" title="Prendre une photo" onclick="pickImage('${id}','spine',true)">${icSvg('camera')}</button>
-          ${b.spine?`<button class="smallbtn" title="Rogner à nouveau" onclick="reRognerBookImage('${id}','spine')">${icSvg('rogner')}</button>`:''}
-        </div>
-        <div class="btns" style="margin-top:4px">
-          <button class="smallbtn" title="Chercher en ligne" onclick="openSpineFind('book','${id}')">🔍</button>
-        </div>
-        <div class="lbl">Tranche</div>
-      </div>
-      <div style="min-width:0">
+      <div style="margin-top:12px">
         <h2 style="margin:0 0 4px">${esc(b.titre)}</h2>
         <div class="auth" style="color:var(--txt2);margin-bottom:8px">${esc(b.auteur)||'—'}</div>
         <span class="badge ${sc}">${sl}</span>
