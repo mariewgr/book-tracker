@@ -3983,8 +3983,8 @@ async function renderFeed(){
     const postComments=comments.filter(cm=>cm.post_id===p.id);
     return `<div class="book" style="cursor:default">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        ${avatarHTML(photoOf(p.user_id),32)}
-        <div><div style="font-weight:700;font-size:.85rem">${esc(nameOf(p.user_id))}</div>
+        ${avatarHTML(photoOf(p.user_id),32,p.user_id)}
+        <div style="cursor:pointer" onclick="openFriendProfile('${p.user_id}')"><div style="font-weight:700;font-size:.85rem">${esc(nameOf(p.user_id))}</div>
         <div style="font-size:.7rem;color:var(--txt2)">${fmtDateFr((p.created_at||'').slice(0,10))}</div></div>
       </div>
       ${p.book_titre?`<div style="display:flex;gap:8px;align-items:center;background:var(--card2);border-radius:10px;padding:6px;margin-bottom:8px;cursor:pointer" data-book="${bookDataAttr({titre:p.book_titre,auteur:p.book_auteur,couverture:p.book_couverture})}" onclick="openBookPreview(JSON.parse(this.dataset.book))">
