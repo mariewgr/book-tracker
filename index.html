@@ -611,6 +611,8 @@
     <h2 style="margin-top:24px">Données</h2>
     <button class="btn ghost" style="margin-top:0" id="bfBtn" onclick="backfillSynopsis()"><span data-spr="summary" data-spr-size="18"><svg class="icn"><use href="#i-summary"/></svg></span> Récupérer les résumés manquants</button>
     <p class="note-io">Cherche en ligne le résumé de chaque livre qui n'en a pas — en français d'abord : Google Books (FR), puis <b>Booknode</b>, puis Google Books toutes langues et Open Library en dernier recours.</p>
+    <button class="btn ghost" id="migBtn" onclick="migrateImagesToStorage()"><span data-spr="refresh" data-spr-size="18"><svg class="icn"><use href="#i-refresh"/></svg></span> Convertir mes photos en stockage cloud</button>
+    <p class="note-io">Une couverture ou tranche ajoutée hors ligne (ou via une vieille sauvegarde) peut rester embarquée en entier dans tes données au lieu d'être hébergée séparément — ça alourdit chaque synchronisation et peut faire gonfler ton espace de stockage. Cette action convertit toutes ces images en une fois (nécessite d'être connectée).</p>
     <h2 style="margin-top:24px">Sauvegarde</h2>
     <button class="btn ghost" style="margin-top:0" onclick="exportData()">⬇️ Exporter mes données (JSON)</button>
     <button class="btn ghost" onclick="document.getElementById('importFile').click()">⬆️ Importer une sauvegarde</button>

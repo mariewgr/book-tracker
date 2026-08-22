@@ -1448,7 +1448,8 @@ function saveBook(){
   if(editId)db.books=db.books.map(x=>x.id===editId?b:x);else db.books.push(b);
   save();closeModals();render();
   if(prev){cleanupOldImage(prev.couverture,b.couverture);cleanupOldImage(prev.spine,b.spine);}
-  cacheExternalCover(b.id);
+  cacheExternalImage(b.id,'couverture');
+  cacheExternalImage(b.id,'spine');
   syncFeedForBook(b);
 }
 /* ---------- Avancement rapide ---------- */
@@ -2080,13 +2081,16 @@ function needsCaching(url){
   if(url.includes('/storage/v1/object/public/bibli/'))return false;
   return /^https?:\/\//.test(url)||/^data:image\//.test(url);
 }
-async function cacheExternalCover(bookId){
-  const b=db.books.find(x=>x.id===bookId);if(!b)return;
-  const url=b.couverture;
-  if(!needsCaching(url))return;
+/* Retourne true si l'image est bien passée en URL de stockage cloud (pas juste recompressée
+   en base64 suite à un échec d'upload) — utilisé par migrateImagesToStorage() pour un compte
+   rendu honnête. */
+async function cacheExternalImage(bookId,field){
+  const b=db.books.find(x=>x.id===bookId);if(!b)return false;
+  const url=b[field];
+  if(!needsCaching(url))return false;
   try{
     const res=await fetch(url);
-    if(!res.ok)return;
+    if(!res.ok)return false;
     const blob=await res.blob();
     const objUrl=URL.createObjectURL(blob);
     const img=new Image();
@@ -2096,14 +2100,16 @@ async function cacheExternalCover(bookId){
     c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
     URL.revokeObjectURL(objUrl);
-    const stored=await uploadImage(c.toDataURL('image/jpeg',0.72),'book-couverture');
+    const stored=await uploadImage(c.toDataURL('image/jpeg',0.72),'book-'+field);
     const cur=db.books.find(x=>x.id===bookId);
-    if(cur&&cur.couverture===url){
-      cur.couverture=stored;
+    if(cur&&cur[field]===url){
+      cur[field]=stored;
       saveLocal();scheduleSync();render();
     }
-  }catch(e){}
+    return /^https?:\/\//.test(stored);
+  }catch(e){return false;}
 }
+function cacheExternalCover(bookId){return cacheExternalImage(bookId,'couverture');}
 let imgTarget=null,formImgs={couverture:'',spine:''};
 function resetFormImgs(){
   formImgs={couverture:'',spine:''};
@@ -3556,9 +3562,39 @@ async function backfillSynopsis(){
   else toast(ok+' résumé'+(ok>1?'s':'')+' récupéré'+(ok>1?'s':'')+' sur '+missing.length+' livre'+(missing.length>1?'s':'')+' ✅');
 }
 /* Variante silencieuse (pas de bouton à mettre à jour) : lancée en arrière-plan après un import,
-   pour ne pas laisser une sauvegarde pleine de couvertures en base64 dans l'état à synchroniser. */
+   pour ne pas laisser une sauvegarde pleine de couvertures/tranches en base64 dans l'état à
+   synchroniser. */
 async function cacheAllCoversQuiet(){
-  for(const b of db.books.filter(b=>needsCaching(b.couverture)))await cacheExternalCover(b.id);
+  for(const b of db.books){
+    if(needsCaching(b.couverture))await cacheExternalImage(b.id,'couverture');
+    if(needsCaching(b.spine))await cacheExternalImage(b.id,'spine');
+  }
+}
+/* Version visible (bouton Réglages) : mêmes conversions, mais avec progression affichée —
+   utile pour un gros rattrapage ponctuel (photos ajoutées hors ligne, vieille sauvegarde
+   importée avant la première connexion…) plutôt que le passage silencieux habituel. */
+async function migrateImagesToStorage(){
+  const btn=document.getElementById('migBtn');
+  if(!sbUser){toast('Connecte-toi d\'abord (compte cloud, voir plus haut) 🙂');return;}
+  const todo=[];
+  db.books.forEach(b=>{
+    if(needsCaching(b.couverture))todo.push([b.id,'couverture']);
+    if(needsCaching(b.spine))todo.push([b.id,'spine']);
+  });
+  if(!todo.length){toast('Toutes tes images sont déjà sur le stockage cloud ✅');return;}
+  btn.disabled=true;
+  let i=0,ok=0;
+  for(const[id,field] of todo){
+    i++;
+    const b=db.books.find(x=>x.id===id);
+    btn.textContent='⏳ '+i+'/'+todo.length+' — '+(b?b.titre.slice(0,22):'')+'…';
+    if(await cacheExternalImage(id,field))ok++;
+  }
+  btn.disabled=false;
+  btn.innerHTML=icSvg('refresh')+' Convertir mes photos en stockage cloud';
+  toast(ok===todo.length
+    ?ok+' image'+(ok>1?'s':'')+' converties ✅'
+    :ok+'/'+todo.length+' images converties — réessaie pour les autres (réseau ?) 😕');
 }
 function openSettings(){
   segSet('segLang',db.settings.lang||'fr');
@@ -4430,6 +4466,7 @@ window.addComment=addComment;
 window.applySearch=applySearch;
 window.backfillFeed=backfillFeed;
 window.backfillSynopsis=backfillSynopsis;
+window.migrateImagesToStorage=migrateImagesToStorage;
 window.calMove=calMove;
 window.cancelFriendRequest=cancelFriendRequest;
 window.chooseSpine=chooseSpine;
