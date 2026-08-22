@@ -188,7 +188,7 @@ const I18N={
     'Hors ligne':'Offline',
     '📷 Ajouter une photo':'📷 Add a photo',
     '📷 Choisir une photo':'📷 Choose a photo',
-    '🔄 Synchroniser mes livres terminés':'🔄 Sync my finished books',
+    'Synchroniser mes livres terminés':'Sync my finished books',
     '🔍 Chercher dans ta bibli…':'🔍 Search your library…',
     '🔍 Chercher une saga…':'🔍 Search a series…',
     '🔍 Livre, auteur ou saga…':'🔍 Book, author or series…',
@@ -387,7 +387,7 @@ const I18N={
     'Hors ligne':'Offline',
     '📷 Ajouter une photo':'📷 Foto hinzufügen',
     '📷 Choisir une photo':'📷 Foto auswählen',
-    '🔄 Synchroniser mes livres terminés':'🔄 Meine beendeten Bücher synchronisieren',
+    'Synchroniser mes livres terminés':'Meine beendeten Bücher synchronisieren',
     '🔍 Chercher dans ta bibli…':'🔍 In deiner Bibliothek suchen…',
     '🔍 Chercher une saga…':'🔍 Eine Reihe suchen…',
     '🔍 Livre, auteur ou saga…':'🔍 Buch, Autor oder Reihe…',
@@ -946,7 +946,8 @@ const IC_FILES={
   target:'target.png',streak:'streak.png',offline:'offline.png',empty:'empty.png',
   finished:'finished.png',summary:'summary.png',cat:'cat.png',dog:'dog.png',panda:'panda.png',
   soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png',
-  flamingo:'flamingo.png',giraffe:'giraffe.png',warning:'warning.png'
+  flamingo:'flamingo.png',giraffe:'giraffe.png',warning:'warning.png',
+  loading:'loading.png',sync:'sync.png'
 };
 const icSvg=n=>IC_FILES[n]
   ?'<img class="icn icimg" src="'+IC_FILES[n]+'" alt="" onerror="this.outerHTML=\'<svg class=&quot;icn&quot;><use href=&quot;#i-'+n+'&quot;/></svg>\'">'
@@ -967,7 +968,8 @@ const SPR_FILES={
   badge:'badge.png',heart:'heart.png',add:'add.png',send:'send.png',delete:'delete.png',
   target:'target.png',streak:'streak.png',offline:'offline.png',empty:'empty.png',
   finished:'finished.png',summary:'summary.png',cat:'cat.png',dog:'dog.png',panda:'panda.png',
-  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png'
+  soon:'soon.png',clock:'clock.png',crystalball:'crystalball.png',
+  loading:'loading.png',sync:'sync.png'
 };
 function applySpr(root){
   (root||document).querySelectorAll('[data-spr]').forEach(el=>{
@@ -3869,7 +3871,7 @@ async function renderFriends(){
   /* Marqueur de chargement seulement au tout premier affichage, pas à chaque nouvel appel
      (accepter/refuser/retirer un·e ami·e, mise à jour temps réel…) — même principe que
      renderFeed(), sinon la liste clignote en blanc à chaque action. */
-  if(!friendsLoadedOnce)document.getElementById('friendsListEl').innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('refresh')+'</span><br>Chargement…</div>';
+  if(!friendsLoadedOnce)document.getElementById('friendsListEl').innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('loading')+'</span><br>Chargement…</div>';
   friendsLoadedOnce=true;
   const c=await sbClient();
   if(!c||!sbUser){
@@ -3970,7 +3972,7 @@ async function renderFeed(){
   /* Marqueur de chargement seulement au tout premier affichage du fil (chargement souvent
      lent) — pas à chaque rafraîchissement temps réel (nouveau commentaire/réaction d'un·e
      ami·e) ni après une action locale, sinon le fil clignote en blanc à chaque fois. */
-  if(!feedLoadedOnce)el.innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('refresh')+'</span><br>Chargement du fil…</div>';
+  if(!feedLoadedOnce)el.innerHTML='<div class="empty" style="padding:24px 10px"><span style="display:inline-block;animation:ptrspin .7s linear infinite">'+icSvg('loading')+'</span><br>Chargement du fil…</div>';
   feedLoadedOnce=true;
   const c=await sbClient();
   if(!c||!sbUser){el.innerHTML='<div class="isbnmsg">Connecte-toi (compte cloud, voir ⚙️) pour voir le fil de tes amis.</div>';return;}

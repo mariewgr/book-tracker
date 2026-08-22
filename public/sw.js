@@ -1,5 +1,5 @@
 /* Ma Bibli — service worker : app 100 % hors ligne */
-const CACHE='mabibli-v7'; /* v7 : plusieurs icônes régénérées (soon/friends/feed/human/profil…), invalide le cache pour forcer le rechargement */
+const CACHE='mabibli-v8'; /* v8 : loading/sync passées en versions rondes, invalide le cache pour forcer le rechargement */
 const ASSETS=['./','./index.html','./book.png','./shelf.png','./rank.png',
   './book_pile.png','./stats.png','./calendar.png','./refresh.png','./settings.png','./paper.png',
   './numeric.png','./audio.png','./human.png','./search.png','./modify.png','./photo.png',

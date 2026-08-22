@@ -80,9 +80,11 @@
   <symbol id="i-flamingo" viewBox="0 0 24 24"><path d="M9 3c3 1 4 4 3 7l-2 6"/><circle cx="9" cy="4" r="1.2"/><path d="M10 16l-3 5M10 16l3 3"/></symbol>
   <symbol id="i-giraffe" viewBox="0 0 24 24"><path d="M10 2v10"/><circle cx="10" cy="2" r="1.2"/><path d="M7 6h6M8 12h4a4 4 0 0 1 4 4v6"/><path d="M6 22l2-6M18 22v-4"/></symbol>
   <symbol id="i-warning" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="1"/></symbol>
+  <symbol id="i-loading" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></symbol>
 </svg>
 
-<div id="ptrIndicator"><svg class="icn"><use href="#i-refresh"/></svg></div>
+<div id="ptrIndicator"><span data-spr="sync" data-spr-size="24"><svg class="icn"><use href="#i-refresh"/></svg></span></div>
 
 <div class="authwrap" id="authScreen">
   <div class="authcard" id="authCard">
@@ -236,7 +238,7 @@
   <section id="view-feed" class="hidden">
     <div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <button class="btn" style="width:auto;margin-top:0;flex:none;padding:0 16px" onclick="openPostCompose()"><span data-spr="pencil" data-spr-size="18"><svg class="icn"><use href="#i-pencil"/></svg></span> Nouveau post</button>
-      <button class="smallbtn" onclick="backfillFeed()">🔄 Synchroniser mes livres terminés</button>
+      <button class="smallbtn" onclick="backfillFeed()"><span data-spr="sync" data-spr-size="16"><svg class="icn"><use href="#i-sync"/></svg></span> Synchroniser mes livres terminés</button>
     </div>
     <div id="feedListEl"></div>
   </section>
