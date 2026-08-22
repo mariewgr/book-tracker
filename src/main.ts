@@ -2000,11 +2000,31 @@ function genRecap(){
   x.fillText('Pile de '+h+' cm 📚',540,1140);
   x.fillStyle='#6f6390';x.font='500 38px -apple-system,sans-serif';
   x.fillText('fait avec Ma Bibli',540,1270);
+  cv.toBlob(blob=>{
+    if(!blob){toast('Impossible de générer l\'image 😕');return;}
+    recapBlob=blob;recapYear=y;
+    document.getElementById('recapImg').src=URL.createObjectURL(blob);
+    document.getElementById('recapModal').classList.add('open');
+  },'image/png');
+}
+let recapBlob=null,recapYear=null;
+function downloadRecap(){
+  if(!recapBlob)return;
   const a2=document.createElement('a');
-  a2.href=cv.toDataURL('image/png');
-  a2.download='ma-bibli-recap-'+y+'.png';
+  a2.href=URL.createObjectURL(recapBlob);
+  a2.download='ma-bibli-recap-'+recapYear+'.png';
   a2.click();
-  toast('Récap '+y+' généré 🎉 (dans tes téléchargements)');
+  toast('Récap téléchargé 🎉');
+}
+async function shareRecap(){
+  if(!recapBlob)return;
+  const file=new File([recapBlob],'ma-bibli-recap-'+recapYear+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'Mon récap Ma Bibli '+recapYear});}
+    catch(e){/* annulé par l'utilisateur·ice — rien à faire */}
+  }else{
+    toast('Partage non pris en charge sur cet appareil — utilise Télécharger 👇');
+  }
 }
 
 /* ---------- Images : upload / photo ---------- */
@@ -4419,6 +4439,8 @@ window.editObjectif=editObjectif;
 window.esc=esc;
 window.exportData=exportData;
 window.genRecap=genRecap;
+window.shareRecap=shareRecap;
+window.downloadRecap=downloadRecap;
 window.handleAuthSubmit=handleAuthSubmit;
 window.signInWithOAuth=signInWithOAuth;
 window.handleForgotPassword=handleForgotPassword;

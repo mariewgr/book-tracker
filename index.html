@@ -434,6 +434,17 @@
   </div>
 </div>
 
+<!-- RÉCAP DE L'ANNÉE -->
+<div class="overlay" id="recapModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2>Ton récap</h2>
+    <img id="recapImg" style="display:block;max-width:100%;border-radius:12px;margin-top:4px" alt="">
+    <button class="btn" style="margin-top:16px" onclick="shareRecap()"><span data-spr="send" data-spr-size="18"><svg class="icn"><use href="#i-send"/></svg></span> Partager</button>
+    <button class="btn ghost" onclick="downloadRecap()">Télécharger l'image</button>
+    <button class="btn ghost" onclick="closeModals()">Fermer</button>
+  </div>
+</div>
+
 <!-- MODAL ÉTAGÈRE DEPUIS SAGAS -->
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
