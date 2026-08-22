@@ -1447,6 +1447,7 @@ function saveBook(){
   if(statut==='done'&&(!prev||prev.statut!=='done'))confetti();
   if(editId)db.books=db.books.map(x=>x.id===editId?b:x);else db.books.push(b);
   save();closeModals();render();
+  if(prev){cleanupOldImage(prev.couverture,b.couverture);cleanupOldImage(prev.spine,b.spine);}
   cacheExternalCover(b.id);
   syncFeedForBook(b);
 }
@@ -2028,6 +2029,17 @@ async function shareRecap(){
 }
 
 /* ---------- Images : upload / photo ---------- */
+/* Supprime l'ancien fichier storage quand une image est remplacée (nouvelle photo, re-rognage,
+   changement de couverture/tranche/avatar) — sinon chaque remplacement laisse l'ancienne copie
+   orpheline dans le bucket pour toujours, ce qui finit par remplir le quota de stockage.
+   Best-effort : ignore silencieusement si l'ancienne image n'était pas sur notre storage, ou
+   en cas d'erreur (jamais bloquant pour l'utilisateur·ice). */
+function cleanupOldImage(oldUrl,newUrl){
+  if(!oldUrl||oldUrl===newUrl)return;
+  const m=oldUrl.match(/\/storage\/v1\/object\/public\/bibli\/(.+)$/);
+  if(!m)return;
+  sbClient().then(c=>{if(c)c.storage.from('bibli').remove([m[1]]).catch(()=>{});}).catch(()=>{});
+}
 /* Photos → Supabase Storage (sync légère) ; repli base64 locale hors connexion */
 async function uploadImage(dataUrl,name){
   try{
@@ -2141,6 +2153,7 @@ function onImgPicked(inp){
     }
     const obj=db.books.find(x=>x.id===target.id);
     if(!obj)return;
+    cleanupOldImage(obj[target.field],dataUrl);
     obj[target.field]=dataUrl;
     save();render();
     openInfo(obj.id);
@@ -2177,8 +2190,10 @@ function reRognerField(field){
 function reRognerBookImage(id,field){
   const obj=db.books.find(x=>x.id===id);
   if(!obj)return;
-  reRognerImage(obj[field],dataUrl=>{
+  const oldUrl=obj[field];
+  reRognerImage(oldUrl,dataUrl=>{
     obj[field]=dataUrl;
+    cleanupOldImage(oldUrl,dataUrl);
     save();render();openInfo(id);
     toast('Image rognée ✅');
   });
@@ -3625,7 +3640,11 @@ async function saveProfile(){
   db.profile.nom=document.getElementById('pf_nom').value.trim();
   db.profile.sectionOrder=pfSectionsW.map(s=>s.key);
   pfSectionsW.forEach(s=>{db.profile[profileField(s.key)]=s.on;});
-  if(pfPhotoData)db.profile.photo=await uploadImage(pfPhotoData,'profile');
+  if(pfPhotoData){
+    const oldPhoto=db.profile.photo;
+    db.profile.photo=await uploadImage(pfPhotoData,'profile');
+    cleanupOldImage(oldPhoto,db.profile.photo);
+  }
   save();closeModals();render();
   lastProfileSync=Date.now();
   syncPublicProfile();
