@@ -1868,7 +1868,7 @@ function defiCardHTML(){
   return `<div class="challenge-card" onclick="toggleDefiScope()" style="cursor:pointer">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <div style="font-size:.8rem;color:var(--txt2);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Défi de la pile</div>
-      <div class="chip" style="pointer-events:none;margin:0">${scope==='year'?'📅 '+y:'📚 Tous les livres'}</div>
+      <div class="chip" style="pointer-events:none;margin:0">${scope==='year'?icSvg('calendar')+' '+y:icSvg('pile')+' Tous les livres'}</div>
     </div>
     <div class="bignum">${h} cm</div>
     <div style="font-size:1rem;font-weight:800;color:var(--accent)">${Math.round(h/taille*100)} % de ta taille</div>
