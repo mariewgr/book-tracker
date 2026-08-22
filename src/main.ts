@@ -1837,6 +1837,17 @@ function toggleDefiScope(){
   db.settings.defiScope=(db.settings.defiScope==='year')?'all':'year';
   save();render();
 }
+const PILE_AVATARS=['avatar-explorer.png','avatar-explorer-female.png','avatar-scholar.png','avatar-scholar-female.png','avatar-warrior.png','avatar-warrior-female.png'];
+function openPileAvatarPicker(){
+  document.getElementById('pileAvatarGrid').innerHTML=PILE_AVATARS.map(a=>
+    `<img src="${a}" onclick="choosePileAvatar('${a}')" style="width:80px;cursor:pointer;border-radius:8px;border:2px solid ${(db.settings.pileAvatar||'human.png')===a?'var(--accent)':'transparent'}">`
+  ).join('');
+  document.getElementById('pileAvatarModal').classList.add('open');
+}
+function choosePileAvatar(path){
+  db.settings.pileAvatar=path;
+  save();closeModals();render();
+}
 function defiCardHTML(){
   const taille=db.settings.taille||165;
   const scope=db.settings.defiScope||'all';
@@ -1864,13 +1875,13 @@ function defiCardHTML(){
     <div style="font-size:.85rem;color:var(--txt2);margin-top:2px">Objectif : ta taille (${taille} cm) — ${done.length} livre${done.length>1?'s':''} terminé${done.length>1?'s':''}${scope==='year'?' en '+y:''}</div>
     <div class="stackwrap">
       <div class="stack">${stack}</div>
-      <div class="human">
-        <img src="human.png" style="height:176px;display:block" alt="" onerror="${fallback}">
+      <div class="human" style="cursor:pointer" onclick="event.stopPropagation();openPileAvatarPicker()">
+        <img src="${db.settings.pileAvatar||'human.png'}" style="height:176px;display:block" alt="" onerror="${fallback}">
         <small>${taille} cm</small>
       </div>
     </div>
     <div class="pbar" style="height:10px"><div style="width:${Math.min(100,h/taille*100)}%"></div></div>
-    <div style="font-size:.78rem;color:var(--txt2);margin-top:8px">Chaque livre terminé${scope==='year'?' en '+y:''} ajoute son épaisseur à ta pile. <b>Appuie sur la carte</b> pour basculer tous les livres / cette année.</div>
+    <div style="font-size:.78rem;color:var(--txt2);margin-top:8px">Chaque livre terminé${scope==='year'?' en '+y:''} ajoute son épaisseur à ta pile. <b>Appuie sur la carte</b> pour basculer tous les livres / cette année, <b>ou sur ton avatar</b> pour en changer.</div>
   </div>`;
 }
 function renderDefi(){
@@ -4554,6 +4565,8 @@ window.switchTab=switchTab;
 window.toggleAuthMode=toggleAuthMode;
 window.toggleComments=toggleComments;
 window.toggleDefiScope=toggleDefiScope;
+window.openPileAvatarPicker=openPileAvatarPicker;
+window.choosePileAvatar=choosePileAvatar;
 window.toggleReaction=toggleReaction;
 window.toggleStatutFields=toggleStatutFields;
 window.updateParutionMsg=updateParutionMsg;
