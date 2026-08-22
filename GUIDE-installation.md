@@ -56,13 +56,22 @@ alter publication supabase_realtime add table public.bibli;
 4. *(Recommandé — photos)* Toujours dans **SQL Editor**, exécute aussi ce script pour que les photos soient stockées dans le cloud (sync beaucoup plus rapide) :
 
 ```sql
-insert into storage.buckets (id, name, public) values ('bibli','bibli', true);
+insert into storage.buckets (id, name, public) values ('bibli','bibli', true)
+  on conflict (id) do nothing;
 create policy "upload perso" on storage.objects for insert to authenticated
   with check (bucket_id='bibli' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "maj perso" on storage.objects for update to authenticated
   using (bucket_id='bibli' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "lecture publique" on storage.objects for select using (bucket_id='bibli');
+create policy "suppression perso" on storage.objects for delete to authenticated
+  using (bucket_id='bibli' and (storage.foldername(name))[1] = auth.uid()::text);
 ```
+
+**Sans cette étape**, les photos restent embarquées dans tes données au lieu d'être hébergées à
+part — chaque sauvegarde/synchronisation devient beaucoup plus lourde, et ça peut faire gonfler
+inutilement l'espace utilisé (couvertures/tranches en base64 au lieu de simples liens). Si tu as
+commencé à utiliser l'app sans avoir lancé ce script, va dans ⚙️ Réglages → Données → **« Convertir
+mes photos en stockage cloud »** une fois le script exécuté pour rattraper les photos déjà là.
 4. **Project Settings** → **API** : note l'**URL** du projet et la clé **anon public**.
 
 ### b) Connecter l'app

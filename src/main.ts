@@ -3592,9 +3592,9 @@ async function migrateImagesToStorage(){
   }
   btn.disabled=false;
   btn.innerHTML=icSvg('refresh')+' Convertir mes photos en stockage cloud';
-  toast(ok===todo.length
-    ?ok+' image'+(ok>1?'s':'')+' converties ✅'
-    :ok+'/'+todo.length+' images converties — réessaie pour les autres (réseau ?) 😕');
+  if(ok===todo.length)toast(ok+' image'+(ok>1?'s':'')+' converties ✅');
+  else if(ok===0)toast('⚠️ Aucune image convertie — vérifie que le bucket de stockage est bien configuré (voir GUIDE-installation.md §4)');
+  else toast(ok+'/'+todo.length+' images converties — réessaie pour les autres (réseau ?) 😕');
 }
 function openSettings(){
   segSet('segLang',db.settings.lang||'fr');
