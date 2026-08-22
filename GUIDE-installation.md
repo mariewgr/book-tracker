@@ -70,8 +70,8 @@ create policy "suppression perso" on storage.objects for delete to authenticated
 **Sans cette étape**, les photos restent embarquées dans tes données au lieu d'être hébergées à
 part — chaque sauvegarde/synchronisation devient beaucoup plus lourde, et ça peut faire gonfler
 inutilement l'espace utilisé (couvertures/tranches en base64 au lieu de simples liens). Si tu as
-commencé à utiliser l'app sans avoir lancé ce script, va dans ⚙️ Réglages → Données → **« Convertir
-mes photos en stockage cloud »** une fois le script exécuté pour rattraper les photos déjà là.
+commencé à utiliser l'app sans avoir lancé ce script, les photos déjà en base64 se convertiront
+automatiquement en stockage cloud dès que tu modifies (ou ré-enregistres) chaque livre concerné.
 4. **Project Settings** → **API** : note l'**URL** du projet et la clé **anon public**.
 
 ### b) Connecter l'app
