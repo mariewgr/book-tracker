@@ -1083,6 +1083,13 @@ function renderHome(){
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
     </div>`;
   });
+  const coups=db.books.filter(b=>b.statut==='done'&&b.note>=5);
+  if(coups.length){
+    out+=`<h2>${icSvg('heart')} Coups de cœur</h2>
+      <div class="hscroll">${coups.map(b=>`<div class="hcard" style="cursor:pointer" onclick="openInfo('${b.id}')">
+        ${coverEl(b.couverture,'')}<span class="nm">${esc(b.titre)}</span><span class="sub">${esc(b.auteur)||''}</span>
+      </div>`).join('')}</div>`;
+  }
   const upcoming=db.books.filter(b=>isUpcoming(b)).sort((a,b)=>a.dateParution<b.dateParution?-1:1);
   if(upcoming.length){
     out+=`<h2>📅 Parutions à venir</h2>`;
@@ -3695,7 +3702,7 @@ function profileSectionHTML(key){
     let h='<h2>📚 Étagères</h2>';
     if(!db.shelves.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucune étagère</div>`;
     db.shelves.forEach(s=>{
-      const books=(s.items||[]).map(it=>db.books.find(b=>b.id===it.bookId)).filter(Boolean);
+      const books=shelfEffItems(s).map(it=>db.books.find(b=>b.id===it.bookId)).filter(Boolean);
       h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${books.length?hstripHTML(books):`<div class="empty" style="padding:14px">${icSvg('empty')} Étagère vide</div>`}`;
     });
     return h;
