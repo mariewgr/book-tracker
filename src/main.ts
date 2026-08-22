@@ -1830,7 +1830,7 @@ function closeScanner(){
 /* ---------- Défi pile ---------- */
 const MILESTONES=[
   [icSvg('cat'),'Chat',25],[icSvg('dog'),'Beagle',40],[icSvg('panda'),'Panda assis',90],
-  ['🧍‍♀️','Ta taille !',null],[icSvg('flamingo'),'Autruche',250],[icSvg('giraffe'),'Girafe',500],
+  [icSvg('human'),'Ta taille !',null],[icSvg('flamingo'),'Autruche',250],[icSvg('giraffe'),'Girafe',500],
 ];
 const COLORS=['#8b5cf6','#c9a2ff','#f5c86e','#6ee7a8','#7fc5ff','#ff9ad5','#ff8a8a'];
 function toggleDefiScope(){
