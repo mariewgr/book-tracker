@@ -3753,15 +3753,13 @@ function profileSectionHTML(key){
     const tbr=db.books.filter(b=>b.statut==='tbr');
     let h=`<h2>📖 Ma PAL (${tbr.length})</h2>`;
     if(!tbr.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun livre à lire pour l'instant</div>`;
-    const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
-    return h+shelfVisual(pal,true);
+    return h+hstripHTML(tbr);
   }
   if(key==='shelves'){
     let h='<h2>📚 Étagères</h2>';
     if(!db.shelves.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucune étagère</div>`;
     db.shelves.forEach(s=>{
-      const books=shelfEffItems(s).map(it=>db.books.find(b=>b.id===it.bookId)).filter(Boolean);
-      h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${books.length?hstripHTML(books):`<div class="empty" style="padding:14px">${icSvg('empty')} Étagère vide</div>`}`;
+      h+=`<h3 style="margin:14px 2px 8px;font-size:.9rem">${esc(s.nom)}</h3>${shelfVisual(s,true)}`;
     });
     return h;
   }
