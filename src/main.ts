@@ -3238,7 +3238,10 @@ function libSlotTap(i){
   renderLibEditViz();
 }
 function libRemoveAt(i){libItemsW.splice(i,1);renderLibEditViz();}
-function addLibDivider(){libItemsW.push({divider:true,id:uid(),row:null});renderLibEditViz();}
+/* Étage 1 = étage du haut (voir layoutShelfRows) : sans le fixer, une nouvelle séparation
+   ajoutée en fin de liste hérite du curseur de remplissage automatique à ce stade (déjà avancé
+   par tous les livres précédents) et atterrit en bas au lieu d'en haut. */
+function addLibDivider(){libItemsW.push({divider:true,id:uid(),row:1});renderLibEditViz();}
 (function(){
   let dragging=null,movedFar=false,ghostEl=null,origSnapshot=null,lastKey=null;
   const THRESH=8;
