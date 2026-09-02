@@ -1236,7 +1236,9 @@ function renderLibShelf(){
     el.innerHTML=`<div class="empty"><span class="big">${icSvg('book')}</span>Ta bibliothèque est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier livre !</div>`;
     return;
   }
-  const shelf={nom:'',rows:8,items:db.books.map(b=>({bookId:b.id,mode:'spine'}))};
+  const sorted=[...db.books].sort((a,b)=>
+    (a.saga||a.titre).localeCompare(b.saga||b.titre)||(a.tome||0)-(b.tome||0)||a.titre.localeCompare(b.titre));
+  const shelf={nom:'',rows:8,items:sorted.map(b=>({bookId:b.id,mode:'spine'}))};
   el.innerHTML=shelfVisual(shelf);
 }
 function renderLib(){
@@ -2750,7 +2752,7 @@ function shelfVisual(s,preview){
   /* placement : étage imposé si précisé, sinon à la suite avec passage
      à l'étage suivant quand il n'y a plus de place */
   const nRows=Math.max(1,Math.min(8,s.rows||1));
-  const holder=document.getElementById('shelfList');
+  const holder=document.getElementById('shelfList')||document.getElementById('libShelfMode');
   const cap=Math.max(240,((holder&&holder.clientWidth)||window.innerWidth-32)-44);
   const rows=Array.from({length:nRows},()=>({w:0,els:[]}));
   groups.forEach(g=>{
