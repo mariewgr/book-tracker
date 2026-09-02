@@ -463,6 +463,19 @@
   </div>
 </div>
 
+<!-- MODIFIER LA BIBLIOTHÈQUE -->
+<div class="overlay" id="libEditModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2>Modifier la bibliothèque</h2>
+    <label>Nombre d'étages</label><input id="lib_rows" type="number" inputmode="numeric" min="1" max="8" value="8" onchange="renderLibEditViz()">
+    <label>Disposition — tape un livre pour changer tranche / couverture / pile, glisse-le pour le repositionner</label>
+    <div id="libEditViz"></div>
+    <button class="btn ghost" style="margin-top:12px" onclick="addLibDivider()">＋ Ajouter une séparation en bois</button>
+    <button class="btn" style="margin-top:16px" onclick="saveLibLayout()">Enregistrer</button>
+    <button class="btn ghost" onclick="closeModals()">Annuler</button>
+  </div>
+</div>
+
 <!-- MODAL ÉTAGÈRE DEPUIS SAGAS -->
 <div class="overlay" id="shelfColsModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">

@@ -329,6 +329,7 @@ input[type=range]{padding:0;height:32px;accent-color:var(--accent2)}
 .shelfinner{display:inline-block;min-width:100%}
 .shelfrow{display:flex;align-items:flex-end;gap:0;min-height:150px;padding:0 6px}
 .board{height:11px;background:linear-gradient(180deg,var(--woodA),var(--woodB));border-radius:3px;margin-top:2px;box-shadow:0 3px 6px rgba(0,0,0,.4)}
+.libDivider{width:26px;height:138px;flex:none;background:linear-gradient(90deg,var(--woodA),var(--woodB));border-radius:3px;box-shadow:0 2px 5px rgba(0,0,0,.4),inset 0 0 0 1px rgba(255,255,255,.08)}
 /* Bibliothèque (Bibli → Bibliothèque) : sort du max-width/padding de main pour occuper
    toute la largeur de l'écran, quelle que soit la taille de l'appareil. */
 #libShelfMode{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);padding:0 10px}
@@ -343,7 +344,7 @@ body.scrollock{position:fixed;left:0;right:0;overflow:hidden}
 .spinebook{height:138px;width:auto;max-width:64px;min-width:12px;border-radius:3px 3px 0 0;object-fit:cover;display:block}
 .spinefake{height:138px;border-radius:3px 3px 0 0;color:#fff;font-size:.6rem;font-weight:700;writing-mode:vertical-rl;padding:8px 0;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .standcover{height:138px;width:auto;border-radius:3px 3px 0 0;display:block}
-.pilestack{display:flex;flex-direction:column-reverse;gap:2px}
+.pilestack{display:flex;flex-direction:column-reverse;gap:2px;padding:0 6px}
 .pilebook{width:112px;height:24px;position:relative;overflow:hidden;border-radius:3px;flex:none}
 .pilebook img{position:absolute;left:50%;top:50%;width:24px;height:112px;transform:translate(-50%,-50%) rotate(90deg);object-fit:cover}
 .pilefake{width:112px;height:24px;border-radius:3px;color:#fff;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0 6px;white-space:nowrap}
