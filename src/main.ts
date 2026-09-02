@@ -1236,8 +1236,8 @@ function setLibViewMode(mode){
 function libEffItems(){
   const saved=(db.settings.libLayout&&db.settings.libLayout.items)||[];
   const known=new Set(db.books.map(b=>b.id));
-  const kept=saved.filter(it=>it.divider||known.has(it.bookId));
-  const placed=new Set(kept.filter(it=>!it.divider).map(it=>it.bookId));
+  const kept=saved.filter(it=>it.divider||it.deco||known.has(it.bookId));
+  const placed=new Set(kept.filter(it=>!it.divider&&!it.deco).map(it=>it.bookId));
   const extra=db.books.filter(b=>!placed.has(b.id))
     .sort((a,b)=>(a.saga||a.titre).localeCompare(b.saga||b.titre)||(a.tome||0)-(b.tome||0)||a.titre.localeCompare(b.titre))
     .map(b=>({bookId:b.id,mode:'spine',row:null}));
@@ -2754,6 +2754,7 @@ function shelfVisual(s,preview){
   const groups=[];let pile=null;
   shelfEffItems(s).forEach(it=>{
     if(it.divider){pile=null;groups.push({divider:true,w:26,row:it.row||null});return;}
+    if(it.deco){pile=null;groups.push({deco:true,kind:it.kind,w:110,row:it.row||null});return;}
     const b=db.books.find(x=>x.id===it.bookId);if(!b)return;
     if(it.mode==='pile'){
       if(!pile){pile={pile:true,books:[],w:118,row:it.row||null};groups.push(pile);}
@@ -2788,6 +2789,7 @@ function shelfVisual(s,preview){
   const rowsHtml=rows.map(row=>{
     const inner=row.els.map(g=>{
       if(g.divider)return `<div class="libDivider"></div>`;
+      if(g.deco)return `<div class="libDecoWrap"><img class="libDeco" src="${DECO_KINDS[g.kind]}" alt=""></div>`;
       return g.pile
         ?`<div class="pilestack">${g.books.map(b=>click(b,pileEl(b))).join('')}</div>`
         :click(g.b,standEl(g.b,g.mode));
@@ -3182,14 +3184,24 @@ let libItemsW=[];
 function openLibEdit(){
   libItemsW=libEffItems().map(x=>({...x}));
   document.getElementById('lib_rows').value=(db.settings.libLayout&&db.settings.libLayout.rows)||8;
+  document.getElementById('libDecoPicker').innerHTML=Object.keys(DECO_KINDS).map(k=>
+    `<button type="button" class="smallbtn" title="${esc(DECO_LABELS[k])}" onclick="addLibDeco('${k}')" style="padding:4px 8px">
+      <img src="${DECO_KINDS[k]}" alt="" style="height:28px;width:auto;display:block;vertical-align:middle">
+    </button>`
+  ).join('');
   document.getElementById('libEditModal').classList.add('open');
   renderLibEditViz();
 }
-function libItemKey(it){return it.divider?'d:'+it.id:'b:'+it.bookId;}
+const DECO_KINDS={plant:'plant.png',globe:'globe.png',candle:'candle.png',flowervase:'flowervase.png',
+  owl:'owl.png',chest:'chest.png',compass:'compass.png',clock:'clock.png',crystalball:'crystalball.png'};
+const DECO_LABELS={plant:'Plante',globe:'Globe',candle:'Bougie',flowervase:'Vase de fleurs',
+  owl:'Hibou',chest:'Coffre',compass:'Boussole',clock:'Horloge',crystalball:'Boule de cristal'};
+function libItemKey(it){return it.divider||it.deco?(it.divider?'d:':'c:')+it.id:'b:'+it.bookId;}
 function libEditGroups(){
   const groups=[];let pile=null;
   libItemsW.forEach((it,i)=>{
     if(it.divider){pile=null;groups.push({divider:true,i,w:26,row:it.row||null});return;}
+    if(it.deco){pile=null;groups.push({deco:true,kind:it.kind,i,w:110,row:it.row||null});return;}
     const b=db.books.find(x=>x.id===it.bookId);if(!b)return;
     if(it.mode==='pile'){
       if(!pile){pile={pile:true,entries:[],w:118,row:it.row||null};groups.push(pile);}
@@ -3223,6 +3235,7 @@ function renderLibEditViz(dragKey){
   const rowsHtml=rows.map((row,rIdx)=>{
     const inner=row.els.map(g=>{
       if(g.divider)return slot(g.i,'<div class="libDivider"></div>',26,138,true);
+      if(g.deco)return slot(g.i,`<div class="libDecoWrap"><img class="libDeco" src="${DECO_KINDS[g.kind]}" alt=""></div>`,110,138,true);
       return g.pile
         ?`<div class="pilestack">${g.entries.map(e=>slot(e.i,pileEl(e.b),112,24,false)).join('')}</div>`
         :slot(g.i,standEl(g.b,g.mode),g.w,138,false);
@@ -3232,16 +3245,17 @@ function renderLibEditViz(dragKey){
   wrap.innerHTML=`<div class="shelfviz"><div class="shelfinner">${rowsHtml}</div></div>`;
 }
 function libSlotTap(i){
-  if(libItemsW[i].divider)return;
+  if(libItemsW[i].divider||libItemsW[i].deco)return;
   const modes=['spine','cover','pile'];
   libItemsW[i].mode=modes[(modes.indexOf(libItemsW[i].mode)+1)%3];
   renderLibEditViz();
 }
 function libRemoveAt(i){libItemsW.splice(i,1);renderLibEditViz();}
-/* Étage 1 = étage du haut (voir layoutShelfRows) : sans le fixer, une nouvelle séparation
-   ajoutée en fin de liste hérite du curseur de remplissage automatique à ce stade (déjà avancé
-   par tous les livres précédents) et atterrit en bas au lieu d'en haut. */
+/* Étage 1 = étage du haut (voir layoutShelfRows) : sans le fixer, un élément ajouté en fin de
+   liste hérite du curseur de remplissage automatique à ce stade (déjà avancé par tous les
+   livres précédents) et atterrit en bas au lieu d'en haut. */
 function addLibDivider(){libItemsW.push({divider:true,id:uid(),row:1});renderLibEditViz();}
+function addLibDeco(kind){libItemsW.push({deco:true,kind,id:uid(),row:1});renderLibEditViz();}
 (function(){
   let dragging=null,movedFar=false,ghostEl=null,origSnapshot=null,lastKey=null;
   const THRESH=8;
@@ -4720,6 +4734,7 @@ window.openLibEdit=openLibEdit;
 window.libSlotTap=libSlotTap;
 window.libRemoveAt=libRemoveAt;
 window.addLibDivider=addLibDivider;
+window.addLibDeco=addLibDeco;
 window.saveLibLayout=saveLibLayout;
 window.renderLibEditViz=renderLibEditViz;
 window.openSpineFind=openSpineFind;
