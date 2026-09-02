@@ -132,13 +132,20 @@
 
   <!-- BIBLIOTHÈQUE -->
   <section id="view-lib" class="hidden">
-    <input class="search" id="search" placeholder="🔍 Rechercher un titre, un auteur, une saga…" oninput="renderLib()">
-    <div class="filterrow">
-      <select id="genreFilter" class="gfSel" onchange="renderLib()"></select>
-      <select id="sagaFilter" class="sfSel" onchange="renderLib()"></select>
+    <div class="seg" id="libViewSeg" style="margin-bottom:10px">
+      <button type="button" data-val="list" class="on" onclick="segPick(this);setLibViewMode('list')"><span data-spr="search" data-spr-size="14"><svg class="icn"><use href="#i-search"/></svg></span> Liste</button>
+      <button type="button" data-val="shelf" onclick="segPick(this);setLibViewMode('shelf')"><span data-spr="shelf" data-spr-size="14"><svg class="icn"><use href="#i-shelf"/></svg></span> Bibliothèque</button>
     </div>
-    <div class="chips" id="filterChips"></div>
-    <div id="bookList"></div>
+    <div id="libListMode">
+      <input class="search" id="search" placeholder="🔍 Rechercher un titre, un auteur, une saga…" oninput="renderLib()">
+      <div class="filterrow">
+        <select id="genreFilter" class="gfSel" onchange="renderLib()"></select>
+        <select id="sagaFilter" class="sfSel" onchange="renderLib()"></select>
+      </div>
+      <div class="chips" id="filterChips"></div>
+      <div id="bookList"></div>
+    </div>
+    <div id="libShelfMode" class="hidden"></div>
   </section>
 
   <!-- DÉFI -->

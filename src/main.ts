@@ -1226,7 +1226,25 @@ function renderSagas(){
 function renderGenreFilter(){
   fillFilterSelects(null,'genreFilter','sagaFilter');
 }
+function setLibViewMode(mode){
+  db.settings.libView=mode;
+  save();render();
+}
+function renderLibShelf(){
+  const el=document.getElementById('libShelfMode');
+  if(!db.books.length){
+    el.innerHTML=`<div class="empty"><span class="big">${icSvg('book')}</span>Ta bibliothèque est vide.<br>Appuie sur <b>+</b> pour ajouter ton premier livre !</div>`;
+    return;
+  }
+  const shelf={nom:'',rows:8,items:db.books.map(b=>({bookId:b.id,mode:'spine'}))};
+  el.innerHTML=shelfVisual(shelf);
+}
 function renderLib(){
+  const mode=db.settings.libView||'list';
+  document.getElementById('libListMode').classList.toggle('hidden',mode!=='list');
+  document.getElementById('libShelfMode').classList.toggle('hidden',mode!=='shelf');
+  [...document.querySelectorAll('#libViewSeg button')].forEach(b=>b.classList.toggle('on',b.dataset.val===mode));
+  if(mode==='shelf'){renderLibShelf();return;}
   renderChips();renderGenreFilter();
   const q=document.getElementById('search').value.toLowerCase().trim();
   let list=filter==='upcoming'?db.books.filter(isUpcoming):db.books.filter(b=>filter==='all'||b.statut===filter);
@@ -4544,6 +4562,7 @@ window.selectCalDay=selectCalDay;
 window.sendFeedback=sendFeedback;
 window.sendFriendRequest=sendFriendRequest;
 window.setLibFilter=setLibFilter;
+window.setLibViewMode=setLibViewMode;
 window.setSmut=setSmut;
 window.setStarVal=setStarVal;
 window.setSub=setSub;
