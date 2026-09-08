@@ -1309,6 +1309,15 @@ function toggleStatutFields(){
   document.getElementById('progPages').classList.toggle('hidden',f!=='papier');
   document.getElementById('progPct').classList.toggle('hidden',f==='papier');
 }
+/* Progression en % (numérique/audio) : slider + saisie directe + raccourcis, tous synchronisés
+   sur les mêmes trois éléments (glisser reste possible, mais taper ou taper un raccourci est
+   plus rapide/précis, surtout sur mobile). */
+function setProg(sliderId,numId,valId,val){
+  val=Math.max(0,Math.min(100,Math.round(+val)||0));
+  document.getElementById(sliderId).value=val;
+  document.getElementById(numId).value=val;
+  document.getElementById(valId).textContent=val+' %';
+}
 function renderStars(){
   document.getElementById('starPick').innerHTML=[1,2,3,4,5].map(i=>
     `<span class="${i<=starVal?'on':''}" onclick="setStarVal(${i})">★</span>`).join('');
@@ -1373,7 +1382,7 @@ function openAdd(){
   document.getElementById('f_dateFin').value=new Date().toISOString().slice(0,10);
   document.getElementById('f_noDate').checked=false;
   document.getElementById('f_dateFin').disabled=false;
-  document.getElementById('f_prog').value=0;document.getElementById('progVal').textContent='0 %';
+  document.getElementById('f_prog').value=0;document.getElementById('f_progNum').value='';document.getElementById('progVal').textContent='0 %';
   document.getElementById('f_page').value='';
   segSet('segFic','fiction');segSet('segStatut','tbr');segSet('segFormat','papier');
   document.getElementById('delBookBtn').classList.add('hidden');
@@ -1414,6 +1423,7 @@ function openEdit(id){
   document.getElementById('f_noDate').checked=noD;
   document.getElementById('f_dateFin').disabled=noD;
   document.getElementById('f_prog').value=b.progression||0;
+  document.getElementById('f_progNum').value=b.progression||'';
   document.getElementById('progVal').textContent=(b.progression||0)+' %';
   document.getElementById('f_page').value=b.pageActuelle||'';
   segSet('segFic',b.fiction===false?'nonfiction':'fiction');
@@ -1502,6 +1512,7 @@ function openQuick(id){
     document.getElementById('q_pageHint').textContent=b.pages?'sur '+b.pages+' pages':'';
   }else{
     document.getElementById('q_prog').value=b.progression||0;
+    document.getElementById('q_progNum').value=b.progression||'';
     document.getElementById('q_progVal').textContent=(b.progression||0)+' %';
   }
   document.getElementById('q_date').value=new Date().toISOString().slice(0,10);
@@ -4781,6 +4792,7 @@ window.setLibFilter=setLibFilter;
 window.setLibViewMode=setLibViewMode;
 window.setSmut=setSmut;
 window.setStarVal=setStarVal;
+window.setProg=setProg;
 window.setSub=setSub;
 window.sfcToggle=sfcToggle;
 window.shelfAddBook=shelfAddBook;

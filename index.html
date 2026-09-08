@@ -368,8 +368,19 @@
       </div>
       <div id="progPct">
         <label>Progression</label>
-        <div class="rangewrap">
-          <input type="range" id="f_prog" min="0" max="100" value="0" oninput="document.getElementById('progVal').textContent=this.value+' %'">
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="f_progNum" inputmode="numeric" min="0" max="100" placeholder="0" style="width:90px" oninput="setProg('f_prog','f_progNum','progVal',this.value)">
+          <span style="color:var(--txt2);font-weight:600">%</span>
+        </div>
+        <div class="chips" style="margin:6px 0 0">
+          <div class="chip" onclick="setProg('f_prog','f_progNum','progVal',0)">0 %</div>
+          <div class="chip" onclick="setProg('f_prog','f_progNum','progVal',25)">25 %</div>
+          <div class="chip" onclick="setProg('f_prog','f_progNum','progVal',50)">50 %</div>
+          <div class="chip" onclick="setProg('f_prog','f_progNum','progVal',75)">75 %</div>
+          <div class="chip" onclick="setProg('f_prog','f_progNum','progVal',100)">100 %</div>
+        </div>
+        <div class="rangewrap" style="margin-top:8px">
+          <input type="range" id="f_prog" min="0" max="100" value="0" oninput="setProg('f_prog','f_progNum','progVal',this.value)">
           <div class="rangeval" id="progVal">0 %</div>
         </div>
       </div>
@@ -533,8 +544,19 @@
     </div>
     <div id="quickPct">
       <label>Progression</label>
-      <div class="rangewrap">
-        <input type="range" id="q_prog" min="0" max="100" value="0" oninput="document.getElementById('q_progVal').textContent=this.value+' %'">
+      <div style="display:flex;align-items:center;gap:8px">
+        <input type="number" id="q_progNum" inputmode="numeric" min="0" max="100" placeholder="0" style="width:90px" oninput="setProg('q_prog','q_progNum','q_progVal',this.value)">
+        <span style="color:var(--txt2);font-weight:600">%</span>
+      </div>
+      <div class="chips" style="margin:6px 0 0">
+        <div class="chip" onclick="setProg('q_prog','q_progNum','q_progVal',0)">0 %</div>
+        <div class="chip" onclick="setProg('q_prog','q_progNum','q_progVal',25)">25 %</div>
+        <div class="chip" onclick="setProg('q_prog','q_progNum','q_progVal',50)">50 %</div>
+        <div class="chip" onclick="setProg('q_prog','q_progNum','q_progVal',75)">75 %</div>
+        <div class="chip" onclick="setProg('q_prog','q_progNum','q_progVal',100)">100 %</div>
+      </div>
+      <div class="rangewrap" style="margin-top:8px">
+        <input type="range" id="q_prog" min="0" max="100" value="0" oninput="setProg('q_prog','q_progNum','q_progVal',this.value)">
         <div class="rangeval" id="q_progVal">0 %</div>
       </div>
     </div>
