@@ -1046,12 +1046,14 @@ function calcStreak(){
   while(ds.has(iso(d))){n++;d.setDate(d.getDate()-1);}
   return n;
 }
+const PAL_HOME_MAX=12;
+function goPal(){filter='tbr';db.settings.libView='list';save();switchTab('lib');}
 function renderHome(){
   const el=document.getElementById('homeWrap');if(!el)return;
   const reading=db.books.filter(b=>b.statut==='reading').sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const year=String(new Date().getFullYear());
   const doneY=db.books.filter(b=>b.statut==='done'&&b.dateFin&&b.dateFin.startsWith(year)).length;
-  const tbr=db.books.filter(b=>b.statut==='tbr').length;
+  const tbr=db.books.filter(b=>b.statut==='tbr').sort((a,b)=>(a.dateAjout||0)-(b.dateAjout||0));
   const streak=calcStreak();
   const obj=db.settings.objectif||0;
   let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
@@ -1085,6 +1087,12 @@ function renderHome(){
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
     </div>`;
   });
+  if(tbr.length){
+    out+=`<div class="secthead"><h2>${icSvg('pile')} Ma PAL (${tbr.length})</h2><button class="smallbtn" onclick="goPal()">Voir tout →</button></div>
+      <div class="hscroll">${tbr.slice(0,PAL_HOME_MAX).map(b=>`<div class="hcard" style="cursor:pointer" onclick="openInfo('${b.id}')">
+        ${coverEl(b.couverture,'')}<span class="nm">${esc(b.titre)}</span><span class="sub">${esc(b.auteur)||''}</span>
+      </div>`).join('')}</div>`;
+  }
   const coups=db.books.filter(b=>b.statut==='done'&&b.note>=5);
   if(coups.length){
     out+=`<h2>${icSvg('heart')} Coups de cœur</h2>
@@ -4713,6 +4721,7 @@ window.editObjectif=editObjectif;
 window.esc=esc;
 window.exportData=exportData;
 window.genRecap=genRecap;
+window.goPal=goPal;
 window.shareRecap=shareRecap;
 window.downloadRecap=downloadRecap;
 window.handleAuthSubmit=handleAuthSubmit;

@@ -146,6 +146,8 @@ nav button.active{color:var(--accent)}
 .cover{width:46px;height:66px;border-radius:6px;object-fit:cover;background:var(--card2);flex:none}
 .cover.sm{width:34px;height:48px;border-radius:5px}
 .cover.lg{width:82px;height:118px;border-radius:8px}
+.secthead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.secthead .smallbtn{flex:none;margin:18px 2px 10px;padding:5px 10px}
 /* Profil (public/aperçu visiteur) : étagères et livres terminés en bande défilable
    horizontalement plutôt qu'empilés verticalement — plus compact, se parcourt d'un glissement. */
 .hscroll{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;-webkit-overflow-scrolling:touch}
