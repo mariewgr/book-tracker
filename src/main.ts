@@ -1053,7 +1053,7 @@ function renderHome(){
   const reading=db.books.filter(b=>b.statut==='reading').sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const year=String(new Date().getFullYear());
   const doneY=db.books.filter(b=>b.statut==='done'&&b.dateFin&&b.dateFin.startsWith(year)).length;
-  const tbr=db.books.filter(b=>b.statut==='tbr').sort((a,b)=>(a.dateAjout||0)-(b.dateAjout||0));
+  const tbr=db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b)).sort((a,b)=>(a.dateAjout||0)-(b.dateAjout||0));
   const streak=calcStreak();
   const obj=db.settings.objectif||0;
   let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
@@ -1987,7 +1987,7 @@ function renderStats(){
   document.getElementById('statCards').innerHTML=`
     <div class="stat"><div class="n">${done.length}</div><div class="l">Livres terminés (total)</div></div>
     <div class="stat"><div class="n">${pages.toLocaleString('fr-FR')}</div><div class="l">Pages des livres terminés</div></div>
-    <div class="stat"><div class="n">${db.books.filter(b=>b.statut==='tbr').length}</div><div class="l">À lire (PAL)</div></div>
+    <div class="stat"><div class="n">${db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b)).length}</div><div class="l">À lire (PAL)</div></div>
     <div class="stat"><div class="n">${avg} ★</div><div class="l">Note moyenne donnée</div></div>`;
   /* Stats pages : moyennes par livre et par période de lecture */
   const doneYear=done.filter(b=>b.dateFin&&b.dateFin.startsWith(String(y)));
@@ -2820,7 +2820,7 @@ function shelfVisual(s,preview){
 function renderShelves(){
   const el=document.getElementById('shelfList');
   /* Étagère de base : la PAL (automatique, toujours à jour) */
-  const tbr=db.books.filter(b=>b.statut==='tbr');
+  const tbr=db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b));
   const pal={nom:'Ma PAL',rows:1,items:tbr.map(b=>({bookId:b.id,mode:'spine'}))};
   let html=`<div class="shelfcard">
     <div class="shelfhead"><h3>${icSvg('pile')} Ma PAL (${tbr.length})</h3>
@@ -3996,7 +3996,7 @@ function profileSectionHTML(key){
     </div>`;
   }
   if(key==='pal'){
-    const tbr=db.books.filter(b=>b.statut==='tbr');
+    const tbr=db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b));
     let h=`<h2>📖 Ma PAL (${tbr.length})</h2>`;
     if(!tbr.length)return h+`<div class="empty" style="padding:14px">${icSvg('empty')} Aucun livre à lire pour l'instant</div>`;
     return h+hstripHTML(tbr);
