@@ -1558,6 +1558,33 @@ function logSession(bookId,titre,pages,date){
   const s=db.sessions.find(x=>x.date===date&&x.bookId===bookId);
   if(s)s.pages+=pages;else db.sessions.push({id:uid(),date,bookId,titre,pages});
 }
+/* Changer le statut directement depuis la fiche du livre (pas besoin d'ouvrir Modifier).
+   Reprend les mêmes effets de bord que saveQuick()/saveBook() pour rester cohérent : date de
+   fin par défaut, confettis à la première fois « Terminé », page/progression remises à zéro en
+   repassant « À lire », journal des pages lues mis à jour selon la différence. */
+function quickSetStatut(id,statut){
+  const b=db.books.find(x=>x.id===id);if(!b)return;
+  if(b.statut===statut)return;
+  const today=new Date().toISOString().slice(0,10);
+  const paper=fmt(b)==='papier';
+  const readOf=x=>x.statut==='done'?(x.pages||0):(paper?(x.pageActuelle||0):Math.round((x.progression||0)/100*(x.pages||0)));
+  const oldRead=readOf(b);
+  const wasDone=b.statut==='done';
+  b.statut=statut;
+  if(statut==='done'){
+    b.progression=100;b.pageActuelle=b.pages||0;
+    if(!b.dateFin)b.dateFin=today;
+    if(!wasDone)confetti();
+  }else if(statut==='dnf'){
+    if(!b.dateFin)b.dateFin=today;
+  }else if(statut==='tbr'){
+    b.progression=0;b.pageActuelle=0;
+  }
+  const newRead=readOf(b);
+  if(newRead-oldRead>0)logSession(b.id,b.titre,newRead-oldRead,today);
+  save();openInfo(id);
+  syncFeedForBook(b);
+}
 function deleteBook(){
   askConfirm('Supprimer ce livre ?',()=>{
     const delId=editId;
@@ -2626,7 +2653,6 @@ function closeSpineCam(){
 /* ---------- Fiche info livre ---------- */
 function openInfo(id){
   const b=db.books.find(x=>x.id===id);if(!b)return;
-  const[sl,sc]=STATUT[b.statut];
   const rows=[
     ['Format',FMT[fmt(b)]],
     ['Genre',b.genre],
@@ -2679,7 +2705,12 @@ function openInfo(id){
       <div style="margin-top:12px">
         <h2 style="margin:0 0 4px">${esc(b.titre)}</h2>
         <div class="auth" style="color:var(--txt2);margin-bottom:8px">${esc(b.auteur)||'—'}</div>
-        <span class="badge ${sc}">${sl}</span>
+        <div class="seg">
+          <button type="button" class="${b.statut==='tbr'?'on':''}" onclick="quickSetStatut('${id}','tbr')">À lire</button>
+          <button type="button" class="${b.statut==='reading'?'on':''}" onclick="quickSetStatut('${id}','reading')">En cours</button>
+          <button type="button" class="${b.statut==='done'?'on':''}" onclick="quickSetStatut('${id}','done')">Terminé</button>
+          <button type="button" class="${b.statut==='dnf'?'on':''}" onclick="quickSetStatut('${id}','dnf')">DNF</button>
+        </div>
         ${(b.statut==='done'||b.statut==='dnf')&&b.note?`<div class="stars" style="margin-top:8px;font-size:1.1rem">${'★'.repeat(b.note)}${'☆'.repeat(5-b.note)}</div>`:''}
       </div>
     </div>
@@ -4711,6 +4742,7 @@ window.cycleStat=cycleStat;
 window.declineFriendRequest=declineFriendRequest;
 window.delCitation=delCitation;
 window.deleteBook=deleteBook;
+window.quickSetStatut=quickSetStatut;
 window.deletePost=deletePost;
 window.deleteSession=deleteSession;
 window.deleteShelf=deleteShelf;
