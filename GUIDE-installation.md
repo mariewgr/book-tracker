@@ -337,17 +337,31 @@ Pour remplir un livre en photographiant une fiche de lecture manuscrite :
 ## 7. Développer en local (TypeScript + Vite)
 
 Le code est passé d'un unique `index.html` (HTML + tout le JS mélangé dedans) à une vraie
-structure de projet, pour rester lisible à mesure que l'app grossit :
+structure de projet, découpée par fichier pour rester lisible à mesure que l'app grossit :
 
 ```
 book-tracker/
-  index.html        squelette HTML (structure des pages, quasi plus de logique)
+  index.html          squelette HTML (structure des pages, quasi plus de logique)
   src/
-    main.ts         toute la logique de l'app (TypeScript)
-    style.css       tout le CSS
-  public/           images, manifest, service worker — copiés tels quels au build
+    main.ts           point d'entrée : orchestration (render(), boot) + exposition sur window
+    style.css         tout le CSS
+    core/             utilitaires partagés par plusieurs pages
+      state.ts        modèle de données (db) + persistance locale
+      i18n.ts         traductions FR/EN/DE
+      supabase.ts     session + synchronisation cloud temps réel
+      utils.ts        dialogues, toasts, glisser-déposer générique, échappement HTML…
+      icons.ts        système d'icônes personnalisées (PNG + repli SVG)
+      book-utils.ts   petits utilitaires livre (format, couleur de tranche…)
+      navigation.ts   changement d'onglet
+      images.ts       sélection/compression/rognage de photo + stockage cloud
+    pages/            un fichier par page/fonctionnalité (accueil, bibliothèque, étagères,
+                      formulaire livre, fiche livre, défi, stats, réglages, amis, fil…)
+  public/             images, manifest, service worker — copiés tels quels au build
   package.json, vite.config.ts, tsconfig.json
 ```
+
+Chaque fichier de `pages/` exporte ses fonctions/variables et importe ce dont il a besoin des
+autres fichiers (`core/` ou `pages/`) — modules ES standard, assemblés par Vite au build.
 
 **Lancer l'app en local** (nécessite [Node.js](https://nodejs.org)) :
 

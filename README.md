@@ -87,7 +87,7 @@ Clé gratuite sur [aistudio.google.com](https://aistudio.google.com) → *Get AP
 
 ## Notes techniques
 
-- `index.html` (squelette) + `src/main.ts` (toute la logique, TypeScript) + `src/style.css`, buildés avec Vite. `public/` contient les images, le manifest et le service worker, copiés tels quels. Aucune dépendance au chargement (ZXing et supabase-js sont chargés à la demande depuis un CDN).
+- `index.html` (squelette) + `src/` (logique TypeScript, découpée en modules par page/fonctionnalité sous `src/pages/` et `src/core/`, assemblée par `src/main.ts`) + `src/style.css`, buildés avec Vite. `public/` contient les images, le manifest et le service worker, copiés tels quels. Aucune dépendance au chargement (ZXing et supabase-js sont chargés à la demande depuis un CDN).
 - TypeScript en typage permissif (`strict: false`) pour l'instant — resserrable progressivement.
 - Données en `localStorage`/IndexedDB (miroir local de la base), photos compressées en JPEG ~520 px.
 - Conflits de sync résolus en « dernière écriture gagnante » (horodatage `meta.updatedAt`).
