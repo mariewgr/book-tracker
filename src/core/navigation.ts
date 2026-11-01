@@ -4,8 +4,8 @@ import {icSvg} from './icons';
 import {render} from '../main';
 
 export let tab='home';
-export const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc','feedback','friends','feed'];
-export const PLUS_TABS=new Set(['saga','rank','defi','stats','disc','feedback','friends','feed']);
+export const TAB_KEYS=['home','lib','shelf','saga','rank','defi','stats','cal','disc','feedback','friends','feed','tandem'];
+export const PLUS_TABS=new Set(['saga','rank','defi','stats','disc','feedback','friends','feed','tandem']);
 export function switchTab(t){
   tab=t;
   try{sessionStorage.setItem('mabibli_tab',t);}catch(e){}

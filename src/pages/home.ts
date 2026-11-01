@@ -9,6 +9,7 @@ import {openInfo} from './book-info';
 import {defiCardHTML} from './defi';
 import {setLibFilter} from './library';
 import {openQuick} from './quick-update';
+import {tandemHomeHTML} from './tandem';
 
 export function editObjectif(){
   const year=new Date().getFullYear();
@@ -66,6 +67,7 @@ export function renderHome(){
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
     </div>`;
   });
+  out+=tandemHomeHTML();
   if(tbr.length){
     out+=`<div class="secthead"><h2>${icSvg('pile')} Ma PAL (${tbr.length})</h2><button class="smallbtn" onclick="goPal()">Voir tout →</button></div>
       <div class="hscroll">${tbr.slice(0,PAL_HOME_MAX).map(b=>`<div class="hcard" style="cursor:pointer" onclick="openInfo('${b.id}')">

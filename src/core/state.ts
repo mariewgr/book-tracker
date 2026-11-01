@@ -6,7 +6,7 @@ import {toast} from './utils';
 export const KEY='mabibli_v1';
 export function normalizeDb(d){
   d.books=d.books||[];d.loans=d.loans||[];d.sessions=d.sessions||[];
-  d.shelves=d.shelves||[];d.ranking=d.ranking||[];
+  d.shelves=d.shelves||[];d.tandems=d.tandems||[];d.ranking=d.ranking||[];
   d.settings=d.settings||{taille:165};d.meta=d.meta||{updatedAt:0};
   d.settings.lang=d.settings.lang||'fr';
   d.discover=d.discover||{rejected:[]};d.discover.rejected=d.discover.rejected||[];

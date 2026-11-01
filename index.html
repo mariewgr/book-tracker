@@ -175,6 +175,11 @@
     <div id="shelfList"></div>
   </section>
 
+  <!-- TANDEM -->
+  <section id="view-tandem" class="hidden">
+    <div id="tandemWrap"></div>
+  </section>
+
   <!-- SAGAS -->
   <section id="view-saga" class="hidden">
     <input class="search" id="sagaSearch" placeholder="🔍 Chercher une saga…" oninput="renderSagas()">
@@ -269,6 +274,7 @@
   <div class="sheet">
     <h2>Plus</h2>
     <button class="btn ghost menub" onclick="closeModals();switchTab('saga')"><span data-spr="saga" data-spr-size="20"><svg class="icn"><use href="#i-saga"/></svg></span> Sagas</button>
+    <button class="btn ghost menub" onclick="closeModals();switchTab('tandem')">👯 Lectures en tandem</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('rank')"><span data-spr="trophy" data-spr-size="20"><svg class="icn"><use href="#i-trophy"/></svg></span> Top — mon classement</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('defi')"><span data-spr="pile" data-spr-size="20"><svg class="icn"><use href="#i-ruler"/></svg></span> Défi de la pile</button>
     <button class="btn ghost menub" onclick="closeModals();switchTab('stats')"><span data-spr="chart" data-spr-size="20"><svg class="icn"><use href="#i-chart"/></svg></span> Statistiques</button>
@@ -430,6 +436,7 @@
 <input type="file" id="imgPick" accept="image/*" class="hidden" onchange="onImgPicked(this)">
 <input type="file" id="fichePick" accept="image/*" class="hidden" onchange="onFichePicked(this)">
 <input type="file" id="quotePick" accept="image/*" class="hidden" onchange="onQuotePicked(this)">
+<input type="file" id="tandemPick" accept="image/*" class="hidden" onchange="onTandemPicked(this)">
 
 <!-- ROGNER PHOTO (couverture / tranche) -->
 <div class="overlay" id="cropModal" style="z-index:65" onclick="if(event.target===this)closeCropper(false)">
@@ -529,6 +536,22 @@
     <p class="note-io">Mode d'affichage : <b>Tranche</b> = debout · <b>Couv.</b> = couverture de face · <b>Pile</b> = couché (les « Pile » qui se suivent s'empilent ensemble, repère doré). Glisser un livre vers une autre rangée le fixe sur cet étage.</p>
     <button class="btn" onclick="saveShelf()">Enregistrer</button>
     <button class="btn danger" onclick="deleteShelf()">Supprimer l'étagère</button>
+    <button class="btn ghost" onclick="closeModals()">Annuler</button>
+  </div>
+</div>
+
+<!-- MODAL GUIDE TANDEM -->
+<div class="overlay" id="tandemModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2 id="tandemFormTitle">Nouveau guide en tandem</h2>
+    <label>Nom du guide (optionnel)</label>
+    <input id="tg_titre" placeholder="Ex : Empire of Storms &amp; Tower of Dawn">
+    <label>Étapes, dans l'ordre — une par ligne : « Livre – Chapitre »</label>
+    <textarea id="tg_text" rows="10" placeholder="Empire of Storms – CH1&#10;Tower of Dawn – CH1&#10;Empire of Storms – CH2"></textarea>
+    <div class="isbnmsg" id="tg_msg"></div>
+    <button class="btn ghost" onclick="pickTandemPhoto()"><span data-spr="camera" data-spr-size="18"><svg class="icn"><use href="#i-camera"/></svg></span> Importer depuis une photo du guide</button>
+    <button class="btn" onclick="saveTandem()">Enregistrer</button>
+    <button class="btn ghost danger hidden" id="tg_del" onclick="deleteTandem()">Supprimer ce guide</button>
     <button class="btn ghost" onclick="closeModals()">Annuler</button>
   </div>
 </div>

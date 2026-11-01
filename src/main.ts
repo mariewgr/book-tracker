@@ -24,6 +24,7 @@ import {addBookFromPreview,closeBookPreview,closeProfileVisitor,openBookPreview,
 import {deleteBook,openQuick,quickSetStatut,saveQuick} from './pages/quick-update';
 import {rankAdd,rankMove,rankRemove,renderRank,renderRankAdd} from './pages/ranking';
 import {renderSagas} from './pages/sagas';
+import {closeTandem,deleteTandem,onTandemPicked,openTandem,openTandemForm,pickTandemPhoto,renderTandem,saveTandem,tandemTick} from './pages/tandem';
 import {applyTheme,backfillSynopsis,onProfilePhotoPicked,openProfile,openSettings,pfToggleSection,pickProfilePhoto,saveProfile,saveSettings} from './pages/settings';
 import {createShelfFromCols,deleteShelf,openShelfEdit,openShelfFromCols,renderShelfAdd,renderShelfEditViz,renderShelves,saveShelf,sfcToggle,shelfAddBook,shelfRemove,shelfSlotTap,shelfSourceAdd,shelfSourceRemove,shelfUnlink} from './pages/shelves';
 import {chooseSpine,closeSpineCam,openSpineFind,searchCommunitySpines,spineRetake,spineShoot,spineUse} from './pages/spine-tools';
@@ -40,7 +41,7 @@ export function render(){
   applyTheme();
   const map={home:renderHome,lib:renderLib,shelf:renderShelves,saga:renderSagas,
     rank:renderRank,defi:renderDefi,stats:renderStats,cal:renderCal,disc:renderDisc,feedback:()=>{},
-    friends:renderFriends,feed:renderFeed};
+    friends:renderFriends,feed:renderFeed,tandem:renderTandem};
   (map[tab]||renderHome)();
 }
 export async function loadLocalData(){
@@ -241,6 +242,7 @@ window.renderPcBookResults=renderPcBookResults;
 window.renderPcPhotos=renderPcPhotos;
 window.renderRankAdd=renderRankAdd;
 window.renderSagas=renderSagas;
+Object.assign(window,{closeTandem,deleteTandem,onTandemPicked,openTandem,openTandemForm,pickTandemPhoto,saveTandem,tandemTick});
 window.renderShelfAdd=renderShelfAdd;
 window.renderShelfEditViz=renderShelfEditViz;
 window.renderStars=renderStars;
