@@ -36,15 +36,18 @@ export async function gemMoreModels(){
   return more;
 }
 /* `fast` : pas de phase de « réflexion » (modèles 2.5) — bien plus rapide pour une simple transcription */
-export async function gemVision(prompt,b64,json,fast){
+export async function gemVision(prompt,b64,json,fast,onTry){
   let lastErr='';
   async function tryModel(model){
+    if(onTry)onTry(model);
+    /* mode rapide : un modèle qui ne répond pas en 40 s est abandonné au profit du suivant */
+    const ctl=fast?new AbortController():null,timer=ctl&&setTimeout(()=>ctl.abort(),40000);
     try{
       const cfg={temperature:0};
       if(json)cfg.response_mime_type='application/json';
       if(fast&&/2\.5/.test(model))cfg.thinkingConfig={thinkingBudget:0};
       const r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+model+':generateContent',{
-        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},
+        method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},signal:ctl?ctl.signal:undefined,
         body:JSON.stringify({
           contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64}}]}],
           generationConfig:cfg
@@ -61,7 +64,8 @@ export async function gemVision(prompt,b64,json,fast){
         .map(p=>p.text||'').join('').trim();
       if(txt)return txt;
       lastErr='réponse vide du modèle';
-    }catch(e){lastErr=e.message||lastErr;}
+    }catch(e){lastErr=e.name==='AbortError'?'pas de réponse de '+model.replace('models/','')+' après 40 s':(e.message||lastErr);}
+    finally{if(timer)clearTimeout(timer);}
     return null;
   }
   for(const model of GEM_BASE){const t=await tryModel(model);if(t)return t;}
