@@ -35,7 +35,7 @@ const stepText=(g,s)=>(g.names[s.k]?g.names[s.k]+' – ':'')+s.l;
 /* Livre de la bibliothèque correspondant au nom d'un livre du guide (titre identique, sinon contenu) */
 function bookFor(nom){
   const n=nom.toLowerCase();if(!n)return null;
-  return db.books.find(b=>b.titre.toLowerCase()===n)||db.books.find(b=>{const x=b.titre.toLowerCase();return x.includes(n)||n.includes(x);})||null;
+  return db.books.find(b=>b.titre.toLowerCase()===n)||db.books.find(b=>{const x=b.titre.toLowerCase();return Math.min(x.length,n.length)>=4&&(x.includes(n)||n.includes(x));})||null;
 }
 const pctOf=g=>g.steps.length?Math.round(g.pos/g.steps.length*100):0;
 const today=()=>new Date().toISOString().slice(0,10);
@@ -154,13 +154,25 @@ export function openTandemForm(id){
   /* choix des livres déjà faits pour ce guide (nom dans le guide → id du livre de la bibliothèque) */
   formLinks={};
   if(g)g.names.forEach((nom,k)=>{const b=linkedBook(g,k);formLinks[nom]=b?b.id:'';});
-  formNames='\0';document.getElementById('tg_links').innerHTML='';
+  formAutoTitle='';formNames='\0';document.getElementById('tg_links').innerHTML='';
   tandemLinksRefresh();
   document.getElementById('tg_del').classList.toggle('hidden',!g);
   document.getElementById('tandemModal').classList.add('open');
 }
 /* Un menu par livre du guide : on associe chacun à un livre de la bibliothèque (le % lu y sera écrit) */
 export let formLinks={},formNames='';
+/* Titre proposé : les titres des livres choisis, reliés par « & » */
+export let formAutoTitle='';
+function autoTitle(){
+  const {names}=parseSteps(document.getElementById('tg_text').value);
+  return names.map(n=>db.books.find(b=>b.id===formLinks[n])).filter(Boolean).map(b=>b.titre).join(' & ');
+}
+/* Le titre suit les livres choisis tant qu'il est vide ou n'a pas été modifié à la main */
+function syncTitle(){
+  const el=document.getElementById('tg_titre'),auto=autoTitle();
+  if(el.value===''||el.value===formAutoTitle)el.value=auto;
+  formAutoTitle=auto;
+}
 export function tandemLinksRefresh(){
   const {names}=parseSteps(document.getElementById('tg_text').value);
   if(names.join('|')===formNames)return;
@@ -169,17 +181,19 @@ export function tandemLinksRefresh(){
   names.forEach(n=>{if(formLinks[n]===undefined){const b=bookFor(n);formLinks[n]=b?b.id:'';}});
   document.getElementById('tg_links').innerHTML=names.map((nom,k)=>`<label style="color:${colOf(k)}">Livre de ta bibliothèque pour « ${esc(nom||'—')} »</label>
     <select onchange="setTandemLink(${k},this.value)"><option value="">— aucun —</option>${opts.map(b=>`<option value="${b.id}"${formLinks[nom]===b.id?' selected':''}>${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</option>`).join('')}</select>`).join('');
+  syncTitle();
 }
 export function setTandemLink(k,id){
   const nom=parseSteps(document.getElementById('tg_text').value).names[k];
   if(nom!==undefined)formLinks[nom]=id;
+  syncTitle();
 }
 export function saveTandem(){
   const titre=document.getElementById('tg_titre').value.trim();
   const {names,steps}=parseSteps(document.getElementById('tg_text').value);
   if(!steps.length){toast('Ajoute au moins une étape 🙂');return;}
   const old=editId?db.tandems.find(x=>x.id===editId):null;
-  const g={id:old?old.id:uid(),titre:titre||names.filter(Boolean).join(' & ')||'Tandem',names,steps,links:names.map(n=>formLinks[n]||''),pos:Math.min(old?old.pos:0,steps.length)};
+  const g={id:old?old.id:uid(),titre:titre||autoTitle()||names.filter(Boolean).join(' & ')||'Tandem',names,steps,links:names.map(n=>formLinks[n]||''),pos:Math.min(old?old.pos:0,steps.length)};
   if(old)db.tandems=db.tandems.map(x=>x.id===old.id?g:x);else db.tandems.push(g);
   save();closeModals();
   openTandem(g.id);

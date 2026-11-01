@@ -217,7 +217,7 @@ export const I18N={
     'Étapes, dans l\'ordre — une par ligne : « Livre – Chapitre »':'Steps in order — one per line: “Book – Chapter”',
     'Importer depuis une photo du guide':'Import from a photo of the guide',
     'Supprimer ce guide':'Delete this guide',
-    'Ex : Empire of Storms & Tower of Dawn':'E.g.: Empire of Storms & Tower of Dawn',
+    'Auto : titres des livres choisis':'Auto: titles of the chosen books',
   },
   de:{
     'Accueil':'Start',
@@ -431,7 +431,7 @@ export const I18N={
     'Étapes, dans l\'ordre — une par ligne : « Livre – Chapitre »':'Schritte in Reihenfolge — eine pro Zeile: „Buch – Kapitel“',
     'Importer depuis une photo du guide':'Aus einem Foto des Plans importieren',
     'Supprimer ce guide':'Diesen Plan löschen',
-    'Ex : Empire of Storms & Tower of Dawn':'Z. B.: Empire of Storms & Tower of Dawn',
+    'Auto : titres des livres choisis':'Auto: Titel der gewählten Bücher',
   },
 };
 /* ---------- Internationalisation (FR source, EN/DE traduits) ----------
