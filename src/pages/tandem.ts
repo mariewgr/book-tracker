@@ -213,19 +213,26 @@ export function onTandemPicked(inp){
   const f=inp.files[0];inp.value='';
   if(!f)return;
   const msg=document.getElementById('tg_msg');
-  msg.textContent='⏳ Lecture du guide… (compte environ 15 à 30 s pour un long guide)';
+  msg.textContent='⏳ Lecture du guide…';
   const img=new Image();
   img.onload=async()=>{
-    const maxH=2400,sc=Math.min(1,maxH/img.height);
+    const maxH=2000,sc=Math.min(1,maxH/img.height);
     const c=document.createElement('canvas');
     c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
     c.getContext('2d').drawImage(img,0,0,c.width,c.height);
     URL.revokeObjectURL(img.src);
-    const b64=c.toDataURL('image/jpeg',0.85).split(',')[1];
+    const b64=c.toDataURL('image/jpeg',0.8).split(',')[1];
+    /* Un guide fait ~150 lignes sur plusieurs colonnes : une seule réponse serait longue à générer.
+       On lit donc chaque colonne dans un appel séparé, en parallèle, puis on recolle dans l'ordre. */
+    const COLS=3;let done=0;
+    const col=n=>gemVision('Cette image est un guide de lecture en tandem : une liste de cases à cocher répartie sur '+COLS+' colonnes. Transcris UNIQUEMENT la colonne n°'+n+' en partant de la gauche, de haut en bas, une ligne par étape, au format « Titre du livre – Chapitre », sans rien ajouter ni numéroter. Si cette colonne n\'existe pas, réponds exactement : VIDE',b64,false,true)
+      .then(r=>{done++;msg.textContent='⏳ Lecture du guide… colonnes lues : '+done+'/'+COLS;return r;});
     try{
-      const txt=await gemVision('Cette image est un guide de lecture en tandem : une liste de cases à cocher répartie sur plusieurs colonnes. Transcris chaque ligne, dans l\'ordre de lecture (colonne de gauche de haut en bas, puis colonne suivante, etc.), une ligne par étape, au format « Titre du livre – Chapitre », sans rien ajouter ni numéroter.',b64,false,true);
+      msg.textContent='⏳ Lecture du guide… colonnes lues : 0/'+COLS;
+      const parts=await Promise.all([1,2,3].map(col));
+      const txt=parts.map(p=>p.replace(/```/g,'').trim()).filter(p=>p&&p!=='VIDE').join('\n');
       const ta=document.getElementById('tg_text');
-      ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+txt.replace(/```/g,'').trim();
+      ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+txt;
       const {steps}=parseSteps(ta.value);
       tandemLinksRefresh();
       msg.textContent='✅ '+steps.length+' étapes lues — vérifie la liste avant d\'enregistrer.';
