@@ -16,8 +16,10 @@ export function pickFiche(){
   document.getElementById('fichePick').click();
 }
 /* Appel vision Gemini : modèles stables uniquement, bascule auto si quota/indispo */
-export async function gemModels(){
-  const base=['models/gemini-2.5-flash','models/gemini-2.0-flash'];
+export const GEM_BASE=['models/gemini-2.5-flash','models/gemini-2.0-flash'];
+/* Autres modèles flash stables de la clé : n'est interrogé que si les deux modèles de base échouent */
+export async function gemMoreModels(){
+  const more=[];
   try{
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=100',
       {headers:{'x-goog-api-key':gemKey}});
@@ -28,27 +30,30 @@ export async function gemModels(){
         /flash/i.test(m.name)&&
         !/preview|exp|lite|image|tts|live|audio|thinking|8b|latest/i.test(m.name))
         .sort((a,b)=>b.name.localeCompare(a.name))
-        .forEach(m=>{if(!base.includes(m.name))base.push(m.name);});
+        .forEach(m=>{if(!GEM_BASE.includes(m.name))more.push(m.name);});
     }
   }catch(e){}
-  return base;
+  return more;
 }
-export async function gemVision(prompt,b64,json){
-  const models=await gemModels();
+/* `fast` : pas de phase de « réflexion » (modèles 2.5) — bien plus rapide pour une simple transcription */
+export async function gemVision(prompt,b64,json,fast){
   let lastErr='';
-  for(const model of models){
+  async function tryModel(model){
     try{
+      const cfg={temperature:0};
+      if(json)cfg.response_mime_type='application/json';
+      if(fast&&/2\.5/.test(model))cfg.thinkingConfig={thinkingBudget:0};
       const r=await fetch('https://generativelanguage.googleapis.com/v1beta/'+model+':generateContent',{
         method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gemKey},
         body:JSON.stringify({
           contents:[{parts:[{text:prompt},{inline_data:{mime_type:'image/jpeg',data:b64}}]}],
-          generationConfig:json?{response_mime_type:'application/json',temperature:0}:{temperature:0}
+          generationConfig:cfg
         })});
       if(!r.ok){
         const er=await r.json().catch(()=>({}));
         lastErr=((er.error&&er.error.message)||('HTTP '+r.status));
         /* quota atteint ou modèle indisponible → on tente le modèle suivant */
-        if(r.status===429||r.status===404||r.status===400)continue;
+        if(r.status===429||r.status===404||r.status===400)return null;
         throw new Error(lastErr);
       }
       const d=await r.json();
@@ -57,7 +62,10 @@ export async function gemVision(prompt,b64,json){
       if(txt)return txt;
       lastErr='réponse vide du modèle';
     }catch(e){lastErr=e.message||lastErr;}
+    return null;
   }
+  for(const model of GEM_BASE){const t=await tryModel(model);if(t)return t;}
+  for(const model of await gemMoreModels()){const t=await tryModel(model);if(t)return t;}
   throw new Error(lastErr||'aucun modèle Gemini disponible pour cette clé');
 }
 export const FICHE_PROMPT=`Voici la photo d'une fiche de lecture manuscrite en français. Extrais les informations et réponds UNIQUEMENT avec un JSON valide, sans commentaire, avec exactement ces clés (mets null si l'info est absente ou illisible) :

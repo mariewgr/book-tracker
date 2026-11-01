@@ -213,7 +213,7 @@ export function onTandemPicked(inp){
   const f=inp.files[0];inp.value='';
   if(!f)return;
   const msg=document.getElementById('tg_msg');
-  msg.textContent='⏳ Lecture du guide…';
+  msg.textContent='⏳ Lecture du guide… (compte environ 15 à 30 s pour un long guide)';
   const img=new Image();
   img.onload=async()=>{
     const maxH=2400,sc=Math.min(1,maxH/img.height);
@@ -223,7 +223,7 @@ export function onTandemPicked(inp){
     URL.revokeObjectURL(img.src);
     const b64=c.toDataURL('image/jpeg',0.85).split(',')[1];
     try{
-      const txt=await gemVision('Cette image est un guide de lecture en tandem : une liste de cases à cocher répartie sur plusieurs colonnes. Transcris chaque ligne, dans l\'ordre de lecture (colonne de gauche de haut en bas, puis colonne suivante, etc.), une ligne par étape, au format « Titre du livre – Chapitre », sans rien ajouter ni numéroter.',b64,false);
+      const txt=await gemVision('Cette image est un guide de lecture en tandem : une liste de cases à cocher répartie sur plusieurs colonnes. Transcris chaque ligne, dans l\'ordre de lecture (colonne de gauche de haut en bas, puis colonne suivante, etc.), une ligne par étape, au format « Titre du livre – Chapitre », sans rien ajouter ni numéroter.',b64,false,true);
       const ta=document.getElementById('tg_text');
       ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+txt.replace(/```/g,'').trim();
       const {steps}=parseSteps(ta.value);
