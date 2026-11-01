@@ -18,10 +18,13 @@ export function openQuick(id){
   if(paper){
     document.getElementById('q_page').value=b.pageActuelle||'';
     document.getElementById('q_pageHint').textContent=b.pages?'sur '+b.pages+' pages':'';
+    document.getElementById('q_pctHint').textContent='';
   }else{
     document.getElementById('q_prog').value=b.progression||0;
     document.getElementById('q_progNum').value=b.progression||'';
     document.getElementById('q_progVal').textContent=(b.progression||0)+' %';
+    /* Sans nombre de pages, un % ne peut pas être converti en pages lues : rien n'irait au journal */
+    document.getElementById('q_pctHint').textContent=b.pages?'':'⚠️ Ce livre n\'a pas de nombre de pages : renseigne-le (Modifier) pour que tes pages lues apparaissent dans le journal.';
   }
   document.getElementById('q_date').value=new Date().toISOString().slice(0,10);
   document.getElementById('quickModal').classList.add('open');
