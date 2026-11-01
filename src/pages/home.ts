@@ -9,7 +9,7 @@ import {openInfo} from './book-info';
 import {defiCardHTML} from './defi';
 import {setLibFilter} from './library';
 import {openQuick} from './quick-update';
-import {tandemHomeHTML} from './tandem';
+import {hasTandemReading,tandemActiveBookIds,tandemReadingHTML} from './tandem';
 
 export function editObjectif(){
   const year=new Date().getFullYear();
@@ -30,14 +30,17 @@ export const PAL_HOME_MAX=12;
 export function goPal(){setLibFilter('tbr');db.settings.libView='list';save();switchTab('lib');}
 export function renderHome(){
   const el=document.getElementById('homeWrap');if(!el)return;
-  const reading=db.books.filter(b=>b.statut==='reading').sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
+  const readingAll=db.books.filter(b=>b.statut==='reading');
+  /* les livres d'un guide en tandem sont regroupés dans la carte du guide */
+  const inTandem=tandemActiveBookIds();
+  const reading=readingAll.filter(b=>!inTandem.has(b.id)).sort((a,b)=>(b.dateAjout||0)-(a.dateAjout||0));
   const year=String(new Date().getFullYear());
   const doneY=db.books.filter(b=>b.statut==='done'&&b.dateFin&&b.dateFin.startsWith(year)).length;
-  const tbr=db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b)).sort((a,b)=>(a.dateAjout||0)-(b.dateAjout||0));
+  const tbr=db.books.filter(b=>b.statut==='tbr'&&!isUpcoming(b)&&!inTandem.has(b.id)).sort((a,b)=>(a.dateAjout||0)-(b.dateAjout||0));
   const streak=calcStreak();
   const obj=db.settings.objectif||0;
   let out=`<div class="statgrid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:6px">
-    <div class="stat"><div class="n">${reading.length}</div><div class="l">En cours</div></div>
+    <div class="stat"><div class="n">${readingAll.length}</div><div class="l">En cours</div></div>
     <div class="stat"><div class="n">${doneY}</div><div class="l">Terminés en ${year}</div></div>
     <div class="stat"><div class="n">🔥 ${streak}</div><div class="l">Jour${streak>1?'s':''} d'affilée</div></div>
   </div>`;
@@ -55,7 +58,7 @@ export function renderHome(){
     </div>`;
   }
   out+=`<h2>Mes lectures en cours</h2>`;
-  if(!reading.length)
+  if(!reading.length&&!hasTandemReading())
     out+=`<div class="empty">${icSvg('empty')} Aucune lecture en cours<br>Passe un livre « En cours » depuis la Bibli !</div>`;
   reading.forEach(b=>{
     out+=`<div class="book" onclick="openInfo('${b.id}')">
@@ -67,7 +70,7 @@ export function renderHome(){
       <button class="quickbtn" onclick="event.stopPropagation();openQuick('${b.id}')">${icSvg('book-open')} Mettre à jour mon avancement</button>
     </div>`;
   });
-  out+=tandemHomeHTML();
+  out+=tandemReadingHTML();
   if(tbr.length){
     out+=`<div class="secthead"><h2>${icSvg('pile')} Ma PAL (${tbr.length})</h2><button class="smallbtn" onclick="goPal()">Voir tout →</button></div>
       <div class="hscroll">${tbr.slice(0,PAL_HOME_MAX).map(b=>`<div class="hcard" style="cursor:pointer" onclick="openInfo('${b.id}')">

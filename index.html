@@ -556,6 +556,21 @@
   </div>
 </div>
 
+<!-- MODAL AVANCEMENT TANDEM -->
+<div class="overlay" id="tandemQuickModal" onclick="if(event.target===this)closeModals()">
+  <div class="sheet">
+    <h2 id="tq_title"></h2>
+    <div id="tq_sum"></div>
+    <label>Chapitres lus</label>
+    <div id="tq_list" style="max-height:34vh;overflow-y:auto;position:relative"></div>
+    <div id="tq_books"></div>
+    <label>Lu le</label>
+    <input id="tq_date" type="date">
+    <button class="btn" onclick="saveTandemQuick()">Enregistrer</button>
+    <button class="btn ghost" onclick="closeModals()">Annuler</button>
+  </div>
+</div>
+
 <!-- MODAL AVANCEMENT RAPIDE -->
 <div class="overlay" id="quickModal" onclick="if(event.target===this)closeModals()">
   <div class="sheet">
