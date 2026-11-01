@@ -38,10 +38,12 @@ export async function gemMoreModels(){
 /* `fast` : pas de phase de « réflexion » (modèles 2.5) — bien plus rapide pour une simple transcription */
 export async function gemVision(prompt,b64,json,fast,onTry){
   let lastErr='';
+  const ctls=[];
   async function tryModel(model){
     if(onTry)onTry(model);
-    /* mode rapide : un modèle qui ne répond pas en 40 s est abandonné au profit du suivant */
-    const ctl=fast?new AbortController():null,timer=ctl&&setTimeout(()=>ctl.abort(),40000);
+    /* mode rapide : un modèle qui ne répond pas en 30 s est abandonné */
+    const ctl=fast?new AbortController():null,timer=ctl&&setTimeout(()=>ctl.abort(),30000);
+    if(ctl)ctls.push(ctl);
     try{
       const cfg={temperature:0};
       if(json)cfg.response_mime_type='application/json';
@@ -64,11 +66,34 @@ export async function gemVision(prompt,b64,json,fast,onTry){
         .map(p=>p.text||'').join('').trim();
       if(txt)return txt;
       lastErr='réponse vide du modèle';
-    }catch(e){lastErr=e.name==='AbortError'?'pas de réponse de '+model.replace('models/','')+' après 40 s':(e.message||lastErr);}
+    }catch(e){lastErr=e.name==='AbortError'?'pas de réponse de '+model.replace('models/','')+' après 30 s':(e.message||lastErr);}
     finally{if(timer)clearTimeout(timer);}
     return null;
   }
-  for(const model of GEM_BASE){const t=await tryModel(model);if(t)return t;}
+  /* mode rapide : le 2e modèle est lancé en doublon si le 1er tarde (7 s), le plus rapide gagne */
+  function race(models){
+    return new Promise(resolve=>{
+      let next=0,pending=0,won=false,timer=null;
+      const launch=()=>{
+        clearTimeout(timer);
+        if(won||next>=models.length)return;
+        pending++;
+        tryModel(models[next++]).then(t=>{
+          pending--;
+          if(won)return;
+          if(t){won=true;clearTimeout(timer);resolve(t);return;}
+          if(next<models.length)launch();else if(!pending)resolve(null);
+        });
+        if(next<models.length)timer=setTimeout(launch,7000);
+      };
+      launch();
+    });
+  }
+  if(fast){
+    const t=await race(GEM_BASE);
+    ctls.forEach(c=>c.abort());
+    if(t)return t;
+  }else for(const model of GEM_BASE){const t=await tryModel(model);if(t)return t;}
   for(const model of await gemMoreModels()){const t=await tryModel(model);if(t)return t;}
   throw new Error(lastErr||'aucun modèle Gemini disponible pour cette clé');
 }

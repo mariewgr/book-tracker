@@ -173,19 +173,37 @@ function syncTitle(){
   if(el.value===''||el.value===formAutoTitle)el.value=auto;
   formAutoTitle=auto;
 }
+const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+/* Un bloc par livre du guide : le livre choisi + une barre de recherche dans la bibliothèque */
+function renderLinks(){
+  const {names}=parseSteps(document.getElementById('tg_text').value);
+  document.getElementById('tg_links').innerHTML=names.map((nom,k)=>{
+    const b=db.books.find(x=>x.id===formLinks[nom]);
+    return `<label style="color:${colOf(k)}">Livre de ta bibliothèque pour « ${esc(nom||'—')} »</label>
+      ${b?`<div class="mile" style="gap:10px;padding:8px 10px">${coverEl(b.couverture,'sm')}<span class="name">${esc(b.titre)}</span><button type="button" class="smallbtn" title="Retirer" onclick="setTandemLink(${k},'')">✕</button></div>`:''}
+      <input class="search" id="tg_s${k}" autocomplete="off" placeholder="${b?'🔍 Changer de livre…':'🔍 Chercher un livre de ma bibliothèque…'}" oninput="tandemSearch(${k},this.value)" style="margin-top:6px">
+      <div id="tg_r${k}"></div>`;
+  }).join('');
+}
+export function tandemSearch(k,q){
+  const el=document.getElementById('tg_r'+k);if(!el)return;
+  const n=norm(q).trim();
+  if(!n){el.innerHTML='';return;}
+  const res=db.books.filter(b=>norm(b.titre+' '+(b.auteur||'')+' '+(b.saga||'')).includes(n)).slice(0,8);
+  el.innerHTML=res.length?res.map(b=>`<div class="mile" style="cursor:pointer;gap:10px;padding:8px 10px" onclick="setTandemLink(${k},'${b.id}')">${coverEl(b.couverture,'sm')}<span class="name">${esc(b.titre)}${b.auteur?' <small style="color:var(--txt2)">— '+esc(b.auteur)+'</small>':''}</span></div>`).join(''):'<div class="isbnmsg">Aucun livre trouvé dans ta bibliothèque.</div>';
+}
 export function tandemLinksRefresh(){
   const {names}=parseSteps(document.getElementById('tg_text').value);
   if(names.join('|')===formNames)return;
   formNames=names.join('|');
-  const opts=[...db.books].sort((a,b)=>a.titre.localeCompare(b.titre,'fr'));
   names.forEach(n=>{if(formLinks[n]===undefined){const b=bookFor(n);formLinks[n]=b?b.id:'';}});
-  document.getElementById('tg_links').innerHTML=names.map((nom,k)=>`<label style="color:${colOf(k)}">Livre de ta bibliothèque pour « ${esc(nom||'—')} »</label>
-    <select onchange="setTandemLink(${k},this.value)"><option value="">— aucun —</option>${opts.map(b=>`<option value="${b.id}"${formLinks[nom]===b.id?' selected':''}>${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</option>`).join('')}</select>`).join('');
+  renderLinks();
   syncTitle();
 }
 export function setTandemLink(k,id){
   const nom=parseSteps(document.getElementById('tg_text').value).names[k];
   if(nom!==undefined)formLinks[nom]=id;
+  renderLinks();
   syncTitle();
 }
 export function saveTandem(){
