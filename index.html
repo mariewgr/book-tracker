@@ -547,8 +547,9 @@
     <label>Nom du guide (optionnel)</label>
     <input id="tg_titre" placeholder="Ex : Empire of Storms &amp; Tower of Dawn">
     <label>Étapes, dans l'ordre — une par ligne : « Livre – Chapitre »</label>
-    <textarea id="tg_text" rows="10" placeholder="Empire of Storms – CH1&#10;Tower of Dawn – CH1&#10;Empire of Storms – CH2"></textarea>
+    <textarea id="tg_text" rows="10" oninput="tandemLinksRefresh()" placeholder="Empire of Storms – CH1&#10;Tower of Dawn – CH1&#10;Empire of Storms – CH2"></textarea>
     <div class="isbnmsg" id="tg_msg"></div>
+    <div id="tg_links"></div>
     <button class="btn ghost" onclick="pickTandemPhoto()"><span data-spr="camera" data-spr-size="18"><svg class="icn"><use href="#i-camera"/></svg></span> Importer depuis une photo du guide</button>
     <button class="btn" onclick="saveTandem()">Enregistrer</button>
     <button class="btn ghost danger hidden" id="tg_del" onclick="deleteTandem()">Supprimer ce guide</button>

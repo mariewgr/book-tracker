@@ -45,7 +45,13 @@ function bookPct(g,k,pos){
   return all?Math.round(g.steps.slice(0,pos).filter(s=>s.k===k).length/all*100):0;
 }
 /* Livres de la bibliothèque liés à un guide, par index de livre du guide */
-const linked=g=>g.names.map(nom=>bookFor(nom));
+/* Livre choisi dans le guide (`g.links[k]`, '' = aucun) ; à défaut (vieux guide), rapprochement par titre */
+const linkedBook=(g,k)=>{
+  const id=(g.links||[])[k];
+  if(id)return db.books.find(b=>b.id===id)||null;
+  return id===''?null:bookFor(g.names[k]);
+};
+const linked=g=>g.names.map((nom,k)=>linkedBook(g,k));
 /* Livres des guides en cours : affichés dans la carte du guide plutôt qu'en doublon sur l'accueil */
 export function tandemActiveBookIds(){
   const ids=new Set();
@@ -108,8 +114,8 @@ function detailHTML(g){
   const nx=g.steps[g.pos];
   const perBook=g.names.map((nom,k)=>{
     const all=g.steps.filter(s=>s.k===k).length,done=g.steps.slice(0,g.pos).filter(s=>s.k===k).length;
-    const b=bookFor(nom);
-    return `<div class="inforow" style="align-items:center"><span style="color:${colOf(k)};font-weight:700;${b?'cursor:pointer':''}"${b?` onclick="openInfo('${b.id}')"`:''}>${esc(nom||'—')}${nom&&!b?' <small style="color:var(--txt2);font-weight:400">(pas dans ta bibli)</small>':''}</span><b>${done}/${all}${b?' · '+(b.progression||0)+' %':''}</b></div>`;
+    const b=linkedBook(g,k);
+    return `<div class="inforow" style="align-items:center"><span style="color:${colOf(k)};font-weight:700;${b?'cursor:pointer':''}"${b?` onclick="openInfo('${b.id}')"`:''}>${esc(nom||'—')}${nom&&!b?' <small style="color:var(--txt2);font-weight:400">(aucun livre associé)</small>':''}</span><b>${done}/${all}${b?' · '+(b.progression||0)+' %':''}</b></div>`;
   }).join('');
   return `<button class="smallbtn" onclick="closeTandem()">← Tous les guides</button>
     <h2 style="margin:10px 0 4px">${esc(g.titre)}</h2>
@@ -145,15 +151,35 @@ export function openTandemForm(id){
   document.getElementById('tg_titre').value=g?g.titre:'';
   document.getElementById('tg_text').value=g?g.steps.map(s=>stepText(g,s)).join('\n'):'';
   document.getElementById('tg_msg').textContent='';
+  /* choix des livres déjà faits pour ce guide (nom dans le guide → id du livre de la bibliothèque) */
+  formLinks={};
+  if(g)g.names.forEach((nom,k)=>{const b=linkedBook(g,k);formLinks[nom]=b?b.id:'';});
+  formNames='\0';document.getElementById('tg_links').innerHTML='';
+  tandemLinksRefresh();
   document.getElementById('tg_del').classList.toggle('hidden',!g);
   document.getElementById('tandemModal').classList.add('open');
+}
+/* Un menu par livre du guide : on associe chacun à un livre de la bibliothèque (le % lu y sera écrit) */
+export let formLinks={},formNames='';
+export function tandemLinksRefresh(){
+  const {names}=parseSteps(document.getElementById('tg_text').value);
+  if(names.join('|')===formNames)return;
+  formNames=names.join('|');
+  const opts=[...db.books].sort((a,b)=>a.titre.localeCompare(b.titre,'fr'));
+  names.forEach(n=>{if(formLinks[n]===undefined){const b=bookFor(n);formLinks[n]=b?b.id:'';}});
+  document.getElementById('tg_links').innerHTML=names.map((nom,k)=>`<label style="color:${colOf(k)}">Livre de ta bibliothèque pour « ${esc(nom||'—')} »</label>
+    <select onchange="setTandemLink(${k},this.value)"><option value="">— aucun —</option>${opts.map(b=>`<option value="${b.id}"${formLinks[nom]===b.id?' selected':''}>${esc(b.titre)}${b.auteur?' — '+esc(b.auteur):''}</option>`).join('')}</select>`).join('');
+}
+export function setTandemLink(k,id){
+  const nom=parseSteps(document.getElementById('tg_text').value).names[k];
+  if(nom!==undefined)formLinks[nom]=id;
 }
 export function saveTandem(){
   const titre=document.getElementById('tg_titre').value.trim();
   const {names,steps}=parseSteps(document.getElementById('tg_text').value);
   if(!steps.length){toast('Ajoute au moins une étape 🙂');return;}
   const old=editId?db.tandems.find(x=>x.id===editId):null;
-  const g={id:old?old.id:uid(),titre:titre||names.filter(Boolean).join(' & ')||'Tandem',names,steps,pos:Math.min(old?old.pos:0,steps.length)};
+  const g={id:old?old.id:uid(),titre:titre||names.filter(Boolean).join(' & ')||'Tandem',names,steps,links:names.map(n=>formLinks[n]||''),pos:Math.min(old?old.pos:0,steps.length)};
   if(old)db.tandems=db.tandems.map(x=>x.id===old.id?g:x);else db.tandems.push(g);
   save();closeModals();
   openTandem(g.id);
@@ -187,6 +213,7 @@ export function onTandemPicked(inp){
       const ta=document.getElementById('tg_text');
       ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+txt.replace(/```/g,'').trim();
       const {steps}=parseSteps(ta.value);
+      tandemLinksRefresh();
       msg.textContent='✅ '+steps.length+' étapes lues — vérifie la liste avant d\'enregistrer.';
     }catch(e){msg.textContent='⚠️ Lecture impossible — réessaie avec une photo plus nette.';}
   };
@@ -221,8 +248,8 @@ export function openTandemQuick(id){
   quickGid=id;quickPos=g.pos;
   document.getElementById('tq_title').textContent='👯 '+g.titre;
   document.getElementById('tq_books').innerHTML=g.names.map((nom,k)=>{
-    const b=bookFor(nom);
-    if(!b)return `<div class="isbnmsg">${esc(nom||'—')} : ce livre n'est pas dans ta bibli — ajoute-le avec le même titre pour suivre son avancement.</div>`;
+    const b=linkedBook(g,k);
+    if(!b)return `<div class="isbnmsg">${esc(nom||'—')} : aucun livre associé — choisis-le dans « Modifier le guide » pour suivre son avancement.</div>`;
     const u=tqUnit(b);
     return `<label style="color:${colOf(k)}">${esc(b.titre)} — ${u?'page actuelle':'progression (%)'}</label>
       <input id="tq_f${k}" type="number" inputmode="numeric" min="0" max="${u?b.pages:100}" value="${tqVal(b,b.progression||0)||''}" placeholder="0">
